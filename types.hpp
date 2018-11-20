@@ -96,6 +96,9 @@ namespace types
         {
             v.push_back(t);
         }
+
+        T operator [](int i) const {return v[i];}
+        T& operator [](int i)      {return v[i];}
     };
 
     /**0x7F -> i32

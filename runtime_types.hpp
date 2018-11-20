@@ -4,6 +4,8 @@
 #include "types.hpp"
 #include <optional>
 
+struct module;
+
 namespace runtime
 {
     struct addr : types::integral<uint32_t, addr>{};
@@ -81,6 +83,9 @@ namespace runtime
         types::vec<tableinst> tables;
         types::vec<meminst> mems;
         types::vec<globalinst> globals;
+
+        int allocfunction(const module& m, int idx);
+        int allochostfunction(const types::functype& type, void(*ptr)());
     };
 
     template<typename T>
@@ -136,12 +141,6 @@ namespace runtime
         types::vec<globaladdr> globaladdrs;
 
         types::vec<exportinst> exports;
-
-        /*void allocfunction(store& s)
-        {
-            int a = funcaddrs.size();
-            types::functype type =
-        }*/
     };
 }
 

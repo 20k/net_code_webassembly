@@ -575,12 +575,60 @@ struct module
     }
 };
 
+int runtime::store::allocfunction(const module& m, int idx)
+{
+    int a = funcs.size();
+
+    if(idx < 0 || idx >= m.section_func.types.size())
+        throw std::runtime_error("Bad function alloc");
+
+    types::typeidx type_idx = m.section_func.types[idx];
+
+    if((uint32_t)type_idx >= (uint32_t)m.section_type.types.size())
+        throw std::runtime_error("Bad type_idx in function alloc");
+
+    types::functype type = m.section_type.types[(uint32_t)type_idx];
+
+    webasm_func wfunc;
+    wfunc.funct = m.section_code.funcs[idx];
+
+    runtime::funcinst inst;
+    inst.type = type;
+    inst.funct = wfunc;
+
+    funcs.push_back(inst);
+
+    return a;
+}
+
+int runtime::store::allochostfunction(const types::functype& type, void(*ptr)())
+{
+    int a = funcs.size();
+
+    host_func hfunc;
+    hfunc.ptr = ptr;
+
+    runtime::funcinst inst;
+    inst.type = type;
+    inst.funct = hfunc;
+
+    funcs.push_back(inst);
+
+    return a;
+}
+
+///imports are temporarily disabled
+///but looks like externvals are first then regulars
 runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& vals)
 {
     runtime::moduleinst inst;
 
     if(m.section_imports.imports.size() != vals.size())
         throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(vals.size()));
+
+    inst.typel = m.section_type.types;
+
+
 
     return inst;
 }
