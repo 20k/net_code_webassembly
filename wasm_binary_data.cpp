@@ -81,41 +81,35 @@ namespace sections
         ///3 -> global
         uint8_t which = 0;
 
-        union val
-        {
-            types::typeidx tidx;
-            types::tabletype tt;
-            types::memtype mt;
-            types::globaltype gt;
-
-            ///uuh todo check that this doesn't leak memory
-            ///because unions are a bit sketch
-            val()
-            {
-                memset(this, 0, sizeof(val));
-            }
-        } values;
+        std::variant<types::typeidx, types::tabletype, types::memtype, types::globaltype> vals;
 
         virtual void handle_serialise(parser& p, bool ser)
         {
             which = p.next();
 
-            switch(which)
+            if(ser == false)
             {
-                case 0x00:
-                    serialise(values.tidx, p, ser);
-                    break;
-                case 0x01:
-                    serialise(values.tt, p, ser);
-                    break;
-                case 0x02:
-                    serialise(values.mt, p, ser);
-                    break;
-                case 0x03:
-                    serialise(values.gt, p, ser);
-                    break;
-                default:
-                    throw std::runtime_error("Invalid which switch in importdesc " + std::to_string(which));
+                switch(which)
+                {
+                    case 0x00:
+                        lowest_get<types::typeidx>(vals, p);
+                        break;
+                    case 0x01:
+                        lowest_get<types::tabletype>(vals, p);
+                        break;
+                    case 0x02:
+                        lowest_get<types::memtype>(vals, p);
+                        break;
+                    case 0x03:
+                        lowest_get<types::globaltype>(vals, p);
+                        break;
+                    default:
+                        throw std::runtime_error("Invalid which switch in importdesc " + std::to_string(which));
+                }
+            }
+            else
+            {
+                assert(false);
             }
         }
     };
@@ -223,6 +217,56 @@ namespace sections
             serialise(globals, p, ser);
         }
     };
+
+    struct exportdesc : serialisable
+    {
+        uint8_t which = 0;
+
+        std::variant<types::funcidx, types::tableidx, types::memidx, types::globalidx> vals;
+
+        virtual void handle_serialise(parser& p, bool ser)
+        {
+            which = p.next();
+
+            if(ser == false)
+            {
+                switch(which)
+                {
+                    case 0x00:
+                        lowest_get<types::funcidx>(vals, p);
+                        break;
+                    case 0x01:
+                        lowest_get<types::tableidx>(vals, p);
+                        break;
+                    case 0x02:
+                        lowest_get<types::memidx>(vals, p);
+                        break;
+                    case 0x03:
+                        lowest_get<types::globalidx>(vals, p);
+                        break;
+                    default:
+                        throw std::runtime_error("Invalid which switch in importdesc " + std::to_string(which));
+                }
+            }
+            else
+            {
+                assert(false);
+            }
+        }
+    };
+
+    struct export_info
+    {
+        types::name nm;
+    };
+
+    struct exportsec : section
+    {
+        exportsec(const section_header& head) : section(head){}
+        exportsec(){}
+
+
+    };
 }
 
 template<typename T>
@@ -282,6 +326,7 @@ void wasm_binary_data::init(data d)
     sections::functionsec section_func;
     sections::tablesec section_table;
     sections::memsec section_memory;
+    sections::globalsec section_global;
 
     sections::section_header head;
 
@@ -336,6 +381,13 @@ void wasm_binary_data::init(data d)
             serialise(section_memory, p, false);
 
             std::cout << "imported memory\n";
+        }
+        else if(head.id == 6)
+        {
+            section_global = sections::globalsec(head);
+            serialise(section_global, p, false);
+
+            std::cout << "imported global\n";
         }
         else
         {
