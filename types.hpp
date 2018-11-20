@@ -244,6 +244,11 @@ namespace types
         mut m;
     };
 
+    struct externtype
+    {
+        std::variant<func, tabletype, memtype, globaltype> type;
+    };
+
     struct table
     {
         tabletype type;

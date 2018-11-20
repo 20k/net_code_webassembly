@@ -140,7 +140,6 @@ namespace sections
 
             //std::cout << "import1 " << mod.friendly() << std::endl;
             //std::cout << "import2 " << nm.friendly() << std::endl;
-
             ///so mod is the module
             ///env seems to be environment, eg passive imports
             ///nm is the name, in this example the function hi
