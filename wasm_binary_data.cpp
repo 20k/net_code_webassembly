@@ -392,31 +392,6 @@ namespace sections
     };
 }
 
-template<typename T>
-T get_section_ignore_custom(parser& p)
-{
-    sections::section_header head;
-
-    serialise(head, p, false);
-
-    if(head.id == 0)
-    {
-        sections::custom cust(head);
-        serialise(cust, p, false);
-
-        serialise(head, p, false);
-    }
-
-    ///a lotta these headers are optional
-    ///so really we should just mix and match which one goes where
-
-    T ret(head);
-
-    serialise(ret, p, false);
-
-    return ret;
-}
-
 ///skips custom segments
 sections::section_header get_next_header(parser& p)
 {
@@ -435,15 +410,8 @@ sections::section_header get_next_header(parser& p)
     return head;
 }
 
-void wasm_binary_data::init(data d)
+struct module
 {
-    parser p(d);
-
-    p.checked_fetch<4>({0x00, 0x61, 0x73, 0x6D});
-    p.checked_fetch<4>({0x01, 0x00, 0x00, 0x00});
-
-    dump_state(p);
-
     sections::type section_type;
     sections::importsec section_imports;
     sections::functionsec section_func;
@@ -455,145 +423,161 @@ void wasm_binary_data::init(data d)
     sections::elemsec section_elem;
     sections::codesec section_code;
 
-    sections::section_header head;
-
-    int num_encoded = 15;
-
-    int num_3 = 0;
-
-    ///current.y implemented two section types
-    for(int i=0; i < num_encoded; i++)
+    void init(parser& p)
     {
-        if(p.finished())
-            break;
+        p.checked_fetch<4>({0x00, 0x61, 0x73, 0x6D});
+        p.checked_fetch<4>({0x01, 0x00, 0x00, 0x00});
 
-        head = get_next_header(p);
+        dump_state(p);
 
-        std::cout <<" HID " << std::to_string(head.id) << std::endl;
+        sections::section_header head;
 
-        if(head.id >= num_encoded)
-            break;
+        int num_encoded = 15;
 
-        if(head.id == 0)
+        int num_3 = 0;
+
+        ///current.y implemented two section types
+        for(int i=0; i < num_encoded; i++)
         {
-            sections::custom cust(head);
-            serialise(cust, p, false);
+            if(p.finished())
+                break;
 
-            std::cout << "found custom\n";
-        }
-        else if(head.id == 1)
-        {
-            //dump_state(p);
+            head = get_next_header(p);
 
-            section_type = sections::type(head);
-            serialise(section_type, p, false);
-            std::cout << "import type\n";
-        }
-        else if(head.id == 2)
-        {
-            section_imports = sections::importsec(head);
-            serialise(section_imports, p, false);
-            std::cout << "import imports\n";
-        }
-        else if(head.id == 3)
-        {
-            section_func = sections::functionsec(head);
-            serialise(section_func, p, false);
-            std::cout << "import functionsec\n";
+            std::cout <<" HID " << std::to_string(head.id) << std::endl;
 
-            num_3++;
-        }
-        else if(head.id == 4)
-        {
-            section_table = sections::tablesec(head);
-            serialise(section_table, p, false);
+            if(head.id >= num_encoded)
+                break;
 
-            std::cout << "imported table\n";
-        }
-        else if(head.id == 5)
-        {
-            section_memory = sections::memsec(head);
-            serialise(section_memory, p, false);
+            if(head.id == 0)
+            {
+                sections::custom cust(head);
+                serialise(cust, p, false);
 
-            std::cout << "imported memory\n";
-        }
-        else if(head.id == 6)
-        {
-            section_global = sections::globalsec(head);
-            serialise(section_global, p, false);
+                std::cout << "found custom\n";
+            }
+            else if(head.id == 1)
+            {
+                //dump_state(p);
 
-            std::cout << "imported global\n";
-        }
-        else if(head.id == 7)
-        {
-            section_export = sections::exportsec(head);
-            serialise(section_export, p, false);
+                section_type = sections::type(head);
+                serialise(section_type, p, false);
+                std::cout << "import type\n";
+            }
+            else if(head.id == 2)
+            {
+                section_imports = sections::importsec(head);
+                serialise(section_imports, p, false);
+                std::cout << "import imports\n";
+            }
+            else if(head.id == 3)
+            {
+                section_func = sections::functionsec(head);
+                serialise(section_func, p, false);
+                std::cout << "import functionsec\n";
 
-            std::cout << "imported exports\n";
-        }
-        else if(head.id == 8)
-        {
-            section_start = sections::startsec(head);
-            serialise(section_start, p, false);
+                num_3++;
+            }
+            else if(head.id == 4)
+            {
+                section_table = sections::tablesec(head);
+                serialise(section_table, p, false);
 
-            std::cout << "warning: imported start untested\n";
-        }
-        else if(head.id == 9)
-        {
-            section_elem = sections::elemsec(head);
-            serialise(section_elem, p, false);
+                std::cout << "imported table\n";
+            }
+            else if(head.id == 5)
+            {
+                section_memory = sections::memsec(head);
+                serialise(section_memory, p, false);
 
-            std::cout << "warning: imported elem section untested\n";
-        }
-        else if(head.id == 10)
-        {
-            section_code = sections::codesec(head);
-            serialise(section_code, p, false);
+                std::cout << "imported memory\n";
+            }
+            else if(head.id == 6)
+            {
+                section_global = sections::globalsec(head);
+                serialise(section_global, p, false);
 
-            std::cout << "Imported code section\n";
+                std::cout << "imported global\n";
+            }
+            else if(head.id == 7)
+            {
+                section_export = sections::exportsec(head);
+                serialise(section_export, p, false);
+
+                std::cout << "imported exports\n";
+            }
+            else if(head.id == 8)
+            {
+                section_start = sections::startsec(head);
+                serialise(section_start, p, false);
+
+                std::cout << "warning: imported start untested\n";
+            }
+            else if(head.id == 9)
+            {
+                section_elem = sections::elemsec(head);
+                serialise(section_elem, p, false);
+
+                std::cout << "warning: imported elem section untested\n";
+            }
+            else if(head.id == 10)
+            {
+                section_code = sections::codesec(head);
+                serialise(section_code, p, false);
+
+                std::cout << "Imported code section\n";
+            }
+            else
+            {
+                break;
+            }
         }
-        else
+
+        ///unsure of spec in this case
+        assert(num_3 == 0 || num_3 == 1);
+
+
+        std::cout << "finished parsing\n";
+
+        std::cout << "num functions " << std::to_string(section_type.types.size()) << std::endl;
+
+        for(auto& i : section_type.types)
         {
-            break;
+            std::cout << "params " << i.params.size() << std::endl;
+
+            for(auto& p : i.params)
+            {
+                std::cout << p.friendly() << std::endl;
+            }
+
+            std::cout << "results " << i.results.size() << std::endl;
+
+            for(auto& r : i.results)
+            {
+                std::cout << r.friendly() << std::endl;
+            }
         }
+
+        std::cout << "num iports " << section_imports.imports.size() << std::endl;
+
+        std::cout << "num functionsecs " << section_func.types.size() << std::endl;
+
+        std::cout << "num tables " << section_table.tables.size() << std::endl;
+
+        std::cout << "num mem " << section_memory.mems.size() << std::endl;
+
+        std::cout << "num globals " << section_global.globals.size() << std::endl;
+
+        std::cout << "num exports " << section_export.exports.size() << std::endl;
+
+        std::cout << "num code " << section_code.funcs.size() << std::endl;
     }
+};
 
-    ///unsure of spec in this case
-    assert(num_3 == 0 || num_3 == 1);
+void wasm_binary_data::init(data d)
+{
+    parser p(d);
 
-
-    std::cout << "finished parsing\n";
-
-    std::cout << "num functions " << std::to_string(section_type.types.size()) << std::endl;
-
-    for(auto& i : section_type.types)
-    {
-        std::cout << "params " << i.params.size() << std::endl;
-
-        for(auto& p : i.params)
-        {
-            std::cout << p.friendly() << std::endl;
-        }
-
-        std::cout << "results " << i.results.size() << std::endl;
-
-        for(auto& r : i.results)
-        {
-            std::cout << r.friendly() << std::endl;
-        }
-    }
-
-    std::cout << "num iports " << section_imports.imports.size() << std::endl;
-
-    std::cout << "num functionsecs " << section_func.types.size() << std::endl;
-
-    std::cout << "num tables " << section_table.tables.size() << std::endl;
-
-    std::cout << "num mem " << section_memory.mems.size() << std::endl;
-
-    std::cout << "num globals " << section_global.globals.size() << std::endl;
-
-    std::cout << "num exports " << section_export.exports.size() << std::endl;
-
-    std::cout << "num code " << section_code.funcs.size() << std::endl;
+    module mod;
+    mod.init(p);
 }

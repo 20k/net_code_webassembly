@@ -24,6 +24,8 @@ namespace runtime
         externval value;
     };
 
+    ///so this is constructed from our module
+    ///which is the section representation we constructed earlier
     struct moduleinst
     {
         types::vec<types::functype> typel;
@@ -46,6 +48,8 @@ namespace runtime
         void(*ptr)(void);
     };
 
+    ///uuh
+    ///this probably should be a pointer or something to moduleinst
     struct funcinst
     {
         types::functype type;
@@ -83,6 +87,7 @@ namespace runtime
         types::mut mut;
     };
 
+    ///this is incorrect for the moment due to funcinst
     struct store
     {
         types::vec<funcinst> funcs;
