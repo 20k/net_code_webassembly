@@ -601,18 +601,18 @@ int runtime::store::allocfunction(const module& m, int idx)
     return a;
 }
 
-int runtime::store::allochostfunction(const types::functype& type, void(*ptr)())
+int runtime::store::alloctable(const types::tabletype& type)
 {
-    int a = funcs.size();
+    int a = tables.size();
 
-    host_func hfunc;
-    hfunc.ptr = ptr;
+    runtime::tableinst inst;
 
-    runtime::funcinst inst;
-    inst.type = type;
-    inst.funct = hfunc;
+    if(type.lim.has_max_val)
+        inst.max = type.lim.m;
 
-    funcs.push_back(inst);
+    inst.elem.resize((uint32_t)type.lim.n);
+
+    tables.push_back(inst);
 
     return a;
 }

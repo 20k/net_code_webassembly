@@ -99,6 +99,11 @@ namespace types
 
         T operator [](int i) const {return v[i];}
         T& operator [](int i)      {return v[i];}
+
+        void resize(int n)
+        {
+            v.resize(n);
+        }
     };
 
     /**0x7F -> i32

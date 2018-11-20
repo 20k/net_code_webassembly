@@ -86,6 +86,7 @@ namespace runtime
 
         int allocfunction(const module& m, int idx);
         int allochostfunction(const types::functype& type, void(*ptr)());
+        int alloctable(const types::tabletype& type);
     };
 
     template<typename T>
