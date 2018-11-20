@@ -65,6 +65,31 @@ namespace runtime
 
         std::optional<types::u32> max;
     };
+
+    struct meminst
+    {
+        types::vec<uint8_t> dat;
+        std::optional<types::u32> max;
+    };
+
+    struct value
+    {
+        std::variant<types::i32, types::i64, types::f32, types::f64> v;
+    };
+
+    struct globalinst
+    {
+        value val;
+        types::mut mut;
+    };
+
+    struct store
+    {
+        types::vec<funcinst> funcs;
+        types::vec<tableinst> tables;
+        types::vec<meminst> mems;
+        types::vec<globalinst> globals;
+    };
 }
 
 #endif // RUNTIME_TYPES_HPP_INCLUDED
