@@ -27,10 +27,10 @@ namespace runtime
     {
         types::vec<types::func> typel;
 
-        types::vec<types::funcaddr> funcaddrs
-        types::vec<types::tableaddr> tableaddrs
-        types::vec<types::memaddr> memaddrs
-        types::vec<types::globaladdr> globaladdrs
+        types::vec<funcaddr> funcaddrs;
+        types::vec<tableaddr> tableaddrs;
+        types::vec<memaddr> memaddrs;
+        types::vec<globaladdr> globaladdrs;
 
         types::vec<exportinst> exports;
     };
