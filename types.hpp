@@ -157,6 +157,13 @@ namespace types
     struct name
     {
         vec<uint8_t> dat;
+
+        std::string friendly()
+        {
+            std::string ret(dat.v.begin(), dat.v.end());
+
+            return ret;
+        }
     };
 
     struct typeidx : u32{};
@@ -307,6 +314,24 @@ namespace types
     {
         globaltype type;
         expr e;
+    };
+
+    struct local
+    {
+        u32 n;
+        valtype type;
+    };
+
+    struct code_func
+    {
+        vec<local> locals;
+        expr e;
+    };
+
+    struct code
+    {
+        u32 size;
+        code_func fnc;
     };
 }
 

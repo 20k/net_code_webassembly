@@ -48,7 +48,10 @@ struct parser
     template<int N>
     void checked_fetch(const std::array<uint8_t, N>& arr)
     {
-        bounds_check(offset + N);
+        //bounds_check(offset + N);
+
+        if(offset + N > (int)ptr.size())
+            throw std::runtime_error("Failed boundary check");
 
         for(int32_t i=0; i < N; i++)
         {
@@ -61,9 +64,17 @@ struct parser
 
     void advance(int32_t n)
     {
-        bounds_check(offset + n);
+        //bounds_check(offset + n);
+
+        if(offset + n > (int)ptr.size())
+            throw std::runtime_error("Failed boundary check");
 
         offset += n;
+    }
+
+    bool finished()
+    {
+        return offset >= (int)ptr.size();
     }
 };
 
@@ -535,6 +546,27 @@ void lowest_get(types::global& type, parser& p)
 {
     lowest_get(type.type, p);
     lowest_get(type.e, p);
+}
+
+inline
+void lowest_get(types::local& type, parser& p)
+{
+    lowest_get(type.n, p);
+    lowest_get(type.type, p);
+}
+
+inline
+void lowest_get(types::code_func& type, parser& p)
+{
+    lowest_get(type.locals, p);
+    lowest_get(type.e, p);
+}
+
+inline
+void lowest_get(types::code& type, parser& p)
+{
+    lowest_get(type.size, p);
+    lowest_get(type.fnc, p);
 }
 
 template<typename T>

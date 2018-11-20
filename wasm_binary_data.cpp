@@ -11,7 +11,7 @@
 
 void dump_state(parser& p)
 {
-    for(int i=p.offset; i < 100 && i < (int)p.ptr.size(); i++)
+    for(int i=p.offset; i < 500 && i < (int)p.ptr.size(); i++)
     {
         std::cout << "0x";
         dump(p.ptr[i]);
@@ -49,9 +49,21 @@ namespace sections
     {
         custom(const section_header& head) : section(head){}
 
+        types::name name;
+
         virtual void handle_serialise(parser& p, bool ser) override
         {
-            p.advance((uint32_t)header.len);
+            int pre = p.offset;
+
+            serialise(name, p, ser);
+
+            p.offset = pre;
+
+            int len = (uint32_t)header.len;
+
+            p.advance(len);
+
+            std::cout << "custom name " << name.friendly() << std::endl;
         }
     };
 
@@ -284,6 +296,92 @@ namespace sections
             serialise(exports, p, ser);
         }
     };
+
+    struct start : serialisable
+    {
+        types::funcidx fidx;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            serialise(fidx, p, ser);
+        }
+    };
+
+    struct startsec : section
+    {
+        startsec(const section_header& head) : section(head){}
+        startsec(){}
+
+        start st;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 8)
+            {
+                throw std::runtime_error("Expected 8, got " + std::to_string(header.id));
+            }
+
+            serialise(st, p, ser);
+        }
+    };
+
+    struct elem : serialisable
+    {
+        types::tableidx tidx;
+        types::expr e;
+        types::vec<types::funcidx> funcs;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            serialise(tidx, p, ser);
+            serialise(e, p, ser);
+            serialise(funcs, p, ser);
+        }
+    };
+
+    struct elemsec : section
+    {
+        elemsec(const section_header& head) : section(head){}
+        elemsec(){}
+
+        types::vec<elem> elems;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 9)
+            {
+                throw std::runtime_error("Expected 9, got " + std::to_string(header.id));
+            }
+
+            serialise(elems, p, ser);
+        }
+    };
+
+    struct codesec : section
+    {
+        codesec(const section_header& head) : section(head){}
+        codesec(){}
+
+        types::vec<types::code> funcs;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 10)
+            {
+                throw std::runtime_error("Expected 10, got " + std::to_string(header.id));
+            }
+
+            int pre = p.offset;
+
+            serialise(funcs, p, ser);
+
+            int post = p.offset;
+
+            int hlen = (uint32_t)header.len;
+
+            assert(post - pre == hlen);
+        }
+    };
 }
 
 template<typename T>
@@ -318,13 +416,13 @@ sections::section_header get_next_header(parser& p)
 
     serialise(head, p, false);
 
-    if(head.id == 0)
+    /*if(head.id == 0)
     {
         sections::custom cust(head);
         serialise(cust, p, false);
 
         serialise(head, p, false);
-    }
+    }*/
 
     return head;
 }
@@ -344,16 +442,23 @@ void wasm_binary_data::init(data d)
     sections::tablesec section_table;
     sections::memsec section_memory;
     sections::globalsec section_global;
+    sections::exportsec section_export;
+    sections::startsec section_start;
+    sections::elemsec section_elem;
+    sections::codesec section_code;
 
     sections::section_header head;
 
-    int num_encoded = 10;
+    int num_encoded = 15;
 
     int num_3 = 0;
 
     ///current.y implemented two section types
     for(int i=0; i < num_encoded; i++)
     {
+        if(p.finished())
+            break;
+
         head = get_next_header(p);
 
         std::cout <<" HID " << std::to_string(head.id) << std::endl;
@@ -362,7 +467,12 @@ void wasm_binary_data::init(data d)
             break;
 
         if(head.id == 0)
-            continue;
+        {
+            sections::custom cust(head);
+            serialise(cust, p, false);
+
+            std::cout << "found custom\n";
+        }
         else if(head.id == 1)
         {
             //dump_state(p);
@@ -406,6 +516,34 @@ void wasm_binary_data::init(data d)
 
             std::cout << "imported global\n";
         }
+        else if(head.id == 7)
+        {
+            section_export = sections::exportsec(head);
+            serialise(section_export, p, false);
+
+            std::cout << "imported exports\n";
+        }
+        else if(head.id == 8)
+        {
+            section_start = sections::startsec(head);
+            serialise(section_start, p, false);
+
+            std::cout << "warning: imported start untested\n";
+        }
+        else if(head.id == 9)
+        {
+            section_elem = sections::elemsec(head);
+            serialise(section_elem, p, false);
+
+            std::cout << "warning: imported elem section untested\n";
+        }
+        else if(head.id == 10)
+        {
+            section_code = sections::codesec(head);
+            serialise(section_code, p, false);
+
+            std::cout << "Imported code section\n";
+        }
         else
         {
             break;
@@ -444,4 +582,10 @@ void wasm_binary_data::init(data d)
     std::cout << "num tables " << section_table.tables.size() << std::endl;
 
     std::cout << "num mem " << section_memory.mems.size() << std::endl;
+
+    std::cout << "num globals " << section_global.globals.size() << std::endl;
+
+    std::cout << "num exports " << section_export.exports.size() << std::endl;
+
+    std::cout << "num code " << section_code.funcs.size() << std::endl;
 }
