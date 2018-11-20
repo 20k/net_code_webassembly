@@ -65,6 +65,31 @@ namespace types
     {
         std::vector<T> v;
     };
+
+    /**0x7F -> i32
+    0x7E -> i64
+    0x7D -> f32
+    0x7C -> f64*/
+
+    ///which embeds one of the above constants
+    struct valtype
+    {
+        uint8_t which = 0;
+
+        /*union type
+        {
+            i32 i_32;
+            i64 i_64;
+            f32 f_32;
+            f64 f_64;
+        } val;*/
+    };
+
+    struct func
+    {
+        vec<valtype> params;
+        vec<valtype> results;
+    };
 }
 
 struct data

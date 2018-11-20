@@ -84,7 +84,7 @@ void lowest_get(T& v, parser& p)
 inline
 void lowest_get(types::i32& val, parser& p)
 {
-    val = leb::signed_decode<types::i32>(p);
+    val = leb::unsigned_decode<types::i32>(p);
 }
 
 inline
@@ -102,7 +102,7 @@ void lowest_get(types::s32& val, parser& p)
 inline
 void lowest_get(types::i64& val, parser& p)
 {
-    val = leb::signed_decode<types::i64>(p);
+    val = leb::unsigned_decode<types::i64>(p);
 }
 
 inline
@@ -145,6 +145,60 @@ void lowest_get(types::vec<T>& val, parser& p)
 
         lowest_get(back, p);
     }
+}
+
+inline
+void lowest_get(types::valtype& val, parser& p)
+{
+    uint8_t next = p.next();
+
+    val.which = next;
+
+    switch(next)
+    {
+        case 0x7F:
+            break;
+        case 0x7E:
+            break;
+        case 0x7D:
+            break;
+        case 0x7C:
+            break;
+        default:
+            throw std::runtime_error("Didn't find a type " + std::to_string(next));
+            break;
+    }
+
+    /*switch(next)
+    {
+        case 0x7F:
+            lowest_get(val.val.i_32, p);
+            break;
+        case 0x7E:
+            lowest_get(val.val.i_64, p);
+            break;
+        case 0x7D:
+            lowest_get(val.val.f_32, p);
+            break;
+        case 0x7C:
+            lowest_get(val.val.f_64, p);
+            break;
+        default:
+            throw std::runtime_error("Didn't find a type " + std::to_string(next));
+            break;
+    }*/
+}
+
+inline
+void lowest_get(types::func& val, parser& p)
+{
+    uint8_t next = p.next();
+
+    if(next != 0x60)
+        throw std::runtime_error("Found wrong next " + std::to_string(next));
+
+    lowest_get(val.params, p);
+    lowest_get(val.results, p);
 }
 
 inline
