@@ -120,5 +120,21 @@ void leb_tests()
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
+
+    {
+        uint64_t check = 2141192192;
+
+        data d = leb::unsigned_encode<uint64_t>(check);
+
+        assert(leb::unsigned_decode<uint64_t>(d) == check);
+    }
+
+    {
+        int64_t check = 2141192192;
+
+        data d = leb::signed_encode<int64_t>(check);
+
+        assert(leb::signed_decode<int64_t>(d) == check);
+    }
 }
 
