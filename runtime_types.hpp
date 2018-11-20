@@ -2,6 +2,7 @@
 #define RUNTIME_TYPES_HPP_INCLUDED
 
 #include "types.hpp"
+#include <optional>
 
 namespace runtime
 {
@@ -51,6 +52,18 @@ namespace runtime
         moduleinst module;
 
         std::variant<host_func, webasm_func> funct;
+    };
+
+    struct funcelem
+    {
+        std::optional<funcaddr> addr;
+    };
+
+    struct tableinst
+    {
+        types::vec<funcelem> elem;
+
+        std::optional<types::u32> max;
     };
 }
 
