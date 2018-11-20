@@ -77,6 +77,16 @@ namespace types
             return v.end();
         }
 
+        auto begin() const
+        {
+            return v.begin();
+        }
+
+        auto end() const
+        {
+            return v.end();
+        }
+
         int32_t size()
         {
             return v.size();

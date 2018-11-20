@@ -90,6 +90,42 @@ namespace runtime
         types::vec<meminst> mems;
         types::vec<globalinst> globals;
     };
+
+    template<typename T>
+    types::vec<T> filter_type(const types::vec<externval>& vals)
+    {
+        types::vec<T> ret;
+
+        for(const externval& val : vals)
+        {
+            if(std::holds_alternative<T>(val.val))
+            {
+                ret.push_back(std::get<T>(val.val));
+            }
+        }
+
+        return ret;
+    }
+
+    types::vec<funcaddr> filter_func(const types::vec<externval>& vals)
+    {
+        return filter_type<funcaddr>(vals);
+    }
+
+    types::vec<tableaddr> filter_table(const types::vec<externval>& vals)
+    {
+        return filter_type<tableaddr>(vals);
+    }
+
+    types::vec<memaddr> filter_mem(const types::vec<externval>& vals)
+    {
+        return filter_type<memaddr>(vals);
+    }
+
+    types::vec<globaladdr> filter_global(const types::vec<externval>& vals)
+    {
+        return filter_type<globaladdr>(vals);
+    }
 }
 
 #endif // RUNTIME_TYPES_HPP_INCLUDED
