@@ -8,6 +8,7 @@
 #include "serialisable.hpp"
 #include "print.hpp"
 #include <cstring>
+#include "runtime_types.hpp"
 
 void dump_state(parser& p)
 {
@@ -574,10 +575,24 @@ struct module
     }
 };
 
+runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& vals)
+{
+    runtime::moduleinst inst;
+
+    if(m.section_imports.imports.size() != vals.size())
+        throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(vals.size()));
+
+    return inst;
+}
+
 void wasm_binary_data::init(data d)
 {
     parser p(d);
 
+    runtime::store s;
+
     module mod;
     mod.init(p);
+
+    runtime::moduleinst minst = build_from_module(mod, s, {});
 }

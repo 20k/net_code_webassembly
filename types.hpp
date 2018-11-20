@@ -87,7 +87,7 @@ namespace types
             return v.end();
         }
 
-        int32_t size()
+        int32_t size() const
         {
             return v.size();
         }

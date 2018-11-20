@@ -24,20 +24,6 @@ namespace runtime
         externval value;
     };
 
-    ///so this is constructed from our module
-    ///which is the section representation we constructed earlier
-    struct moduleinst
-    {
-        types::vec<types::functype> typel;
-
-        types::vec<funcaddr> funcaddrs;
-        types::vec<tableaddr> tableaddrs;
-        types::vec<memaddr> memaddrs;
-        types::vec<globaladdr> globaladdrs;
-
-        types::vec<exportinst> exports;
-    };
-
     struct webasm_func
     {
         types::code funct;
@@ -53,7 +39,8 @@ namespace runtime
     struct funcinst
     {
         types::functype type;
-        moduleinst module;
+        //moduleinst module;
+        ///do this implicitly at runtime?
 
         std::variant<host_func, webasm_func> funct;
     };
@@ -97,6 +84,7 @@ namespace runtime
     };
 
     template<typename T>
+    inline
     types::vec<T> filter_type(const types::vec<externval>& vals)
     {
         types::vec<T> ret;
@@ -112,25 +100,49 @@ namespace runtime
         return ret;
     }
 
+    inline
     types::vec<funcaddr> filter_func(const types::vec<externval>& vals)
     {
         return filter_type<funcaddr>(vals);
     }
 
+    inline
     types::vec<tableaddr> filter_table(const types::vec<externval>& vals)
     {
         return filter_type<tableaddr>(vals);
     }
 
+    inline
     types::vec<memaddr> filter_mem(const types::vec<externval>& vals)
     {
         return filter_type<memaddr>(vals);
     }
 
+    inline
     types::vec<globaladdr> filter_global(const types::vec<externval>& vals)
     {
         return filter_type<globaladdr>(vals);
     }
+
+    ///so this is constructed from our module
+    ///which is the section representation we constructed earlier
+    struct moduleinst
+    {
+        types::vec<types::functype> typel;
+
+        types::vec<funcaddr> funcaddrs;
+        types::vec<tableaddr> tableaddrs;
+        types::vec<memaddr> memaddrs;
+        types::vec<globaladdr> globaladdrs;
+
+        types::vec<exportinst> exports;
+
+        /*void allocfunction(store& s)
+        {
+            int a = funcaddrs.size();
+            types::functype type =
+        }*/
+    };
 }
 
 #endif // RUNTIME_TYPES_HPP_INCLUDED
