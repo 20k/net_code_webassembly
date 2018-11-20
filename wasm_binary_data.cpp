@@ -87,7 +87,7 @@ void wasm_binary_data::init(data d)
     p.checked_fetch<4>({0x00, 0x61, 0x73, 0x6D});
     p.checked_fetch<4>({0x01, 0x00, 0x00, 0x00});
 
-    for(int i=0; i < 100 && i < (int)p.ptr.size(); i++)
+    for(int i=p.offset; i < 100 && i < (int)p.ptr.size(); i++)
     {
         std::cout << "0x";
         dump(p.ptr[i]);
@@ -97,6 +97,8 @@ void wasm_binary_data::init(data d)
     std::cout << std::dec;
 
     sections::type stype = get_section_ignore_custom<sections::type>(p);
+
+    std::cout << "num functions " << std::to_string(stype.types.size()) << std::endl;
 
     for(auto& i : stype.types)
     {
