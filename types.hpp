@@ -11,20 +11,54 @@ namespace types
 {
     ///u32, u64, s32, s64, i8, i16, i32, i64.
 
-    using i32 = uint32_t;
-    using f32 = float;
+    template<typename T, typename derived>
+    struct integral
+    {
+        T val = 0;
 
-    using i64 = uint64_t;
-    using f64 = double;
+        integral(const T& t) : val(t){}
+        integral(){}
 
-    using u32 = i32;
-    using u64 = i64;
+        explicit operator T() const noexcept {return val;}
 
-    using s32 = int32_t;
-    using s64 = int32_t;
+        derived& operator<<(int pval)
+        {
+            val = val << pval;
 
-    using i8 = uint8_t;
-    using i16 = uint16_t;
+            return static_cast<derived&>(*this);
+        }
+
+        derived& operator|=(derived& other)
+        {
+            val = val | other.val;
+
+            return static_cast<derived&>(*this);
+        }
+
+        derived& operator=(const derived& other) // copy assignment
+        {
+            if(this != &other)
+            {
+                val = other.val;
+            }
+
+            return static_cast<derived&>(*this);
+        }
+    };
+
+    struct i32 : integral<uint32_t, i32>{};
+    struct u32 : integral<uint32_t, u32>{};
+    struct s32 : integral<int32_t, s32>{};
+
+    struct i64 : integral<uint64_t, i64>{};
+    struct u64 : integral<uint64_t, u64>{};
+    struct s64 : integral<int32_t, s64>{};
+
+    struct i8 : integral<uint8_t, i8>{};
+    struct i16 : integral<uint16_t, i16>{};
+
+    struct f32 : integral<float, f32>{};
+    struct f64 : integral<double, f64>{};
 }
 
 struct data

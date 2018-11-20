@@ -5,7 +5,7 @@
 void leb_tests()
 {
     {
-        data d = leb::unsigned_encode<uint64_t>(80);
+        data d = leb::unsigned_encode<uint64_t, data>(80);
 
         /*for(int i=0; i < d.size(); i++)
         {
@@ -20,7 +20,7 @@ void leb_tests()
     }
 
     {
-        data dtr = leb::unsigned_encode<uint64_t>(0);
+        data dtr = leb::unsigned_encode<uint64_t, data>(0);
 
         assert(leb::unsigned_decode<uint64_t>(dtr) == 0);
     }
@@ -28,7 +28,7 @@ void leb_tests()
     {
         int64_t check = std::numeric_limits<int64_t>::min();
 
-        data d = leb::signed_encode<int64_t>(check);
+        data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
     }
@@ -36,7 +36,7 @@ void leb_tests()
     {
         int64_t check = std::numeric_limits<int64_t>::max();
 
-        data d = leb::signed_encode<int64_t>(check);
+        data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
     }
@@ -44,7 +44,7 @@ void leb_tests()
     {
         int64_t check = -9934349;
 
-        data d = leb::signed_encode<int64_t>(check);
+        data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
     }
@@ -52,7 +52,7 @@ void leb_tests()
     {
         int64_t check = 768590789078;
 
-        data d = leb::signed_encode<int64_t>(check);
+        data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
     }
@@ -60,7 +60,7 @@ void leb_tests()
     {
         int64_t check = -1;
 
-        data d = leb::signed_encode<int64_t>(check);
+        data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
     }
@@ -68,7 +68,7 @@ void leb_tests()
     {
         int64_t check = 1;
 
-        data d = leb::signed_encode<int64_t>(check);
+        data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
     }
@@ -76,7 +76,7 @@ void leb_tests()
     {
         uint64_t check = std::numeric_limits<uint64_t>::min();
 
-        data d = leb::unsigned_encode<uint64_t>(check);
+        data d = leb::unsigned_encode<uint64_t, data>(check);
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
@@ -84,7 +84,7 @@ void leb_tests()
     {
         uint64_t check = std::numeric_limits<uint64_t>::max();
 
-        data d = leb::unsigned_encode<uint64_t>(check);
+        data d = leb::unsigned_encode<uint64_t, data>(check);
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
@@ -92,7 +92,7 @@ void leb_tests()
     {
         uint64_t check = -9934349;
 
-        data d = leb::unsigned_encode<uint64_t>(check);
+        data d = leb::unsigned_encode<uint64_t, data>(check);
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
@@ -100,7 +100,7 @@ void leb_tests()
     {
         uint64_t check = 768590789078;
 
-        data d = leb::unsigned_encode<uint64_t>(check);
+        data d = leb::unsigned_encode<uint64_t, data>(check);
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
@@ -108,7 +108,7 @@ void leb_tests()
     {
         uint64_t check = -1;
 
-        data d = leb::unsigned_encode<uint64_t>(check);
+        data d = leb::unsigned_encode<uint64_t, data>(check);
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
@@ -116,7 +116,7 @@ void leb_tests()
     {
         uint64_t check = 1;
 
-        data d = leb::unsigned_encode<uint64_t>(check);
+        data d = leb::unsigned_encode<uint64_t, data>(check);
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
@@ -124,7 +124,7 @@ void leb_tests()
     {
         uint64_t check = 2141192192;
 
-        data d = leb::unsigned_encode<uint64_t>(check);
+        data d = leb::unsigned_encode<uint64_t, data>(check);
 
         assert(leb::unsigned_decode<uint64_t>(d) == check);
     }
@@ -132,7 +132,7 @@ void leb_tests()
     {
         int64_t check = 2141192192;
 
-        data d = leb::signed_encode<int64_t>(check);
+        data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
     }

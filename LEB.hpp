@@ -6,11 +6,11 @@
 
 namespace leb
 {
-    template<typename T>
+    template<typename T, typename U>
     inline
-    T signed_decode(data& in)
+    T signed_decode(U& in)
     {
-        T result = 0;
+        T result{0};
         uint32_t shift = 0;
         uint8_t byte = 0;
 
@@ -19,7 +19,7 @@ namespace leb
         {
             byte = in.next();
 
-            T lowbits = 0x7F & byte;
+            T lowbits{0x7F & byte};
 
             result |= (lowbits << shift);
 
@@ -28,23 +28,28 @@ namespace leb
         while((byte & 0x80) > 0);
 
         if(shift < sizeof(T) * 8 && (byte & 0x40) > 0)
-            result |= ((T)~0 << shift);
+        {
+            T nzero{~0};
+            nzero = nzero << shift;
+
+            result |= nzero;
+        }
 
         return result;
     }
 
-    template<typename T>
+    template<typename T, typename U>
     inline
-    T unsigned_decode(data& in)
+    T unsigned_decode(U& in)
     {
-        T result = 0;
+        T result{0};
         uint64_t shift = 0;
 
         while(true)
         {
             uint8_t byte = in.next();
 
-            T lowbits = (0x7F & byte);
+            T lowbits{(0x7Fllu & byte)};
 
             result |= (lowbits << shift);
 
@@ -57,11 +62,11 @@ namespace leb
         return result;
     }
 
-    template<typename T>
+    template<typename T, typename U>
     inline
-    data signed_encode(T in)
+    U signed_encode(T in)
     {
-        data dtr;
+        U dtr;
 
         bool more = 1;
         bool negative = (in < 0);
@@ -82,11 +87,11 @@ namespace leb
         return dtr;
     }
 
-    template<typename T>
+    template<typename T, typename U>
     inline
-    data unsigned_encode(T in)
+    U unsigned_encode(T in)
     {
-        data dtr;
+        U dtr;
 
         do
         {
