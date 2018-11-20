@@ -32,7 +32,10 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="LEB.cpp" />
+		<Unit filename="LEB.hpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="types.hpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

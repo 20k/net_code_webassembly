@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <vector>
+#include <assert.h>
+#include <stdexcept>
 
 namespace types
 {

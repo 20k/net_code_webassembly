@@ -28,7 +28,7 @@ namespace leb
         while((byte & 0x80) > 0);
 
         if(shift < sizeof(T) * 8 && (byte & 0x40) > 0)
-            result |= (~0 << shift);
+            result |= ((T)~0 << shift);
 
         return result;
     }
@@ -44,7 +44,9 @@ namespace leb
         {
             uint8_t byte = in.next();
 
-            result |= ((0x7F & byte) << shift);
+            T lowbits = (0x7F & byte);
+
+            result |= (lowbits << shift);
 
             if((byte >> 7) == 0)
                 break;
@@ -90,8 +92,10 @@ namespace leb
         {
             uint8_t byte = in & 0x7F;
             in >>= 7;
+
             if (in != 0)
                 byte |= 0x80;
+
             dtr.push_back(byte);
         }
         while (in != 0);
@@ -99,5 +103,7 @@ namespace leb
         return dtr;
     }
 }
+
+void leb_tests();
 
 #endif // LEB_HPP_INCLUDED
