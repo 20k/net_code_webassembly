@@ -143,7 +143,6 @@ void lowest_get(types::f64& val, parser& p)
     lowest_get<double>(val.val, p);
 }
 
-
 inline
 void lowest_get(types::typeidx& val, parser& p)
 {
