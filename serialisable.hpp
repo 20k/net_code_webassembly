@@ -72,7 +72,7 @@ struct serialisable
     virtual void handle_serialise(parser& p, bool ser){}
 };
 
-template<typename T, typename = std::enable_if_t<!std::is_base_of_v<serialisable, T> && std::is_standard_layout_v<std::remove_reference_t<T>>>>
+template<typename T, typename = std::enable_if_t<!std::is_base_of_v<serialisable, T> && std::is_arithmetic_v<std::remove_reference_t<T>>>>
 inline
 void lowest_get(T& v, parser& p)
 {
@@ -305,6 +305,12 @@ void lowest_get(types::mut& type, parser& p)
     uint8_t next = p.next();
 
     type.is_mut = next;
+}
+
+inline
+void lowest_get(types::memtype& type, parser& p)
+{
+    lowest_get(type.lim, p);
 }
 
 inline

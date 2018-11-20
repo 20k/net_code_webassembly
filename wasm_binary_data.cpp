@@ -7,6 +7,19 @@
 #include <assert.h>
 #include "serialisable.hpp"
 #include "print.hpp"
+#include <cstring>
+
+void dump_state(parser& p)
+{
+    for(int i=p.offset; i < 100 && i < (int)p.ptr.size(); i++)
+    {
+        std::cout << "0x";
+        dump(p.ptr[i]);
+        std::cout << ", ";
+    }
+
+    std::cout << std::dec;
+}
 
 namespace sections
 {
@@ -62,24 +75,46 @@ namespace sections
 
     struct importdesc : serialisable
     {
-        types::typeidx tidx;
-        types::tabletype tt;
-        types::memtype mt;
-        types::globaltype gt;
+        ///0 -> func
+        ///1 -> table
+        ///2 -> mem
+        ///3 -> global
+        uint8_t which = 0;
+
+        union val
+        {
+            types::typeidx tidx;
+            types::tabletype tt;
+            types::memtype mt;
+            types::globaltype gt;
+
+            val()
+            {
+                memset(this, 0, sizeof(val));
+            }
+        } values;
 
         virtual void handle_serialise(parser& p, bool ser)
         {
-            p.checked_fetch<1>({0x00});
-            serialise(tidx, p, ser);
+            which = p.next();
 
-            p.checked_fetch<1>({0x01});
-            serialise(tt, p, ser);
-
-            p.checked_fetch<1>({0x02});
-            serialise(mt, p, ser);
-
-            p.checked_fetch<1>({0x03});
-            serialise(gt, p, ser);
+            switch(which)
+            {
+                case 0x00:
+                    serialise(values.tidx, p, ser);
+                    break;
+                case 0x01:
+                    serialise(values.tt, p, ser);
+                    break;
+                case 0x02:
+                    serialise(values.mt, p, ser);
+                    break;
+                case 0x03:
+                    serialise(values.gt, p, ser);
+                    break;
+                default:
+                    throw std::runtime_error("Invalid which switch in importdesc " + std::to_string(which));
+            }
         }
     };
 
@@ -154,8 +189,6 @@ T get_section_ignore_custom(parser& p)
 
     T ret(head);
 
-    std::cout << "SIZE " << (uint32_t)head.len << std::endl;
-
     serialise(ret, p, false);
 
     return ret;
@@ -179,18 +212,6 @@ sections::section_header get_next_header(parser& p)
     return head;
 }
 
-void dump_state(parser& p)
-{
-    for(int i=p.offset; i < 100 && i < (int)p.ptr.size(); i++)
-    {
-        std::cout << "0x";
-        dump(p.ptr[i]);
-        std::cout << ", ";
-    }
-
-    std::cout << std::dec;
-}
-
 void wasm_binary_data::init(data d)
 {
     parser p(d);
@@ -206,7 +227,7 @@ void wasm_binary_data::init(data d)
 
     sections::section_header head;
 
-    int num_encoded = 4;
+    int num_encoded = 10;
 
     ///current.y implemented two section types
     for(int i=0; i < num_encoded; i++)
@@ -221,7 +242,7 @@ void wasm_binary_data::init(data d)
         if(head.id == 0)
             continue;
 
-        if(head.id == 1)
+        else if(head.id == 1)
         {
             //dump_state(p);
 
@@ -230,28 +251,27 @@ void wasm_binary_data::init(data d)
             std::cout << "import type\n";
         }
 
-        if(head.id == 2)
+        else if(head.id == 2)
         {
             section_imports = sections::importsec(head);
             serialise(section_imports, p, false);
             std::cout << "import imports\n";
         }
 
-        if(head.id == 3)
+        else if(head.id == 3)
         {
-            dump_state(p);
+            //dump_state(p);
 
             section_func = sections::functionsec(head);
             serialise(section_func, p, false);
             std::cout << "import functionsec\n";
 
-            std::cout << "peek " << std::to_string(p.peek()) << std::endl;
-
             break;
         }
-
-        if(head.id >= num_encoded)
+        else
+        {
             break;
+        }
     }
 
 
