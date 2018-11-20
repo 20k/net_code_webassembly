@@ -255,9 +255,16 @@ namespace sections
         }
     };
 
-    struct export_info
+    struct export_info : serialisable
     {
         types::name nm;
+        exportdesc desc;
+
+        virtual void handle_serialise(parser& p, bool ser)
+        {
+            serialise(nm, p, ser);
+            serialise(desc, p, ser);
+        }
     };
 
     struct exportsec : section
@@ -265,7 +272,17 @@ namespace sections
         exportsec(const section_header& head) : section(head){}
         exportsec(){}
 
+        types::vec<export_info> exports;
 
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 7)
+            {
+                throw std::runtime_error("Expected 7, got " + std::to_string(header.id));
+            }
+
+            serialise(exports, p, ser);
+        }
     };
 }
 
