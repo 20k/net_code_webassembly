@@ -1,6 +1,7 @@
 #include "LEB.hpp"
 #include <limits>
 #include <assert.h>
+#include <iostream>
 
 void leb_tests()
 {
@@ -135,6 +136,27 @@ void leb_tests()
         data d = leb::signed_encode<int64_t, data>(check);
 
         assert(leb::signed_decode<int64_t>(d) == check);
+    }
+
+    {
+        data d;
+        d.push_back(0x03);
+
+        assert(leb::unsigned_decode<uint32_t>(d) == 3);
+    }
+
+    {
+        data d;
+        d.push_back(0x83);
+        d.push_back(0x00);
+
+        uint8_t val = leb::unsigned_decode<uint8_t>(d);
+
+        assert(d.offset == 2);
+
+        //std::cout << "VAL" << std::to_string(val) << std::endl;
+
+        assert(val == 3);
     }
 }
 

@@ -64,6 +64,21 @@ namespace types
     struct vec
     {
         std::vector<T> v;
+
+        auto begin()
+        {
+            return v.begin();
+        }
+
+        auto end()
+        {
+            return v.end();
+        }
+
+        int32_t size()
+        {
+            return v.size();
+        }
     };
 
     /**0x7F -> i32
@@ -83,6 +98,23 @@ namespace types
             f32 f_32;
             f64 f_64;
         } val;*/
+
+        std::string friendly()
+        {
+            switch(which)
+            {
+                case 0x7F:
+                    return "i32";
+                case 0x7E:
+                    return "i64";
+                case 0x7D:
+                    return "f32";
+                case 0x7C:
+                    return "f64";
+                default:
+                    return "i/fvtypeErr";
+            }
+        }
     };
 
     struct func

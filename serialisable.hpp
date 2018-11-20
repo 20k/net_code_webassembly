@@ -14,6 +14,14 @@ struct parser
         offset = d.offset;
     }
 
+    uint8_t peek()
+    {
+        if(offset >= (int32_t)ptr.size())
+            throw std::runtime_error("offset >= ptr.size()");
+
+        return ptr[offset];
+    }
+
     uint8_t next()
     {
         if(offset >= (int32_t)ptr.size())
