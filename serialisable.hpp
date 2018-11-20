@@ -530,6 +530,13 @@ void lowest_get(types::expr& type, parser& p)
     p.checked_fetch<1>({0x0B});
 }
 
+inline
+void lowest_get(types::global& type, parser& p)
+{
+    lowest_get(type.type, p);
+    lowest_get(type.e, p);
+}
+
 template<typename T>
 void serialise(T& type, parser& p, bool ser)
 {

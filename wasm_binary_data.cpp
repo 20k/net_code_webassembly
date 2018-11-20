@@ -205,6 +205,24 @@ namespace sections
             serialise(mems, p, ser);
         }
     };
+
+    struct globalsec : section
+    {
+        globalsec(const section_header& head) : section(head){}
+        globalsec(){}
+
+        types::vec<types::global> globals;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 6)
+            {
+                throw std::runtime_error("Expected 5, got " + std::to_string(header.id));
+            }
+
+            serialise(globals, p, ser);
+        }
+    };
 }
 
 template<typename T>
