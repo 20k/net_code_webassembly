@@ -11,17 +11,21 @@ namespace leb
     T signed_decode(data& in)
     {
         T result = 0;
-        int64_t shift = 0;
+        uint32_t shift = 0;
         uint8_t byte = 0;
 
-        while(true)
+        //while(true)
+        do
         {
             byte = in.next();
-            result |= (0x7F & byte) << shift;
-            if ((byte >> 7) == 0)
-                break;
+
+            T lowbits = 0x7F & byte;
+
+            result |= (lowbits << shift);
+
             shift += 7;
         }
+        while((byte & 0x80) > 0);
 
         if(shift < sizeof(T) * 8 && (byte & 0x40) > 0)
             result |= (~0 << shift);
