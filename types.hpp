@@ -105,6 +105,19 @@ namespace types
         {
             v.resize(n);
         }
+
+        vec<T> append(const vec<T>& dat) const
+        {
+            vec<T> ret;
+            ret.v = v;
+
+            for(int i=0; i < dat.size(); i++)
+            {
+                ret.push_back(dat[i]);
+            }
+
+            return ret;
+        }
     };
 
     /**0x7F -> i32

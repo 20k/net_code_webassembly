@@ -664,37 +664,37 @@ runtime::globaladdr runtime::store::allocglobal(const types::globaltype& type, c
 
 ///imports are temporarily disabled
 ///but looks like externvals are first then regulars
-runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& vals, const types::vec<runtime::value>& global_init)
+runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& ext, const types::vec<runtime::value>& global_init)
 {
     runtime::moduleinst inst;
 
-    if(m.section_imports.imports.size() != vals.size())
-        throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(vals.size()));
+    if(m.section_imports.imports.size() != ext.size())
+        throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(ext.size()));
 
     inst.typel = m.section_type.types;
 
-    std::vector<runtime::funcaddr> faddr;
+    types::vec<runtime::funcaddr> faddr;
 
     for(int i=0; i < (int)m.section_func.types.size(); i++)
     {
         faddr.push_back(s.allocfunction(m, i));
     }
 
-    std::vector<runtime::tableaddr> taddr;
+    types::vec<runtime::tableaddr> taddr;
 
     for(int i=0; i < (int)m.section_table.tables.size(); i++)
     {
         taddr.push_back(s.alloctable(m.section_table.tables[i].type));
     }
 
-    std::vector<runtime::memaddr> maddr;
+    types::vec<runtime::memaddr> maddr;
 
     for(int i=0; i < (int)m.section_memory.mems.size(); i++)
     {
         maddr.push_back(s.allocmem(m.section_memory.mems[i].type));
     }
 
-    std::vector<runtime::globaladdr> gaddr;
+    types::vec<runtime::globaladdr> gaddr;
 
     for(int i=0; i < (int)m.section_global.globals.size(); i++)
     {
@@ -707,6 +707,19 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     std::cout << "taddr " << (uint32_t)taddr.size() << std::endl;
     std::cout << "maddr " << (uint32_t)maddr.size() << std::endl;
     std::cout << "gaddr " << (uint32_t)gaddr.size() << std::endl;
+
+    ///NOT REALLY CLEAR WHICH WAY ROUND THESE BOYS GO
+    auto efaddr = runtime::filter_func(ext).append(faddr);
+    auto etaddr = runtime::filter_table(ext).append(taddr);
+    auto emaddr = runtime::filter_mem(ext).append(maddr);
+    auto egaddr = runtime::filter_global(ext).append(gaddr);
+
+    std::cout << "efaddr " << (uint32_t)efaddr.size() << std::endl;
+    std::cout << "etaddr " << (uint32_t)etaddr.size() << std::endl;
+    std::cout << "emaddr " << (uint32_t)emaddr.size() << std::endl;
+    std::cout << "egaddr " << (uint32_t)egaddr.size() << std::endl;
+
+
 
     return inst;
 }
