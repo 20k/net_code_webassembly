@@ -112,7 +112,7 @@ namespace types
                 case 0x7C:
                     return "f64";
                 default:
-                    return "i/fvtypeErr";
+                    return "i/fValTypeErr";
             }
         }
     };
@@ -121,6 +121,79 @@ namespace types
     {
         vec<valtype> params;
         vec<valtype> results;
+    };
+
+    struct name
+    {
+        vec<uint8_t> dat;
+    };
+
+    struct typeidx : u32{};
+    struct funcidx : u32{};
+    struct tableidx : u32{};
+    struct memidx : u32{};
+
+    struct globalidx : u32{};
+    struct localidx : u32{};
+    struct labelidx : u32{};
+
+    ///only valid is 0x70 -> anyfunc
+    struct elemtype
+    {
+        uint8_t which = 0;
+
+        std::string friendly()
+        {
+            if(which == 0x70)
+                return "anyfunc";
+
+            return "ErrElementType";
+        }
+    };
+
+    struct limits
+    {
+        uint8_t has_max_val = 0;
+
+        u32 n;
+        u32 m;
+
+        bool has_max()
+        {
+            return has_max_val;
+        }
+    };
+
+    struct tabletype
+    {
+        elemtype et;
+        limits lim;
+    };
+
+    struct memtype
+    {
+        limits lim;
+    };
+
+    struct mut
+    {
+        uint8_t is_mut = 0;
+
+        std::string friendly()
+        {
+            if(is_mut == 0)
+                return "const";
+            if(is_mut == 1)
+                return "var";
+
+            return "ErrMut";
+        }
+    };
+
+    struct globaltype
+    {
+        valtype type;
+        mut m;
     };
 }
 

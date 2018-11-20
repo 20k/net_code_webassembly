@@ -36,6 +36,8 @@
 		<Unit filename="LEB.cpp" />
 		<Unit filename="LEB.hpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="print.hpp" />
+		<Unit filename="serialisable.hpp" />
 		<Unit filename="types.hpp" />
 		<Unit filename="wasm_binary_data.cpp" />
 		<Unit filename="wasm_binary_data.hpp" />

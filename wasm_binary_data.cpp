@@ -57,6 +57,60 @@ namespace sections
             serialise(types, p, ser);
         }
     };
+
+    struct importdesc : serialisable
+    {
+        types::typeidx tidx;
+        types::tabletype tt;
+        types::memtype mt;
+        types::globaltype gt;
+
+        virtual void handle_serialise(parser& p, bool ser)
+        {
+            p.checked_fetch<1>({0x00});
+            serialise(tidx, p, ser);
+
+            p.checked_fetch<1>({0x01});
+            serialise(tt, p, ser);
+
+            p.checked_fetch<1>({0x02});
+            serialise(mt, p, ser);
+
+            p.checked_fetch<1>({0x03});
+            serialise(gt, p, ser);
+        }
+    };
+
+    struct import : serialisable
+    {
+        types::name mod;
+        types::name nm;
+        importdesc desc;
+
+        virtual void handle_serialise(parser& p, bool ser)
+        {
+            serialise(mod, p, ser);
+            serialise(nm, p, ser);
+            serialise(desc, p, ser);
+        }
+    };
+
+    struct importsec : section
+    {
+        importsec(const section_header& head) : section(head){}
+
+        types::vec<import> imports;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 2)
+            {
+                throw std::runtime_error("Expected 2, got " + std::to_string(header.id));
+            }
+
+            serialise(imports, p, ser);
+        }
+    };
 }
 
 template<typename T>

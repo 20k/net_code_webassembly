@@ -90,6 +90,12 @@ void lowest_get(T& v, parser& p)
 }
 
 inline
+void lowest_get(serialisable& v, parser& p)
+{
+    v.handle_serialise(p, false);
+}
+
+inline
 void lowest_get(types::i32& val, parser& p)
 {
     val = leb::unsigned_decode<types::i32>(p);
@@ -210,9 +216,60 @@ void lowest_get(types::func& val, parser& p)
 }
 
 inline
-void lowest_get(serialisable& v, parser& p)
+void lowest_get(types::elemtype& val, parser& p)
 {
-    v.handle_serialise(p, false);
+    uint8_t next = p.next();
+
+    if(next != 0x70)
+        throw std::runtime_error("Found wrong next elemtype " + std::to_string(next));
+
+    val.which = next;
+}
+
+inline
+void lowest_get(types::name& val, parser& p)
+{
+    lowest_get(val.dat, p);
+}
+
+inline
+void lowest_get(types::limits& val, parser& p)
+{
+    uint8_t next = p.next();
+
+    if(next != 0 && next != 1)
+        throw std::runtime_error("Wrong limits prefix " + std::to_string(next));
+
+    val.has_max_val = next;
+
+    lowest_get(val.n, p);
+
+    if(val.has_max_val)
+    {
+        lowest_get(val.m, p);
+    }
+}
+
+inline
+void lowest_get(types::tabletype& type, parser& p)
+{
+    lowest_get(type.et, p);
+    lowest_get(type.lim, p);
+}
+
+inline
+void lowest_get(types::mut& type, parser& p)
+{
+    uint8_t next = p.next();
+
+    type.is_mut = next;
+}
+
+inline
+void lowest_get(types::globaltype& type, parser& p)
+{
+    lowest_get(type.type, p);
+    lowest_get(type.m, p);
 }
 
 template<typename T>
