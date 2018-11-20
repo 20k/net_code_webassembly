@@ -132,6 +132,16 @@ namespace types
                     return "i/fValTypeErr";
             }
         }
+
+        void ci32()
+        {
+            which = 0x7F;
+        }
+
+        void ci64()
+        {
+            which = 0x7E;
+        }
     };
 
     struct blocktype

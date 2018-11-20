@@ -139,8 +139,8 @@ namespace sections
             serialise(nm, p, ser);
             serialise(desc, p, ser);
 
-            //std::cout << "import1 " << mod.friendly() << std::endl;
-            //std::cout << "import2 " << nm.friendly() << std::endl;
+            std::cout << "import1 " << mod.friendly() << std::endl;
+            std::cout << "import2 " << nm.friendly() << std::endl;
             ///so mod is the module
             ///env seems to be environment, eg passive imports
             ///nm is the name, in this example the function hi
@@ -585,6 +585,11 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     return inst;
 }
 
+void test_hi(int in)
+{
+    printf("hi");
+}
+
 void wasm_binary_data::init(data d)
 {
     parser p(d);
@@ -593,6 +598,13 @@ void wasm_binary_data::init(data d)
 
     module mod;
     mod.init(p);
+
+    /*runtime::funcinst test;
+
+    types::valtype in;
+    in.ci32();
+
+    test.type.params.push_back(in);*/
 
     runtime::moduleinst minst = build_from_module(mod, s, {});
 }
