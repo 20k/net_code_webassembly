@@ -158,5 +158,29 @@ void leb_tests()
 
         assert(val == 3);
     }
+
+    {
+        data d;
+        d.push_back(0x7e);
+
+        assert(leb::signed_decode<int16_t>(d) == -2);
+    }
+    {
+        data d;
+        d.push_back(0xfe);
+        d.push_back(0x7f);
+
+        assert(leb::signed_decode<int16_t>(d) == -2);
+    }
+    {
+        data d;
+        d.push_back(0xfe);
+        d.push_back(0xff);
+        d.push_back(0x7f);
+
+        assert(leb::signed_decode<int16_t>(d) == -2);
+
+        assert(d.offset == 3);
+    }
 }
 

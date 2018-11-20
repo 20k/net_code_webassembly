@@ -19,7 +19,7 @@ namespace leb
         {
             byte = in.next();
 
-            T lowbits{0x7F & byte};
+            T lowbits{(uint8_t)(0x7F & byte)};
 
             result |= (lowbits << shift);
 
