@@ -8,6 +8,7 @@
 #include <array>
 #include <cstring>
 #include <variant>
+#include <optional>
 
 namespace types
 {
@@ -227,6 +228,14 @@ namespace types
         bool has_max()
         {
             return has_max_val;
+        }
+
+        std::optional<u32> get_max() const
+        {
+            if(has_max_val)
+                return m;
+
+            return std::nullopt;
         }
     };
 

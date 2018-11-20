@@ -55,7 +55,6 @@ namespace runtime
     struct tableinst
     {
         types::vec<funcelem> elem;
-
         std::optional<types::u32> max;
     };
 
@@ -86,7 +85,9 @@ namespace runtime
 
         int allocfunction(const module& m, int idx);
         int allochostfunction(const types::functype& type, void(*ptr)());
+
         int alloctable(const types::tabletype& type);
+        int allocmem(const types::memtype& type);
     };
 
     template<typename T>

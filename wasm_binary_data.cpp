@@ -607,12 +607,27 @@ int runtime::store::alloctable(const types::tabletype& type)
 
     runtime::tableinst inst;
 
-    if(type.lim.has_max_val)
-        inst.max = type.lim.m;
-
+    inst.max = type.lim.get_max();
     inst.elem.resize((uint32_t)type.lim.n);
 
     tables.push_back(inst);
+
+    return a;
+}
+
+int runtime::store::allocmem(const types::memtype& type)
+{
+    int a = mems.size();
+
+    runtime::meminst inst;
+
+    ///TODO:
+    ///SANDBOXING ALERT
+    ///this is simply as per spec but might need tweaking
+    inst.max = type.lim.get_max();
+    inst.dat.resize(64 * 1024 * (uint32_t)type.lim.n);
+
+    mems.push_back(inst);
 
     return a;
 }
