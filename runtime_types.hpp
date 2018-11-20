@@ -34,6 +34,24 @@ namespace runtime
 
         types::vec<exportinst> exports;
     };
+
+    struct webasm_func
+    {
+        types::code funct;
+    };
+
+    struct host_func
+    {
+        void(*ptr)(void);
+    };
+
+    struct funcinst
+    {
+        types::func type;
+        moduleinst module;
+
+        std::variant<host_func, webasm_func> funct;
+    };
 }
 
 #endif // RUNTIME_TYPES_HPP_INCLUDED
