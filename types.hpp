@@ -158,7 +158,7 @@ namespace types
         }
     };
 
-    struct func
+    struct functype
     {
         vec<valtype> params;
         vec<valtype> results;
@@ -246,7 +246,7 @@ namespace types
 
     struct externtype
     {
-        std::variant<func, tabletype, memtype, globaltype> type;
+        std::variant<functype, tabletype, memtype, globaltype> type;
     };
 
     struct table

@@ -26,7 +26,7 @@ namespace runtime
 
     struct moduleinst
     {
-        types::vec<types::func> typel;
+        types::vec<types::functype> typel;
 
         types::vec<funcaddr> funcaddrs;
         types::vec<tableaddr> tableaddrs;
@@ -48,7 +48,7 @@ namespace runtime
 
     struct funcinst
     {
-        types::func type;
+        types::functype type;
         moduleinst module;
 
         std::variant<host_func, webasm_func> funct;

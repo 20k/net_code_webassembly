@@ -282,7 +282,7 @@ void lowest_get(types::blocktype& val, parser& p)
 }
 
 inline
-void lowest_get(types::func& val, parser& p)
+void lowest_get(types::functype& val, parser& p)
 {
     uint8_t next = p.next();
 

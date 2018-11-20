@@ -72,7 +72,7 @@ namespace sections
         type(const section_header& head) : section(head){}
         type(){}
 
-        types::vec<types::func> types;
+        types::vec<types::functype> types;
 
         virtual void handle_serialise(parser& p, bool ser) override
         {
