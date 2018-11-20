@@ -540,7 +540,7 @@ struct module
 
         std::cout << "finished parsing\n";
 
-        std::cout << "num functions " << std::to_string(section_type.types.size()) << std::endl;
+        std::cout << "num ftypes " << std::to_string(section_type.types.size()) << std::endl;
 
         for(auto& i : section_type.types)
         {
@@ -673,12 +673,40 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
     inst.typel = m.section_type.types;
 
-    std::vector<runtime::funcaddr> faddrs;
+    std::vector<runtime::funcaddr> faddr;
 
-    for(int i=0; i< (int)m.section_func.types.size(); i++)
+    for(int i=0; i < (int)m.section_func.types.size(); i++)
     {
-
+        faddr.push_back(s.allocfunction(m, i));
     }
+
+    std::vector<runtime::tableaddr> taddr;
+
+    for(int i=0; i < (int)m.section_table.tables.size(); i++)
+    {
+        taddr.push_back(s.alloctable(m.section_table.tables[i].type));
+    }
+
+    std::vector<runtime::memaddr> maddr;
+
+    for(int i=0; i < (int)m.section_memory.mems.size(); i++)
+    {
+        maddr.push_back(s.allocmem(m.section_memory.mems[i].type));
+    }
+
+    std::vector<runtime::globaladdr> gaddr;
+
+    for(int i=0; i < (int)m.section_global.globals.size(); i++)
+    {
+        ///TODO
+        ///EVAL GLOBAL EXPRESSION
+        gaddr.push_back(s.allocglobal(m.section_global.globals[i].type, global_init[i]));
+    }
+
+    std::cout << "faddr " << (uint32_t)faddr.size() << std::endl;
+    std::cout << "taddr " << (uint32_t)taddr.size() << std::endl;
+    std::cout << "maddr " << (uint32_t)maddr.size() << std::endl;
+    std::cout << "gaddr " << (uint32_t)gaddr.size() << std::endl;
 
     return inst;
 }
@@ -697,16 +725,16 @@ void wasm_binary_data::init(data d)
     module mod;
     mod.init(p);
 
-    /*runtime::funcinst test;
-
-    types::valtype in;
-    in.ci32();
-
-    test.type.params.push_back(in);*/
-
     ///ideally we'd build this from actually evaluating the expressions for the globals
     ///but we're not there yet
     types::vec<runtime::value> global_init;
+    for(int i=0; i < 100; i++)
+    {
+        runtime::value val;
+        val.v = types::i32{0};
+
+        global_init.push_back(val);
+    }
 
     runtime::moduleinst minst = build_from_module(mod, s, {}, global_init);
 }
