@@ -3,8 +3,9 @@
 
 #include <stdint.h>
 #include <vector>
-#include <assert.h>
 #include <stdexcept>
+#include <fstream>
+#include <array>
 
 namespace types
 {
@@ -29,11 +30,11 @@ namespace types
 struct data
 {
     std::vector<uint8_t> ptr;
-    uint32_t offset = 0;
+    int32_t offset = 0;
 
     uint8_t next()
     {
-        if(offset >= ptr.size())
+        if(offset >= (int32_t)ptr.size())
             throw std::runtime_error("offset >= ptr.size()");
 
         uint8_t val = ptr[offset];
@@ -51,6 +52,18 @@ struct data
     void push_back(uint8_t val)
     {
         ptr.push_back(val);
+    }
+
+    void load_from_file(const std::string& wasm)
+    {
+        std::ifstream t(wasm, std::ios::binary);
+        std::vector<uint8_t> data((std::istreambuf_iterator<char>(t)),
+                                   std::istreambuf_iterator<char>());
+
+        if(!t.good())
+            throw std::runtime_error("Could not open file " + wasm);
+
+        ptr = data;
     }
 };
 
