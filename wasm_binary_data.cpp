@@ -114,6 +114,24 @@ namespace sections
             serialise(imports, p, ser);
         }
     };
+
+    struct functionsec : section
+    {
+        functionsec(const section_header& head) : section(head){}
+        functionsec(){}
+
+        types::vec<types::typeidx> types;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 3)
+            {
+                throw std::runtime_error("Expected 3, got " + std::to_string(header.id));
+            }
+
+            serialise(types, p, ser);
+        }
+    };
 }
 
 template<typename T>
@@ -161,13 +179,8 @@ sections::section_header get_next_header(parser& p)
     return head;
 }
 
-void wasm_binary_data::init(data d)
+void dump_state(parser& p)
 {
-    parser p(d);
-
-    p.checked_fetch<4>({0x00, 0x61, 0x73, 0x6D});
-    p.checked_fetch<4>({0x01, 0x00, 0x00, 0x00});
-
     for(int i=p.offset; i < 100 && i < (int)p.ptr.size(); i++)
     {
         std::cout << "0x";
@@ -176,20 +189,33 @@ void wasm_binary_data::init(data d)
     }
 
     std::cout << std::dec;
+}
+
+void wasm_binary_data::init(data d)
+{
+    parser p(d);
+
+    p.checked_fetch<4>({0x00, 0x61, 0x73, 0x6D});
+    p.checked_fetch<4>({0x01, 0x00, 0x00, 0x00});
+
+    dump_state(p);
 
     sections::type section_type;
     sections::importsec section_imports;
+    sections::functionsec section_func;
 
     sections::section_header head;
 
+    int num_encoded = 4;
+
     ///current.y implemented two section types
-    for(int i=0; i < 3; i++)
+    for(int i=0; i < num_encoded; i++)
     {
         head = get_next_header(p);
 
         std::cout <<" HID " << std::to_string(head.id) << std::endl;
 
-        if(head.id >= 3)
+        if(head.id >= num_encoded)
             break;
 
         if(head.id == 0)
@@ -197,6 +223,8 @@ void wasm_binary_data::init(data d)
 
         if(head.id == 1)
         {
+            //dump_state(p);
+
             section_type = sections::type(head);
             serialise(section_type, p, false);
             std::cout << "import type\n";
@@ -205,9 +233,25 @@ void wasm_binary_data::init(data d)
         if(head.id == 2)
         {
             section_imports = sections::importsec(head);
-            serialise(section_type, p, false);
+            serialise(section_imports, p, false);
             std::cout << "import imports\n";
         }
+
+        if(head.id == 3)
+        {
+            dump_state(p);
+
+            section_func = sections::functionsec(head);
+            serialise(section_func, p, false);
+            std::cout << "import functionsec\n";
+
+            std::cout << "peek " << std::to_string(p.peek()) << std::endl;
+
+            break;
+        }
+
+        if(head.id >= num_encoded)
+            break;
     }
 
 
@@ -233,4 +277,6 @@ void wasm_binary_data::init(data d)
     }
 
     std::cout << "num iports " << section_imports.imports.size() << std::endl;
+
+    std::cout << "num functionsecs " << section_func.types.size() << std::endl;
 }

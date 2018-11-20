@@ -143,6 +143,49 @@ void lowest_get(types::f64& val, parser& p)
     lowest_get<double>(val.val, p);
 }
 
+
+inline
+void lowest_get(types::typeidx& val, parser& p)
+{
+    val = leb::unsigned_decode<types::typeidx>(p);
+}
+
+inline
+void lowest_get(types::funcidx& val, parser& p)
+{
+    val = leb::unsigned_decode<types::funcidx>(p);
+}
+
+inline
+void lowest_get(types::tableidx& val, parser& p)
+{
+    val = leb::unsigned_decode<types::tableidx>(p);
+}
+
+inline
+void lowest_get(types::memidx& val, parser& p)
+{
+    val = leb::unsigned_decode<types::memidx>(p);
+}
+
+inline
+void lowest_get(types::globalidx& val, parser& p)
+{
+    val = leb::unsigned_decode<types::globalidx>(p);
+}
+
+inline
+void lowest_get(types::localidx& val, parser& p)
+{
+    val = leb::unsigned_decode<types::localidx>(p);
+}
+
+inline
+void lowest_get(types::labelidx& val, parser& p)
+{
+    val = leb::unsigned_decode<types::labelidx>(p);
+}
+
 template<typename T>
 inline
 void lowest_get(types::vec<T>& val, parser& p)
