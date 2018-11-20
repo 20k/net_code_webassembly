@@ -88,6 +88,7 @@ namespace runtime
 
         int alloctable(const types::tabletype& type);
         int allocmem(const types::memtype& type);
+        int allocglobal(const types::globaltype& type, const value& v);
     };
 
     template<typename T>

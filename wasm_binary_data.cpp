@@ -632,6 +632,20 @@ int runtime::store::allocmem(const types::memtype& type)
     return a;
 }
 
+int runtime::store::allocglobal(const types::globaltype& type, const value& v)
+{
+    int a = globals.size();
+
+    runtime::globalinst inst;
+
+    inst.mut = type.m;
+    inst.val = v;
+
+    globals.push_back(inst);
+
+    return a;
+}
+
 ///imports are temporarily disabled
 ///but looks like externvals are first then regulars
 runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& vals)
