@@ -29,6 +29,7 @@ namespace sections
         section_header header;
 
         section(const section_header& head) : header(head){}
+        section(){}
     };
 
     struct custom : section
@@ -44,6 +45,7 @@ namespace sections
     struct type : section
     {
         type(const section_header& head) : section(head){}
+        type(){}
 
         types::vec<types::func> types;
 
@@ -98,6 +100,7 @@ namespace sections
     struct importsec : section
     {
         importsec(const section_header& head) : section(head){}
+        importsec(){}
 
         types::vec<import> imports;
 
@@ -128,10 +131,34 @@ T get_section_ignore_custom(parser& p)
         serialise(head, p, false);
     }
 
+    ///a lotta these headers are optional
+    ///so really we should just mix and match which one goes where
+
     T ret(head);
+
+    std::cout << "SIZE " << (uint32_t)head.len << std::endl;
+
     serialise(ret, p, false);
 
     return ret;
+}
+
+///skips custom segments
+sections::section_header get_next_header(parser& p)
+{
+    sections::section_header head;
+
+    serialise(head, p, false);
+
+    if(head.id == 0)
+    {
+        sections::custom cust(head);
+        serialise(cust, p, false);
+
+        serialise(head, p, false);
+    }
+
+    return head;
 }
 
 void wasm_binary_data::init(data d)
@@ -150,11 +177,45 @@ void wasm_binary_data::init(data d)
 
     std::cout << std::dec;
 
-    sections::type stype = get_section_ignore_custom<sections::type>(p);
+    sections::type section_type;
+    sections::importsec section_imports;
 
-    std::cout << "num functions " << std::to_string(stype.types.size()) << std::endl;
+    sections::section_header head;
 
-    for(auto& i : stype.types)
+    ///current.y implemented two section types
+    for(int i=0; i < 3; i++)
+    {
+        head = get_next_header(p);
+
+        std::cout <<" HID " << std::to_string(head.id) << std::endl;
+
+        if(head.id >= 3)
+            break;
+
+        if(head.id == 0)
+            continue;
+
+        if(head.id == 1)
+        {
+            section_type = sections::type(head);
+            serialise(section_type, p, false);
+            std::cout << "import type\n";
+        }
+
+        if(head.id == 2)
+        {
+            section_imports = sections::importsec(head);
+            serialise(section_type, p, false);
+            std::cout << "import imports\n";
+        }
+    }
+
+
+    std::cout << "finished parsing\n";
+
+    std::cout << "num functions " << std::to_string(section_type.types.size()) << std::endl;
+
+    for(auto& i : section_type.types)
     {
         std::cout << "params " << i.params.size() << std::endl;
 
@@ -170,4 +231,6 @@ void wasm_binary_data::init(data d)
             std::cout << r.friendly() << std::endl;
         }
     }
+
+    std::cout << "num iports " << section_imports.imports.size() << std::endl;
 }
