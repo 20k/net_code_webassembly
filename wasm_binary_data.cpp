@@ -167,6 +167,24 @@ namespace sections
             serialise(types, p, ser);
         }
     };
+
+    struct tablesec : section
+    {
+        tablesec(const section_header& head) : section(head){}
+        tablesec(){}
+
+        types::vec<types::table> tables;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 4)
+            {
+                throw std::runtime_error("Expected 4, got " + std::to_string(header.id));
+            }
+
+            serialise(tables, p, ser);
+        }
+    };
 }
 
 template<typename T>
@@ -224,10 +242,13 @@ void wasm_binary_data::init(data d)
     sections::type section_type;
     sections::importsec section_imports;
     sections::functionsec section_func;
+    sections::tablesec section_table;
 
     sections::section_header head;
 
     int num_encoded = 10;
+
+    int num_3 = 0;
 
     ///current.y implemented two section types
     for(int i=0; i < num_encoded; i++)
@@ -241,7 +262,6 @@ void wasm_binary_data::init(data d)
 
         if(head.id == 0)
             continue;
-
         else if(head.id == 1)
         {
             //dump_state(p);
@@ -250,29 +270,35 @@ void wasm_binary_data::init(data d)
             serialise(section_type, p, false);
             std::cout << "import type\n";
         }
-
         else if(head.id == 2)
         {
             section_imports = sections::importsec(head);
             serialise(section_imports, p, false);
             std::cout << "import imports\n";
         }
-
         else if(head.id == 3)
         {
-            //dump_state(p);
-
             section_func = sections::functionsec(head);
             serialise(section_func, p, false);
             std::cout << "import functionsec\n";
 
-            break;
+            num_3++;
+        }
+        else if(head.id == 4)
+        {
+            section_table = sections::tablesec(head);
+            serialise(section_table, p, false);
+
+            std::cout << "imported table\n";
         }
         else
         {
             break;
         }
     }
+
+    ///unsure of spec in this case
+    assert(num_3 == 0 || num_3 == 1);
 
 
     std::cout << "finished parsing\n";
@@ -299,4 +325,6 @@ void wasm_binary_data::init(data d)
     std::cout << "num iports " << section_imports.imports.size() << std::endl;
 
     std::cout << "num functionsecs " << section_func.types.size() << std::endl;
+
+    std::cout << "num tables " << section_table.tables.size() << std::endl;
 }

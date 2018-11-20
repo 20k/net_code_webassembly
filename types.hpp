@@ -195,6 +195,11 @@ namespace types
         valtype type;
         mut m;
     };
+
+    struct table
+    {
+        tabletype type;
+    };
 }
 
 struct data
