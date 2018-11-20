@@ -575,7 +575,7 @@ struct module
     }
 };
 
-int runtime::store::allocfunction(const module& m, int idx)
+runtime::funcaddr runtime::store::allocfunction(const module& m, int idx)
 {
     int a = funcs.size();
 
@@ -598,10 +598,26 @@ int runtime::store::allocfunction(const module& m, int idx)
 
     funcs.push_back(inst);
 
-    return a;
+    return funcaddr{a};
 }
 
-int runtime::store::alloctable(const types::tabletype& type)
+runtime::funcaddr runtime::store::allochostfunction(const types::functype& type, void(*ptr)())
+{
+    int a = funcs.size();
+
+    host_func hfunc;
+    hfunc.ptr = ptr;
+
+    runtime::funcinst inst;
+    inst.type = type;
+    inst.funct = hfunc;
+
+    funcs.push_back(inst);
+
+    return funcaddr{a};
+}
+
+runtime::tableaddr runtime::store::alloctable(const types::tabletype& type)
 {
     int a = tables.size();
 
@@ -612,10 +628,10 @@ int runtime::store::alloctable(const types::tabletype& type)
 
     tables.push_back(inst);
 
-    return a;
+    return tableaddr{a};
 }
 
-int runtime::store::allocmem(const types::memtype& type)
+runtime::memaddr runtime::store::allocmem(const types::memtype& type)
 {
     int a = mems.size();
 
@@ -629,10 +645,10 @@ int runtime::store::allocmem(const types::memtype& type)
 
     mems.push_back(inst);
 
-    return a;
+    return memaddr{a};
 }
 
-int runtime::store::allocglobal(const types::globaltype& type, const value& v)
+runtime::globaladdr runtime::store::allocglobal(const types::globaltype& type, const value& v)
 {
     int a = globals.size();
 
@@ -643,12 +659,12 @@ int runtime::store::allocglobal(const types::globaltype& type, const value& v)
 
     globals.push_back(inst);
 
-    return a;
+    return globaladdr{a};
 }
 
 ///imports are temporarily disabled
 ///but looks like externvals are first then regulars
-runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& vals)
+runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& vals, const types::vec<runtime::value>& global_init)
 {
     runtime::moduleinst inst;
 
@@ -657,7 +673,12 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
     inst.typel = m.section_type.types;
 
+    std::vector<runtime::funcaddr> faddrs;
 
+    for(int i=0; i< (int)m.section_func.types.size(); i++)
+    {
+
+    }
 
     return inst;
 }
@@ -683,5 +704,9 @@ void wasm_binary_data::init(data d)
 
     test.type.params.push_back(in);*/
 
-    runtime::moduleinst minst = build_from_module(mod, s, {});
+    ///ideally we'd build this from actually evaluating the expressions for the globals
+    ///but we're not there yet
+    types::vec<runtime::value> global_init;
+
+    runtime::moduleinst minst = build_from_module(mod, s, {}, global_init);
 }

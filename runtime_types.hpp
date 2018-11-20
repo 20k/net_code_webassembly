@@ -83,12 +83,12 @@ namespace runtime
         types::vec<meminst> mems;
         types::vec<globalinst> globals;
 
-        int allocfunction(const module& m, int idx);
-        int allochostfunction(const types::functype& type, void(*ptr)());
+        funcaddr allocfunction(const module& m, int idx);
+        funcaddr allochostfunction(const types::functype& type, void(*ptr)());
 
-        int alloctable(const types::tabletype& type);
-        int allocmem(const types::memtype& type);
-        int allocglobal(const types::globaltype& type, const value& v);
+        tableaddr alloctable(const types::tabletype& type);
+        memaddr allocmem(const types::memtype& type);
+        globaladdr allocglobal(const types::globaltype& type, const value& v);
     };
 
     template<typename T>
