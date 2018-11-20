@@ -59,6 +59,12 @@ namespace types
 
     struct f32 : integral<float, f32>{};
     struct f64 : integral<double, f64>{};
+
+    template<typename T>
+    struct vec
+    {
+        std::vector<T> v;
+    };
 }
 
 struct data

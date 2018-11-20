@@ -69,7 +69,7 @@ namespace leb
         U dtr;
 
         bool more = 1;
-        bool negative = (in < 0);
+        //bool negative = (in < 0);
 
         while(more)
         {
