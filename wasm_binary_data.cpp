@@ -88,6 +88,8 @@ namespace sections
             types::memtype mt;
             types::globaltype gt;
 
+            ///uuh todo check that this doesn't leak memory
+            ///because unions are a bit sketch
             val()
             {
                 memset(this, 0, sizeof(val));

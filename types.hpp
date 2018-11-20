@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <fstream>
 #include <array>
+#include <cstring>
+#include <variant>
 
 namespace types
 {
@@ -79,6 +81,11 @@ namespace types
         {
             return v.size();
         }
+
+        void push_back(const T& t)
+        {
+            v.push_back(t);
+        }
     };
 
     /**0x7F -> i32
@@ -111,6 +118,30 @@ namespace types
                     return "f32";
                 case 0x7C:
                     return "f64";
+                default:
+                    return "i/fValTypeErr";
+            }
+        }
+    };
+
+    struct blocktype
+    {
+        uint8_t which = 0;
+
+        std::string friendly()
+        {
+            switch(which)
+            {
+                case 0x7F:
+                    return "i32";
+                case 0x7E:
+                    return "i64";
+                case 0x7D:
+                    return "f32";
+                case 0x7C:
+                    return "f64";
+                case 0x40:
+                    return "empty";
                 default:
                     return "i/fValTypeErr";
             }
@@ -204,6 +235,78 @@ namespace types
     struct mem
     {
         memtype type;
+    };
+
+    struct memarg
+    {
+        u32 align;
+        u32 offset;
+    };
+
+    struct br_table_data
+    {
+        vec<labelidx> labels;
+        labelidx fin;
+    };
+
+    struct instr;
+
+    struct double_branch_data
+    {
+        blocktype btype;
+
+        bool has_second_branch = false;
+
+        vec<instr> first;
+        vec<instr> second;
+    };
+
+    struct single_branch_data
+    {
+        blocktype btype;
+
+        vec<instr> first;
+    };
+
+    ///currently totally discards all information relating to instructions so i can get through basic parsing
+    ///later this will be pretty humongous
+    struct instr
+    {
+        uint8_t which = 0;
+
+        /*union constant
+        {
+            i32 i_32;
+            i64 i_64;
+            f32 f_32;
+            f64 f_64;
+
+            memarg arg;
+
+            globalidx gidx;
+            localidx lidx;
+
+            typeidx tidx;
+            funcidx fidx;
+
+            br_table_data br_td;
+
+            double_branch_data dbd;
+            single_branch_data sbd;
+        } cst;*/
+
+        std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
+    };
+
+    struct expr
+    {
+        vec<instr> i;
+    };
+
+    struct global
+    {
+        globaltype type;
+        expr e;
     };
 }
 
