@@ -200,6 +200,11 @@ namespace types
     {
         tabletype type;
     };
+
+    struct mem
+    {
+        memtype type;
+    };
 }
 
 struct data

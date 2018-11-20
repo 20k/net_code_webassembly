@@ -326,6 +326,12 @@ void lowest_get(types::table& type, parser& p)
     lowest_get(type.type, p);
 }
 
+inline
+void lowest_get(types::mem& type, parser& p)
+{
+    lowest_get(type.type, p);
+}
+
 template<typename T>
 void serialise(T& type, parser& p, bool ser)
 {

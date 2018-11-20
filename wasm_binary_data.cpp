@@ -185,6 +185,24 @@ namespace sections
             serialise(tables, p, ser);
         }
     };
+
+    struct memsec : section
+    {
+        memsec(const section_header& head) : section(head){}
+        memsec(){}
+
+        types::vec<types::mem> mems;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 5)
+            {
+                throw std::runtime_error("Expected 5, got " + std::to_string(header.id));
+            }
+
+            serialise(mems, p, ser);
+        }
+    };
 }
 
 template<typename T>
@@ -243,6 +261,7 @@ void wasm_binary_data::init(data d)
     sections::importsec section_imports;
     sections::functionsec section_func;
     sections::tablesec section_table;
+    sections::memsec section_memory;
 
     sections::section_header head;
 
@@ -291,6 +310,13 @@ void wasm_binary_data::init(data d)
 
             std::cout << "imported table\n";
         }
+        else if(head.id == 5)
+        {
+            section_memory = sections::memsec(head);
+            serialise(section_memory, p, false);
+
+            std::cout << "imported memory\n";
+        }
         else
         {
             break;
@@ -327,4 +353,6 @@ void wasm_binary_data::init(data d)
     std::cout << "num functionsecs " << section_func.types.size() << std::endl;
 
     std::cout << "num tables " << section_table.tables.size() << std::endl;
+
+    std::cout << "num mem " << section_memory.mems.size() << std::endl;
 }
