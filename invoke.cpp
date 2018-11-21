@@ -504,6 +504,7 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};
+        activate.f = fr;
 
         full.push_activation(activate);
 
