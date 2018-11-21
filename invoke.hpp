@@ -151,6 +151,19 @@ struct full_stack
 
         return std::get<runtime::value>(last.s);
     }
+
+    int num_labels()
+    {
+        int num = 0;
+
+        for(stk& s : full)
+        {
+            if(std::holds_alternative<label>(s.s))
+                num++;
+        }
+
+        return num;
+    }
 };
 
 void eval_expr(runtime::store& s, const types::expr& exp, full_stack& full);
