@@ -57,6 +57,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
         {
             label l;
             l.dat = std::get<types::double_branch_data>(is.dat);
+            l.continuation = 1;
 
             eval_with_label(s, l, {l.dat.first}, full);
 
