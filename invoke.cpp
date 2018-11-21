@@ -31,6 +31,7 @@ void push(const T& t, full_stack& full)
 #define INVOKE_GLOBAL(f) return f(s, full, std::get<types::globalidx>(is.dat)); break;
 
 void eval_with_label(runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
+void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
 inline
 void do_op(runtime::store& s, const types::instr& is, full_stack& full)
@@ -54,6 +55,21 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
             l.dat = std::get<types::single_branch_data>(is.dat);
 
             eval_with_label(s, l, {l.dat.first}, full);
+
+            break;
+        }
+
+        case 0x10:
+        {
+            types::funcidx fidx = std::get<types::funcidx>(is.dat);
+
+            uint32_t idx = (uint32_t)fidx;
+            activation& activate = full.get_current();
+
+            if(idx >= (uint32_t)activate.f.inst->funcaddrs.size())
+                throw std::runtime_error("Bad fidx in 0x10");
+
+            invoke_intl(s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
             break;
         }
