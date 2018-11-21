@@ -30,8 +30,7 @@ void push(const T& t, full_stack& full)
 #define INVOKE_LOCAL(f) return f(full, std::get<types::localidx>(is.dat)); break;
 #define INVOKE_GLOBAL(f) return f(s, full, std::get<types::globalidx>(is.dat)); break;
 
-void eval_expr(const types::expr& exp, full_stack& full);
-void eval_with_label(const label& l, const types::expr& exp, full_stack& full);
+void eval_with_label(runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
 
 inline
 void do_op(runtime::store& s, const types::instr& is, full_stack& full)
@@ -54,7 +53,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
             label l;
             l.dat = std::get<types::single_branch_data>(is.dat);
 
-            eval_with_label(l, {l.dat.first}, full);
+            eval_with_label(s, l, {l.dat.first}, full);
 
             break;
         }
@@ -408,7 +407,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
     }
 }
 
-void eval_expr(const types::expr& exp, full_stack& full)
+void eval_expr(runtime::store& s, const types::expr& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
@@ -419,15 +418,15 @@ void eval_expr(const types::expr& exp, full_stack& full)
     {
         const types::instr& ins = exp.i[i];
 
-
+        do_op(s, ins, full);
     }
 }
 
-void eval_with_label(const label& l, const types::expr& exp, full_stack& full)
+void eval_with_label(runtime::store& s, const label& l, const types::expr& exp, full_stack& full)
 {
     full.push_label(l);
 
-    eval_expr({exp.i}, full);
+    eval_expr(s, {exp.i}, full);
 
     auto all_vals = full.pop_all_values_on_stack();
 
@@ -492,7 +491,7 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
 
         full.push_activation(activate);
 
-        eval_expr(expression, full);
+        eval_expr(s, expression, full);
 
         ///not sure i need to refetch this activation here
         activation& current = full.get_current();

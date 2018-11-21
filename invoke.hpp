@@ -140,4 +140,4 @@ struct full_stack
     }
 };
 
-void eval_expr(const types::expr& exp, full_stack& full);
+void eval_expr(runtime::store& s, const types::expr& exp, full_stack& full);
