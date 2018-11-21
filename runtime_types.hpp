@@ -67,6 +67,27 @@ namespace runtime
     struct value
     {
         std::variant<types::i32, types::i64, types::f32, types::f64> v;
+
+        void from_valtype(const types::valtype& type)
+        {
+            switch(type.which)
+            {
+                case 0x7F:
+                    v = types::i32{0};
+                    return;
+                case 0x7E:
+                    v = types::i64{0};
+                    return;
+                case 0x7D:
+                    v = types::f32{0};
+                    return;
+                case 0x7C:
+                    v = types::f64{0};
+                    return;
+                default:
+                    throw std::runtime_error("Invalid value in which");
+            }
+        }
     };
 
     struct globalinst

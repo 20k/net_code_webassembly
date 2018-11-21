@@ -31,7 +31,18 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
         types::vec<types::local> local_types = fnc.funct.fnc.locals;
         types::expr expression = fnc.funct.fnc.e;
 
+        types::vec<runtime::value> local_zeroes;
 
+        for(const types::local& loc : local_types)
+        {
+            for(uint32_t i=0; i < (uint32_t)loc.n; i++)
+            {
+                runtime::value val;
+                val.from_valtype(loc.type);
+
+                local_zeroes.push_back(val);
+            }
+        }
     }
     else
     {
