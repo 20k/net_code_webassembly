@@ -15,7 +15,7 @@ void push(const T& t, full_stack& full)
 #define POP() full.pop_back()
 
 #define POPA(x) return push(full.pop_back().apply(x), full); break;
-#define POPB(x) {auto a1 = full.pop_back(); auto a2 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break; return;}
+#define POPB(x) {auto a2 = full.pop_back(); auto a1 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break; return;}
 
 #define PUSH_CONSTANT(xtype)\
         { \
@@ -38,6 +38,20 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
     ///good lord this is tedious
     switch(which)
     {
+        case 0x1A:
+        {
+            full.pop_back();
+
+            break;
+        }
+
+        case 0x1B:
+        {
+            select(full);
+
+            break;
+        }
+
         case 0x20:
             INVOKE_LOCAL(get_local);
         case 0x21:
