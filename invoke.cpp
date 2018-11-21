@@ -27,6 +27,9 @@ void push(const T& t, full_stack& full)
 #define MEM_LOAD(x, y) return mem_load<x, y>(s, std::get<types::memarg>(is.dat), full); break;
 #define MEM_STORE(x, y) return mem_store<x, y>(s, std::get<types::memarg>(is.dat), full); break;
 
+#define INVOKE_LOCAL(f) return f(full, std::get<types::localidx>(is.dat)); break;
+#define INVOKE_GLOBAL(f) return f(s, full, std::get<types::globalidx>(is.dat)); break;
+
 inline
 void do_op(runtime::store& s, const types::instr& is, full_stack& full)
 {
@@ -36,7 +39,15 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
     switch(which)
     {
         case 0x20:
-
+            INVOKE_LOCAL(get_local);
+        case 0x21:
+            INVOKE_LOCAL(set_local);
+        case 0x22:
+            INVOKE_LOCAL(tee_local);
+        case 0x23:
+            INVOKE_GLOBAL(get_global);
+        case 0x24:
+            INVOKE_GLOBAL(set_global);
 
         case 0x28:
             MEM_LOAD(uint32_t, sizeof(uint32_t));
