@@ -22,6 +22,35 @@ void do_op(const uint8_t& which, full_stack& full)
 {
     switch(which)
     {
+        case 0x8B:
+            POPA(absf<float>);
+        case 0x8C:
+            POPA(fneg<float>);
+        case 0x8D:
+            POPA(fceil<float>);
+        case 0x8E:
+            POPA(ffloor<float>);
+        case 0x8F:
+            POPA(ftrunc<float>);
+        case 0x90:
+            POPA(fnearest<float>);
+        case 0x91:
+            POPA(fsqrt<float>);
+        case 0x92:
+            POPB((add<float>));
+        case 0x93:
+            POPB(sub<float>);
+        case 0x94:
+            POPB(mul<float>);
+        case 0x95:
+            POPB(fdiv<float>);
+        case 0x96:
+            POPB(fmin<float>);
+        case 0x97:
+            POPB(fmax<float>);
+        case 0x98:
+            POPB(fcopysign<float>);
+
         case 0x99:
             POPA(absf<double>);
         case 0x9A:
