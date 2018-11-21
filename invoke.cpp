@@ -15,7 +15,7 @@ void push(const T& t, full_stack& full)
 //#define PUSH(x) return push(x, full); break;
 #define POP() full.pop_back()
 
-#define POPA(x) return push(full.pop_back().apply(x), full); break;
+#define POPA(x) {auto a1 = full.pop_back(); return push(runtime::apply(x, a1), full); break;}
 #define POPB(x) {auto a2 = full.pop_back(); auto a1 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break; return;}
 
 #define PUSH_CONSTANT(xtype)\
@@ -155,6 +155,8 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             std::cout << "good " << std::holds_alternative<types::i32>(val.v) << std::endl;
 
             types::i32 type = std::get<types::i32>(val.v);
+
+            std::cout << "post good\n";
 
             if((uint32_t)type != 0)
             {

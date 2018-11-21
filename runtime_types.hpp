@@ -188,6 +188,28 @@ namespace runtime
         //return t(u, v);
     }
 
+    template<typename T>
+    inline
+    auto apply(const T& t, const value& u)
+    {
+        if(std::holds_alternative<types::i32>(u.v))
+            return t(std::get<types::i32>(u.v).val);
+
+        else if(std::holds_alternative<types::i64>(u.v))
+            return t(std::get<types::i64>(u.v).val);
+
+        else if(std::holds_alternative<types::f32>(u.v))
+            return t(std::get<types::f32>(u.v).val);
+
+        else if(std::holds_alternative<types::f64>(u.v))
+            return t(std::get<types::f64>(u.v).val);
+
+        else
+            throw std::runtime_error("apply bad type");
+
+        //return t(u, v);
+    }
+
     struct globalinst
     {
         value val;
