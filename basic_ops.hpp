@@ -131,13 +131,13 @@ T ieqz(const T& v1)
 }
 
 template<typename T>
-T ieq(const T& v1, const T& v2)
+T eq(const T& v1, const T& v2)
 {
     return v1 == v2;
 }
 
 template<typename T>
-T ine(const T& v1, const T& v2)
+T ne(const T& v1, const T& v2)
 {
     return v1 != v2;
 }
@@ -218,6 +218,84 @@ T fcopysign(const T& v1, const T& v2)
         return -v1;
 
     return v1;
+}
+
+template<typename T>
+T absf(const T& v1)
+{
+    return fabs(v1);
+}
+
+template<typename T>
+T fneg(const T& t)
+{
+    return -t;
+}
+
+template<typename T>
+T fsqrt(const T& t)
+{
+    return sqrt(t);
+}
+
+template<typename T>
+T fceil(const T& t)
+{
+    return ceil(t);
+}
+
+template<typename T>
+T ffloor(const T& t)
+{
+    return floor(t);
+}
+
+template<typename T>
+T ftrunc(const T& t)
+{
+    if(t > 0 && t < 1)
+        return 0;
+
+    if(t < 0 && t > -1)
+        return -0;
+
+    return (T)(int)t;
+}
+
+template<typename T>
+T fnearest(const T& t)
+{
+    if(t > 0 && t < 0.5)
+        return 0;
+
+    if(t < 0 && t > -0.5)
+        return -0;
+
+    return round(t);
+}
+
+template<typename T>
+T flt(const T& v1, const T& v2)
+{
+    return v1 < v2;
+}
+
+template<typename T>
+T fgt(const T& v1, const T& v2)
+{
+    return v1 > v2;
+}
+
+template<typename T>
+T fle(const T& v1, const T& v2)
+{
+    return v1 <= v2;
+}
+
+template<typename T>
+T fge(const T& v1, const T& v2)
+{
+    return v1 >= v2;
 }
 
 #endif // BASIC_OPS_HPP_INCLUDED
