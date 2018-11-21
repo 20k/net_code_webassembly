@@ -19,9 +19,11 @@ struct activation
 
 struct label
 {
-    types::s32 argument_arity{0};
+    /*types::s32 argument_arity{0};
     ///?
-    types::expr e;
+    types::expr e;*/
+
+    types::single_branch_data dat;
 };
 
 struct stk
@@ -47,6 +49,38 @@ struct full_stack
         k.s = a;
 
         full.push_back(k);
+    }
+
+    void push_label(const label& l)
+    {
+        stk k;
+        k.s = l;
+
+        full.push_back(k);
+    }
+
+    types::vec<runtime::value> pop_all_values_on_stack()
+    {
+        int num = 0;
+        types::vec<runtime::value> ret;
+
+        for(int i = full.size() - 1; i >= 0; i--)
+        {
+            stk& elem = full[i];
+
+            if(!std::holds_alternative<runtime::value>(elem.s))
+                break;
+
+            num++;
+            ret.push_back(std::get<runtime::value>(elem.s));
+        }
+
+        if(num < 0 || num >= full.size())
+            throw std::runtime_error("weird num error, not sure this is possible");
+
+        full.resize(full.size() - num);
+
+        return ret;
     }
 
     types::vec<runtime::value> pop_num_vals(int num)

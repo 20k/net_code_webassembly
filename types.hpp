@@ -205,6 +205,11 @@ namespace types
                     return "i/fValTypeErr";
             }
         }
+
+        int arity()
+        {
+            return which != 0x40;
+        }
     };
 
     struct functype
