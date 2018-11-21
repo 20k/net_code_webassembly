@@ -25,6 +25,11 @@ struct stk
     std::variant<runtime::value, label, activation> s;
 };
 
+void eval_expr(const types::expr& exp)
+{
+
+}
+
 void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
 {
     uint32_t adr = (uint32_t)address;
