@@ -20,8 +20,32 @@ void push(const T& t, full_stack& full)
 inline
 void do_op(const uint8_t& which, full_stack& full)
 {
+    ///good lord this is tedious
     switch(which)
     {
+        case 0x50:
+            POPA(ieqz<uint64_t>);
+        case 0x51:
+            POPB(eq<uint64_t>);
+        case 0x52:
+            POPB(ne<uint64_t>);
+        case 0x53:
+            POPB(ilt_s<int64_t>);
+        case 0x54:
+            POPB(ilt_u<uint64_t>);
+        case 0x55:
+            POPB(igt_s<int64_t>);
+        case 0x56:
+            POPB(igt_u<uint64_t>);
+        case 0x57:
+            POPB(ile_s<int64_t>);
+        case 0x58:
+            POPB(ile_u<uint64_t>);
+        case 0x59:
+            POPB(ige_s<int64_t>);
+        case 0x5A:
+            POPB(ige_u<uint64_t>);
+
         case 0x5B:
             POPB(eq<float>);
         case 0x5C:
@@ -235,6 +259,9 @@ void do_op(const uint8_t& which, full_stack& full)
             POPA((reinterpret<float, uint32_t>));
         case 0xBF:
             POPA((reinterpret<double, uint64_t>));
+
+        default:
+            throw std::runtime_error("bad exception");
     }
 }
 
