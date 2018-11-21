@@ -521,6 +521,52 @@ void tee_local(full_stack& full, const types::localidx& lidx)
     full.push_values(top);
 }
 
+inline
+void get_global(runtime::store& s, full_stack& full, const types::globalidx& gidx)
+{
+    activation& activate = full.get_current();
 
+    runtime::moduleinst* minst = activate.f.inst;
+
+    uint32_t idx = (uint32_t)gidx;
+
+    if(idx >= (uint32_t)minst->globaladdrs.size())
+        throw std::runtime_error("bad idx in get_global");
+
+    runtime::globaladdr addr = minst->globaladdrs[idx];
+
+    if((uint32_t)addr >= (uint32_t)s.globals.size())
+        throw std::runtime_error("bad addr in get_global");
+
+    runtime::globalinst& glob = s.globals[(uint32_t)addr];
+
+    runtime::value val = glob.val;
+
+    full.push_values(val);
+}
+
+inline
+void set_global(runtime::store& s, full_stack& full, const types::globalidx& gidx)
+{
+    activation& activate = full.get_current();
+
+    runtime::moduleinst* minst = activate.f.inst;
+
+    uint32_t idx = (uint32_t)gidx;
+
+    if(idx >= (uint32_t)minst->globaladdrs.size())
+        throw std::runtime_error("bad idx in get_global");
+
+    runtime::globaladdr addr = minst->globaladdrs[idx];
+
+    if((uint32_t)addr >= (uint32_t)s.globals.size())
+        throw std::runtime_error("bad addr in get_global");
+
+    runtime::globalinst& glob = s.globals[(uint32_t)addr];
+
+    runtime::value val = full.pop_back();
+
+    glob.val = val;
+}
 
 #endif // BASIC_OPS_HPP_INCLUDED
