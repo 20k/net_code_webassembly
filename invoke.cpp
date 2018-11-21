@@ -11,18 +11,70 @@ void push(const T& t, full_stack& full)
     full.push_values(val);
 }
 
-#define PUSH(x) return push(x, full); break;
+//#define PUSH(x) return push(x, full); break;
 #define POP() full.pop_back()
 
-#define POPA(x) PUSH(full.pop_back().apply(x))
+#define POPA(x) return push(full.pop_back().apply(x), full); break;
 
 inline
 void do_op(const uint8_t& which, full_stack& full)
 {
     switch(which)
     {
+        ///these functions are all template parameter format
+        ///<dest, src>
+        ///so trunc_s takes the argument as a float
+        ///and then converts it to an in32_t
         case 0xA7:
             POPA((wrap<uint32_t, 64>));
+        case 0xA8:
+            POPA((trunc_s<int32_t, float>));
+        case 0xA9:
+            POPA((trunc_u<uint32_t, float>));
+        case 0xAA:
+            POPA((trunc_s<int32_t, double>));
+        case 0xAB:
+            POPA((trunc_u<uint32_t, double>));
+        case 0xAC:
+            POPA((extend_s<int64_t, int32_t>));
+        case 0xAD:
+            POPA((extend_u<uint64_t, int32_t>));
+        case 0xAE:
+            POPA((trunc_s<int64_t, float>));
+        case 0xAF:
+            POPA((trunc_u<uint64_t, float>));
+        case 0xB0:
+            POPA((trunc_s<int64_t, double>));
+        case 0xB1:
+            POPA((trunc_u<uint64_t, double>));
+        case 0xB2:
+            POPA((convert_s<float, int32_t>));
+        case 0xB3:
+            POPA((convert_u<float, uint32_t>));
+        case 0xB4:
+            POPA((convert_s<float, int64_t>));
+        case 0xB5:
+            POPA((convert_u<float, uint64_t>));
+        case 0xB6:
+            POPA((demote<float, double>));
+        case 0xB7:
+            POPA((convert_s<double, int32_t>));
+        case 0xB8:
+            POPA((convert_u<double, uint32_t>));
+        case 0xB9:
+            POPA((convert_s<double, int64_t>));
+        case 0xBA:
+            POPA((convert_u<double, uint64_t>));
+        case 0xBB:
+            POPA((promote<double, float>));
+        case 0xBC:
+            POPA((reinterpret<uint32_t, float>));
+        case 0xBD:
+            POPA((reinterpret<uint64_t, double>));
+        case 0xBE:
+            POPA((reinterpret<float, uint32_t>));
+        case 0xBF:
+            POPA((reinterpret<double, uint64_t>));
     }
 }
 

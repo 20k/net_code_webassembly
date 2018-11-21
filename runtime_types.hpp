@@ -64,6 +64,9 @@ namespace runtime
         std::optional<types::u32> max;
     };
 
+    ///hmm
+    ///might be better to hold a uint64_t
+    ///and then just cast on the fly
     struct value
     {
         std::variant<types::i32, types::i64, types::f32, types::f64> v;
