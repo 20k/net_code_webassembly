@@ -77,7 +77,6 @@ namespace runtime
 
     struct moduleinst;
 
-    ///this is incorrect for the moment due to funcinst
     struct store
     {
         types::vec<funcinst> funcs;
