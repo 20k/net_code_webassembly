@@ -429,7 +429,17 @@ void eval_with_label(const label& l, const types::expr& exp, full_stack& full)
 
     eval_expr({exp.i}, full);
 
+    auto all_vals = full.pop_all_values_on_stack();
 
+    if(full.full.size() == 0 || !std::holds_alternative<label>(full.full.back().s))
+        throw std::runtime_error("No label in eval with label");
+
+    full.full.pop_back();
+
+    for(auto& i : all_vals)
+    {
+        full.push_values(i);
+    }
 }
 
 void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
