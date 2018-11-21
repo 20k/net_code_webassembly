@@ -22,7 +22,31 @@ void do_op(const uint8_t& which, full_stack& full)
 {
     switch(which)
     {
+        case 0x5B:
+            POPB(eq<float>);
+        case 0x5C:
+            POPB(ne<float>);
+        case 0x5D:
+            POPB(flt<float>);
+        case 0x5E:
+            POPB(fgt<float>);
+        case 0x5F:
+            POPB(fle<float>);
+        case 0x60:
+            POPB(fge<float>);
 
+        case 0x61:
+            POPB(eq<double>);
+        case 0x62:
+            POPB(ne<double>);
+        case 0x63:
+            POPB(flt<double>);
+        case 0x64:
+            POPB(fgt<double>);
+        case 0x65:
+            POPB(fle<double>);
+        case 0x66:
+            POPB(fge<double>);
 
         case 0x67:
             POPA(iclz<uint32_t>);
