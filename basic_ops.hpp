@@ -395,7 +395,7 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
     uint32_t ea = (uint32_t)arg.offset + (uint32_t)std::get<types::i32>(top_i32.v);
 
     if(ea + bytes >= (uint32_t)minst.dat.size())
-        throw std::runtime_error("Out of memory");
+        throw std::runtime_error("Out of memory (OOB in mem_load)");
 
     std::array<uint8_t, bytes> arr;
 
@@ -415,6 +415,63 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
     full.push_values(rval);
 
     //return ret;
+}
+
+template<typename T, int bytes>
+void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
+{
+    static_assert(bytes <= sizeof(T));
+
+    if(s.mems.size() < 1)
+        throw std::runtime_error("No such mem idx 0");
+
+    activation& activate = full.get_current();
+
+    runtime::moduleinst* inst = activate.f.inst;
+
+    if(inst == nullptr)
+        throw std::runtime_error("inst == null");
+
+    runtime::memaddr addr = inst->memaddrs[0];
+
+    uint32_t raw_addr = (uint32_t)addr;
+
+    if(raw_addr >= (uint32_t)s.mems.size())
+        throw std::runtime_error("raw_addr > s.mems.size()");
+
+    runtime::meminst& minst = s.mems[raw_addr];
+
+    ///lets just pretend i did validation here
+    ///normally its great but here i only have the underlying type, eg uint32_t
+    ///whereas the runtime type is phrased in terms of i32
+    ///it is possible to do but a faff
+    runtime::value val = full.pop_back();
+    runtime::value top_i32 = full.pop_back();
+
+    if(!top_i32.is_i32())
+        throw std::runtime_error("Not i32 for mem load");
+
+    uint32_t ea = (uint32_t)arg.offset + (uint32_t)std::get<types::i32>(top_i32.v);
+
+    if(ea + bytes >= (uint32_t)minst.dat.size())
+        throw std::runtime_error("Tried to hit OOB in mem_store");
+
+    ///I believe the semantics for wrap are just integer truncation
+
+    ///we're little endian, so if i start at the bottom itll workcorrectly
+
+    std::array<uint8_t, sizeof(T)> arr;
+
+    val.apply([](auto concrete){if(sizeof(T) != sizeof(concrete)){throw std::runtime_error("BAD SIZE");}});
+
+    val.apply([&arr](auto concrete){memcpy(&arr[0], (char*)&concrete, sizeof(concrete));});
+
+    for(int cbyte=0; cbyte < bytes; cbyte++)
+    {
+        uint32_t current_offset = cbyte + ea;
+
+        minst.dat[current_offset] = arr[cbyte];
+    }
 }
 
 #endif // BASIC_OPS_HPP_INCLUDED

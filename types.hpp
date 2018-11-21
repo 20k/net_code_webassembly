@@ -347,8 +347,6 @@ namespace types
         vec<instr> first;
     };
 
-    ///currently totally discards all information relating to instructions so i can get through basic parsing
-    ///later this will be pretty humongous
     struct instr
     {
         uint8_t which = 0;
