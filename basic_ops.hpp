@@ -474,4 +474,53 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
     }
 }
 
+inline
+void get_local(full_stack& full, const types::localidx& lidx)
+{
+    activation& activate = full.get_current();
+
+    uint32_t idx = (uint32_t)lidx;
+
+    if(idx >= (uint32_t)activate.f.locals.size())
+        throw std::runtime_error("idx > max locals get_local");
+
+    runtime::value val = activate.f.locals[idx];
+
+    full.push_values(val);
+}
+
+inline
+void set_local(full_stack& full, const types::localidx& lidx)
+{
+    activation& activate = full.get_current();
+
+    runtime::value top = full.pop_back();
+
+    uint32_t idx = (uint32_t)lidx;
+
+    if(idx >= (uint32_t)activate.f.locals.size())
+        throw std::runtime_error("idx > max locals get_local");
+
+    activate.f.locals[idx] = top;
+}
+
+inline
+void tee_local(full_stack& full, const types::localidx& lidx)
+{
+    activation& activate = full.get_current();
+
+    runtime::value top = full.pop_back();
+
+    uint32_t idx = (uint32_t)lidx;
+
+    if(idx >= (uint32_t)activate.f.locals.size())
+        throw std::runtime_error("idx > max locals get_local");
+
+    activate.f.locals[idx] = top;
+
+    full.push_values(top);
+}
+
+
+
 #endif // BASIC_OPS_HPP_INCLUDED

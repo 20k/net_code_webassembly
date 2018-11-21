@@ -35,6 +35,9 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
     ///good lord this is tedious
     switch(which)
     {
+        case 0x20:
+
+
         case 0x28:
             MEM_LOAD(uint32_t, sizeof(uint32_t));
         case 0x29:
@@ -82,6 +85,8 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
             MEM_STORE(uint64_t, 2);
         case 0x3E:
             MEM_STORE(uint64_t, 4);
+
+        ///TODO size and grow
 
         case 0x41:
             PUSH_CONSTANT(types::i32);
