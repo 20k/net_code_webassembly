@@ -149,16 +149,14 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
         {
             runtime::value val = full.pop_back();
 
-            std::cout << "0x0d" << std::endl;
-
             if(!val.is_i32())
                 throw std::runtime_error("expected i32 in 0x0D");
 
-            std::cout << "pb\n";
-
             std::cout << "good " << std::holds_alternative<types::i32>(val.v) << std::endl;
 
-            if((uint32_t)std::get<types::i32>(val.v) != 0)
+            types::i32 type = std::get<types::i32>(val.v);
+
+            if((uint32_t)type != 0)
             {
                 std::cout << "ibranch\n";
 
@@ -181,6 +179,8 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
                 std::cout << "hit br_if\n";
             }
+
+            break;
         }
 
         case 0x10:
