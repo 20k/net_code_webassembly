@@ -29,6 +29,14 @@ struct stk
 struct full_stack
 {
     types::vec<stk> full;
+
+    void push_value(const runtime::value& val)
+    {
+        stk k;
+        k.s = val;
+
+        full.push_back(k);
+    }
 };
 
 void eval_expr(const types::expr& exp, full_stack& full);
