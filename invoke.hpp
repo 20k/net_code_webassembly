@@ -24,7 +24,7 @@ struct label
     ///?
     types::expr e;*/
 
-    types::single_branch_data dat;
+    types::double_branch_data dat;
 };
 
 struct stk

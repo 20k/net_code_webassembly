@@ -56,7 +56,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
         case 0x02:
         {
             label l;
-            l.dat = std::get<types::single_branch_data>(is.dat);
+            l.dat = std::get<types::double_branch_data>(is.dat);
 
             eval_with_label(s, l, {l.dat.first}, full);
 
