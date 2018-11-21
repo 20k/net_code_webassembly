@@ -55,9 +55,29 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
 
         case 0x02:
         {
+            types::single_branch_data sbd = std::get<types::single_branch_data>(is.dat);
+
             label l;
-            l.dat = std::get<types::double_branch_data>(is.dat);
+            l.dat.btype = sbd.btype;
+            l.dat.first = sbd.first;
             l.continuation = 1;
+
+            eval_with_label(s, l, {l.dat.first}, full);
+
+            break;
+        }
+
+        case 0x03:
+        {
+            types::single_branch_data sbd = std::get<types::single_branch_data>(is.dat);
+
+            label l;
+            l.dat.btype = sbd.btype;
+            l.dat.first = sbd.first;
+            l.continuation = 2;
+
+            if(l.dat.btype.arity() != 0)
+                throw std::runtime_error("Wrong arity?");
 
             eval_with_label(s, l, {l.dat.first}, full);
 
