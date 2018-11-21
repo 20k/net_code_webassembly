@@ -314,7 +314,7 @@ T extend_s(const U& in)
 template<typename T, int N>
 T wrap(const T& in)
 {
-    return in % pow(2, N);
+    return in % (T)pow(2, N);
 }
 
 template<typename T, typename U>

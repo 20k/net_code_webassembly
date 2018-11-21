@@ -2,13 +2,43 @@
 #include "runtime_types.hpp"
 #include "basic_ops.hpp"
 
+template<typename T>
+void push(const T& t, full_stack& full)
+{
+    runtime::value val;
+    val.set(t);
+
+    full.push_values(val);
+}
+
+#define PUSH(x) return push(x, full); break;
+#define POP() full.pop_back()
+
+#define POPA(x) PUSH(full.pop_back().apply(x))
+
+inline
+void do_op(const uint8_t& which, full_stack& full)
+{
+    switch(which)
+    {
+        case 0xA7:
+            POPA((wrap<uint32_t, 64>));
+    }
+}
+
 void eval_expr(const types::expr& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
 
+    int len = exp.i.size();
+
+    for(int i=0; i < len; i++)
+    {
+        const types::instr& ins = exp.i[i];
 
 
+    }
 }
 
 void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)

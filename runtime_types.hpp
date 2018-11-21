@@ -88,6 +88,51 @@ namespace runtime
                     throw std::runtime_error("Invalid value in which");
             }
         }
+
+        void set(uint32_t t)
+        {
+            v = types::i32{t};
+        }
+
+        void set(int32_t t)
+        {
+            v = types::i32{(uint32_t)t};
+        }
+
+        void set(uint64_t t)
+        {
+            v = types::i64{t};
+        }
+
+        void set(int64_t t)
+        {
+            v = types::i64{(uint64_t)t};
+        }
+
+        void set(float t)
+        {
+            v = types::f32{t};
+        }
+
+        void set(double t)
+        {
+            v = types::f64{t};
+        }
+
+        template<typename T>
+        auto apply(const T& t)
+        {
+            if(std::holds_alternative<types::i32>(v))
+                return t(std::get<types::i32>(v).val);
+            else if(std::holds_alternative<types::i64>(v))
+                return t(std::get<types::i64>(v).val);
+            else if(std::holds_alternative<types::f32>(v))
+                return t(std::get<types::f32>(v).val);
+            else if(std::holds_alternative<types::f64>(v))
+                return t(std::get<types::f64>(v).val);
+
+            throw std::runtime_error("nope");
+        }
     };
 
     struct globalinst

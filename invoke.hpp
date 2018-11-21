@@ -93,12 +93,16 @@ struct full_stack
         throw std::runtime_error("No activation on stack");
     }
 
-    void pop_back()
+    runtime::value pop_back()
     {
         if(full.size() == 0)
             throw std::runtime_error("0 stack");
 
+        auto last = full.back();
+
         full.pop_back();
+
+        return std::get<runtime::value>(last.s);
     }
 };
 
