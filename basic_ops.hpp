@@ -2,6 +2,7 @@
 #define BASIC_OPS_HPP_INCLUDED
 
 #include <algorithm>
+#include <math.h>
 
 template<typename T>
 bool bool_op(const T& t)
@@ -296,6 +297,66 @@ template<typename T>
 T fge(const T& v1, const T& v2)
 {
     return v1 >= v2;
+}
+
+template<typename T, typename U>
+T extend_u(const U& in)
+{
+    return (T)&in;
+}
+
+template<typename T, typename U>
+T extend_s(const U& in)
+{
+    return (T)in;
+}
+
+template<typename T, int N>
+T wrap(const T& in)
+{
+    return in % pow(2, N);
+}
+
+template<typename T, typename U>
+T trunc_u(const U& in)
+{
+    return (T)in;
+}
+
+template<typename T, typename U>
+T trunc_s(const U& in)
+{
+    return (T)in;
+}
+
+template<typename T, typename U>
+T promote(const U& in)
+{
+    return (T)in;
+}
+
+template<typename T, typename U>
+T demote(const U& in)
+{
+    return (T)in;
+}
+
+template<typename T, typename U>
+T convert_u(const U& in)
+{
+    return (T)in;
+}
+
+template<typename T, typename U>
+T convert_s(const U& in)
+{
+    return (T)in;
+}
+
+template<typename T, typename U>
+T reinterpret(const U& in)
+{
+    return *(T*)&in;
 }
 
 #endif // BASIC_OPS_HPP_INCLUDED
