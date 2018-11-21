@@ -17,12 +17,30 @@ void push(const T& t, full_stack& full)
 #define POPA(x) return push(full.pop_back().apply(x), full); break;
 #define POPB(x) {auto a1 = full.pop_back(); auto a2 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break; return;}
 
+#define PUSH_CONSTANT(xtype)\
+        { \
+            xtype cst = std::get<xtype>(is.dat); \
+            return push(cst.val, full); \
+            break; \
+        }
+
 inline
-void do_op(const uint8_t& which, full_stack& full)
+void do_op(const types::instr& is, full_stack& full)
 {
+    uint8_t which = is.which;
+
     ///good lord this is tedious
     switch(which)
     {
+        case 0x41:
+            PUSH_CONSTANT(types::i32);
+        case 0x42:
+            PUSH_CONSTANT(types::i64);
+        case 0x43:
+            PUSH_CONSTANT(types::f32);
+        case 0x44:
+            PUSH_CONSTANT(types::f64);
+
         case 0x45:
             POPA(ieqz<uint32_t>);
         case 0x46:

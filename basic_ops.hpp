@@ -359,4 +359,10 @@ T reinterpret(const U& in)
     return *(T*)&in;
 }
 
+template<typename T>
+T get_const(const T& t)
+{
+    return t;
+}
+
 #endif // BASIC_OPS_HPP_INCLUDED
