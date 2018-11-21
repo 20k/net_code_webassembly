@@ -228,6 +228,20 @@ namespace types
 
             return ret;
         }
+
+        bool operator==(const std::string& in)
+        {
+            if((int)in.size() != (int)dat.size())
+                return false;
+
+            for(int i=0; i < (int)dat.size(); i++)
+            {
+                if(dat[i] != in[i])
+                    return false;
+            }
+
+            return true;
+        }
     };
 
     struct typeidx : u32{};

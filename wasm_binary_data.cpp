@@ -751,6 +751,8 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
         out.name = inf.nm;
 
+        std::cout << "ename " << out.name.friendly() << std::endl;
+
         my_exports.push_back(out);
     }
 
@@ -794,4 +796,18 @@ void wasm_binary_data::init(data d)
     }
 
     runtime::moduleinst minst = build_from_module(mod, s, {}, global_init);
+
+    //s.invoke({0})
+
+    for(int i=0; i < (int)minst.exports.v.size(); i++)
+    {
+        runtime::exportinst& einst = minst.exports.v[i];
+
+        if(einst.name == "_start")
+        {
+            std::cout << "hello looking at _start" << std::endl;
+
+            s.invoke(std::get<runtime::funcaddr>(einst.value.val), minst, {});
+        }
+    }
 }
