@@ -671,8 +671,6 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     if(m.section_imports.imports.size() != ext.size())
         throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(ext.size()));
 
-    inst.typel = m.section_type.types;
-
     types::vec<runtime::funcaddr> faddr;
 
     for(int i=0; i < (int)m.section_func.types.size(); i++)
@@ -719,7 +717,53 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     std::cout << "emaddr " << (uint32_t)emaddr.size() << std::endl;
     std::cout << "egaddr " << (uint32_t)egaddr.size() << std::endl;
 
+    types::vec<runtime::exportinst> my_exports;
 
+    for(int i=0; i < m.section_export.exports.size(); i++)
+    {
+        sections::export_info& inf = m.section_export.exports[i];
+
+        runtime::exportinst out;
+
+        if(std::holds_alternative<types::funcidx>(inf.desc.vals))
+        {
+            out.value.val = faddr[(uint32_t)std::get<types::funcidx>(inf.desc.vals)];
+        }
+
+        else if(std::holds_alternative<types::tableidx>(inf.desc.vals))
+        {
+            out.value.val = taddr[(uint32_t)std::get<types::tableidx>(inf.desc.vals)];
+        }
+
+        else if(std::holds_alternative<types::memidx>(inf.desc.vals))
+        {
+            out.value.val = maddr[(uint32_t)std::get<types::memidx>(inf.desc.vals)];
+        }
+
+        else if(std::holds_alternative<types::globalidx>(inf.desc.vals))
+        {
+            out.value.val = gaddr[(uint32_t)std::get<types::globalidx>(inf.desc.vals)];
+        }
+        else
+        {
+            throw std::runtime_error("Bad export type");
+        }
+
+        out.name = inf.nm;
+
+        my_exports.push_back(out);
+    }
+
+    inst.typel = m.section_type.types;
+
+    inst.funcaddrs = efaddr;
+    inst.tableaddrs = etaddr;
+    inst.memaddrs = emaddr;
+    inst.globaladdrs = egaddr;
+
+    inst.exports = my_exports;
+
+    std::cout << "added " << inst.exports.size() << " exports" << std::endl;
 
     return inst;
 }
