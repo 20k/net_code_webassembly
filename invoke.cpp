@@ -58,4 +58,11 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
     }
 
     invoke_intl(*this, full, address, minst);
+
+    ///pop val from stack
+
+    if(ftype.results.size() > 0)
+    {
+        auto res = full.pop_num_vals(1);
+    }
 }
