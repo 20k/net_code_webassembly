@@ -3,7 +3,8 @@
 
 void eval_expr(const types::expr& exp, full_stack& full)
 {
-
+    ///thisll break until at minimum we pop the values off the stack
+    ///but obviously we actually wanna parse stuff
 }
 
 void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
@@ -43,6 +44,34 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
                 local_zeroes.push_back(val);
             }
         }
+
+        frame fr;
+        ///SUPER BAD CODE ALERT
+        fr.inst = &minst;
+
+        fr.locals = popped;
+        fr.locals.append(local_zeroes);
+
+        activation activate;
+        activate.return_arity = types::s32{ftype.results.size()};
+
+        full.push_activation(activate);
+
+        eval_expr(expression, full);
+
+        ///not sure i need to refetch this activation here
+        activation& current = full.get_current();
+
+        types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
+
+        full.ensure_activation();
+        full.pop_back();
+
+        for(auto& i : found)
+            full.push_values(i);
+
+        ///carry on instruction stream after the call
+        ///as you do
     }
     else
     {
@@ -75,8 +104,8 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
 
     ///pop val from stack
 
-    if(ftype.results.size() > 0)
+    /*if(ftype.results.size() > 0)
     {
         auto res = full.pop_num_vals(1);
-    }
+    }*/
 }

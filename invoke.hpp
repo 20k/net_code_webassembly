@@ -4,7 +4,10 @@
 struct frame
 {
     types::vec<runtime::value> locals;
-    ///moduleinst
+    ///hoo boy ok we're cracking out the pointers i guess
+    ///this must be resolved for serialisation
+    ///maybe use a module_idx and keep the modules in the stores
+    runtime::moduleinst* inst = nullptr;
 };
 
 struct activation
@@ -38,6 +41,14 @@ struct full_stack
         full.push_back(k);
     }
 
+    void push_activation(const activation& a)
+    {
+        stk k;
+        k.s = a;
+
+        full.push_back(k);
+    }
+
     types::vec<runtime::value> pop_num_vals(int num)
     {
         types::vec<runtime::value> r;
@@ -58,6 +69,36 @@ struct full_stack
         full.resize(full.size() - num);
 
         return r;
+    }
+
+    activation& get_current()
+    {
+        for(int i=full.size() - 1; i >= 0; i++)
+        {
+            if(std::holds_alternative<activation>(full[i].s))
+                return std::get<activation>(full[i].s);
+        }
+
+        throw std::runtime_error("No current activation");
+    }
+
+    void ensure_activation()
+    {
+        if(full.size() == 0)
+            throw std::runtime_error("No stack");
+
+        if(std::holds_alternative<activation>(full.back().s))
+            return;
+
+        throw std::runtime_error("No activation on stack");
+    }
+
+    void pop_back()
+    {
+        if(full.size() == 0)
+            throw std::runtime_error("0 stack");
+
+        full.pop_back();
     }
 };
 
