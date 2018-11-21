@@ -22,6 +22,43 @@ void do_op(const uint8_t& which, full_stack& full)
 {
     switch(which)
     {
+        case 0x79:
+            POPA(iclz<uint64_t>);
+        case 0x7A:
+            POPA(ictz<uint64_t>);
+        case 0x7B:
+            POPA(ipopcnt<uint64_t>);
+        case 0x7C:
+            POPB(add<uint64_t>);
+        case 0x7D:
+            POPB(sub<uint64_t>);
+        case 0x7E:
+            POPB(mul<uint64_t>);
+        case 0x7F:
+            POPB(idiv<int64_t>);
+        case 0x80:
+            POPB(idiv<uint64_t>);
+        case 0x81:
+            POPB(remi<int64_t>);
+        case 0x82:
+            POPB(remi<uint64_t>);
+        case 0x83:
+            POPB(iand<uint64_t>);
+        case 0x84:
+            POPB(ior<uint64_t>);
+        case 0x85:
+            POPB(ixor<uint64_t>);
+        case 0x86:
+            POPB(ishl<uint64_t>);
+        case 0x87:
+            POPB(ishr_s<int64_t>);
+        case 0x88:
+            POPB(ishr_u<uint64_t>);
+        case 0x89:
+            POPB(irotl<uint64_t>);
+        case 0x8A:
+            POPB(irotr<uint64_t>);
+
         case 0x8B:
             POPA(absf<float>);
         case 0x8C:
