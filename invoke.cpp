@@ -32,11 +32,16 @@ void push(const T& t, full_stack& full)
 #define INVOKE_LOCAL(f) return f(full, std::get<types::localidx>(is.dat)); break;
 #define INVOKE_GLOBAL(f) return f(s, full, std::get<types::globalidx>(is.dat)); break;
 
-void eval_with_label(runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
-void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
+struct context
+{
+    int abort_stack = 0;
+};
+
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
+void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
 inline
-void do_op(runtime::store& s, const types::instr& is, full_stack& full)
+void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& full)
 {
     uint8_t which = is.which;
 
@@ -62,7 +67,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
             l.dat.first = sbd.first;
             l.continuation = 1;
 
-            eval_with_label(s, l, {l.dat.first}, full);
+            eval_with_label(ctx, s, l, {l.dat.first}, full);
 
             break;
         }
@@ -79,7 +84,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
             if(l.dat.btype.arity() != 0)
                 throw std::runtime_error("Wrong arity?");
 
-            eval_with_label(s, l, {l.dat.first}, full);
+            eval_with_label(ctx, s, l, {l.dat.first}, full);
 
             break;
         }
@@ -103,11 +108,11 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
 
             if(c != 0)
             {
-                eval_with_label(s, l, {l.dat.first}, full);
+                eval_with_label(ctx, s, l, {l.dat.first}, full);
             }
             else
             {
-                eval_with_label(s, l, {l.dat.second}, full);
+                eval_with_label(ctx, s, l, {l.dat.second}, full);
             }
 
             break;
@@ -123,7 +128,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
             if(idx >= (uint32_t)activate.f.inst->funcaddrs.size())
                 throw std::runtime_error("Bad fidx in 0x10");
 
-            invoke_intl(s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
+            invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
             break;
         }
@@ -477,7 +482,7 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
     }
 }
 
-void eval_expr(runtime::store& s, const types::expr& exp, full_stack& full)
+void eval_expr(context& ctx, runtime::store& s, const types::expr& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
@@ -488,24 +493,25 @@ void eval_expr(runtime::store& s, const types::expr& exp, full_stack& full)
     {
         const types::instr& ins = exp.i[i];
 
-        do_op(s, ins, full);
+        do_op(ctx, s, ins, full);
     }
 }
 
 runtime::value eval_implicit(runtime::store& s, const types::expr& exp)
 {
     full_stack full;
+    context ctx;
 
-    eval_expr(s, exp, full);
+    eval_expr(ctx, s, exp, full);
 
     return full.pop_back();
 }
 
-void eval_with_label(runtime::store& s, const label& l, const types::expr& exp, full_stack& full)
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full)
 {
     full.push_label(l);
 
-    eval_expr(s, {exp.i}, full);
+    eval_expr(ctx, s, {exp.i}, full);
 
     auto all_vals = full.pop_all_values_on_stack();
 
@@ -520,7 +526,7 @@ void eval_with_label(runtime::store& s, const label& l, const types::expr& exp, 
     }
 }
 
-void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
+void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
 {
     uint32_t adr = (uint32_t)address;
 
@@ -578,7 +584,7 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
         std::cout << "push " << std::endl;
         full.push_activation(activate);
 
-        eval_expr(s, expression, full);
+        eval_expr(ctx, s, expression, full);
 
         ///not sure i need to refetch this activation here
         ///get_current basically seems to be getting wrong activation frame
@@ -625,7 +631,9 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
         full.push_values(val);
     }
 
-    invoke_intl(*this, full, address, minst);
+    context ctx;
+
+    invoke_intl(ctx, *this, full, address, minst);
 
     std::cout << "left on stack " << full.full.size() << std::endl;
 

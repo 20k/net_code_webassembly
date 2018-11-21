@@ -166,5 +166,4 @@ struct full_stack
     }
 };
 
-void eval_expr(runtime::store& s, const types::expr& exp, full_stack& full);
 runtime::value eval_implicit(runtime::store& s, const types::expr& exp);
