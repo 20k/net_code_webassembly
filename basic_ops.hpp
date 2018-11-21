@@ -446,13 +446,18 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
     ///normally its great but here i only have the underlying type, eg uint32_t
     ///whereas the runtime type is phrased in terms of i32
     ///it is possible to do but a faff
+
     runtime::value val = full.pop_back();
     runtime::value top_i32 = full.pop_back();
 
     if(!top_i32.is_i32())
         throw std::runtime_error("Not i32 for mem load");
 
-    uint32_t ea = (uint32_t)arg.offset + (uint32_t)std::get<types::i32>(top_i32.v);
+    uint32_t found_bytes = (uint32_t)std::get<types::i32>(top_i32.v);
+
+    uint32_t ea = (uint32_t)arg.offset + found_bytes;
+
+    std::cout << "moffset " << found_bytes << std::endl;
 
     if(ea + bytes >= (uint32_t)minst.dat.size())
         throw std::runtime_error("Tried to hit OOB in mem_store");
@@ -487,6 +492,8 @@ void get_local(full_stack& full, const types::localidx& lidx)
 
     runtime::value val = activate.f.locals[idx];
 
+    std::cout << "got local " << val.friendly_val() << std::endl;
+
     full.push_values(val);
 }
 
@@ -518,6 +525,8 @@ void tee_local(full_stack& full, const types::localidx& lidx)
         throw std::runtime_error("idx > max locals get_local");
 
     activate.f.locals[idx] = top;
+
+    std::cout << "set idx " << std::to_string(idx) << " to " << top.friendly_val() << std::endl;
 
     full.push_values(top);
 }

@@ -16,11 +16,12 @@ void push(const T& t, full_stack& full)
 #define POP() full.pop_back()
 
 #define POPA(x) return push(full.pop_back().apply(x), full); break;
-#define POPB(x) {auto a2 = full.pop_back(); auto a1 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break; return;}
+#define POPB(x) {auto a1 = full.pop_back(); auto a2 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break; return;}
 
 #define PUSH_CONSTANT(xtype)\
         { \
             xtype cst = std::get<xtype>(is.dat); \
+            std::cout << "loaded constant " << cst.val << std::endl; \
             return push(cst.val, full); \
             break; \
         }
@@ -38,6 +39,8 @@ inline
 void do_op(runtime::store& s, const types::instr& is, full_stack& full)
 {
     uint8_t which = is.which;
+
+    std::cout << "0x" << std::hex << (uint32_t)which << std::dec << ", " << std::endl;
 
     ///good lord this is tedious
     switch(which)
@@ -492,6 +495,8 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
                 runtime::value val;
                 val.from_valtype(loc.type);
 
+                std::cout << "asdflocal " << val.friendly_val() << std::endl;
+
                 local_zeroes.push_back(val);
             }
         }
@@ -503,9 +508,9 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
         fr.locals = popped;
         fr.locals = fr.locals.append(local_zeroes);
 
-        //std::cout << "fr locals " << fr.locals.size() << std::endl;
-        //std::cout << "ltypes " << local_types.size() << std::endl;
-        //std::cout << "hello " << local_zeroes.size() << std::endl;
+        std::cout << "fr locals " << fr.locals.size() << std::endl;
+        std::cout << "ltypes " << local_types.size() << std::endl;
+        std::cout << "hello " << local_zeroes.size() << std::endl;
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};

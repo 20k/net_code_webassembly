@@ -137,6 +137,11 @@ namespace runtime
             throw std::runtime_error("nope");
         }
 
+        std::string friendly_val()
+        {
+            return apply([](auto concrete){return std::to_string(concrete);});
+        }
+
         bool is_i32()
         {
             return std::holds_alternative<types::i32>(v);
