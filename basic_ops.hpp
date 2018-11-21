@@ -366,9 +366,55 @@ T get_const(const T& t)
 }
 
 template<typename T, int bytes>
-T mem_load(runtime::store& s, const types::memarg& arg)
+void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 {
+    if(s.mems.size() < 1)
+        throw std::runtime_error("No such mem idx 0");
 
+    activation& activate = full.get_current();
+
+    runtime::moduleinst* inst = activate.f.inst;
+
+    if(inst == nullptr)
+        throw std::runtime_error("inst == null");
+
+    runtime::memaddr addr = inst->memaddrs[0];
+
+    uint32_t raw_addr = (uint32_t)addr;
+
+    if(raw_addr >= (uint32_t)s.mems.size())
+        throw std::runtime_error("raw_addr > s.mems.size()");
+
+    runtime::meminst& minst = s.mems[raw_addr];
+
+    runtime::value top_i32 = full.pop_back();
+
+    if(!top_i32.is_i32())
+        throw std::runtime_error("Not i32 for mem load");
+
+    uint32_t ea = (uint32_t)arg.offset + (uint32_t)std::get<types::i32>(top_i32.v);
+
+    if(ea + bytes >= (uint32_t)minst.dat.size())
+        throw std::runtime_error("Out of memory");
+
+    std::array<uint8_t, bytes> arr;
+
+    for(uint32_t cbyte = 0; cbyte < bytes; cbyte++)
+    {
+        uint32_t current_offset = cbyte + ea;
+
+        arr[cbyte] = minst.dat[current_offset];
+    }
+
+    T ret;
+    memcpy(&ret, &arr[0], bytes);
+
+    runtime::value rval;
+    rval.set(ret);
+
+    full.push_values(rval);
+
+    //return ret;
 }
 
 #endif // BASIC_OPS_HPP_INCLUDED

@@ -24,6 +24,8 @@ void push(const T& t, full_stack& full)
             break; \
         }
 
+#define MEM_LOAD(x, y) return mem_load<x, y>(s, std::get<types::memarg>(is.dat), full); break;
+
 inline
 void do_op(runtime::store& s, const types::instr& is, full_stack& full)
 {
@@ -32,6 +34,35 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
     ///good lord this is tedious
     switch(which)
     {
+        case 0x28:
+            MEM_LOAD(uint32_t, sizeof(uint32_t));
+        case 0x29:
+            MEM_LOAD(uint64_t, sizeof(uint64_t));
+        case 0x2A:
+            MEM_LOAD(float, sizeof(float));
+        case 0x2B:
+            MEM_LOAD(double, sizeof(double));
+        case 0x2C:
+            MEM_LOAD(int32_t, 1);
+        case 0x2D:
+            MEM_LOAD(uint32_t, 1);
+        case 0x2E:
+            MEM_LOAD(int32_t, 2);
+        case 0x2F:
+            MEM_LOAD(uint32_t, 2);
+        case 0x30:
+            MEM_LOAD(int64_t, 1);
+        case 0x31:
+            MEM_LOAD(uint64_t, 1);
+        case 0x32:
+            MEM_LOAD(int64_t, 2);
+        case 0x33:
+            MEM_LOAD(uint64_t, 2);
+        case 0x34:
+            MEM_LOAD(int64_t, 4);
+        case 0x35:
+            MEM_LOAD(uint64_t, 4);
+
         case 0x41:
             PUSH_CONSTANT(types::i32);
         case 0x42:

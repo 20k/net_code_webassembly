@@ -136,6 +136,11 @@ namespace runtime
 
             throw std::runtime_error("nope");
         }
+
+        bool is_i32()
+        {
+            return std::holds_alternative<types::i32>(v);
+        }
     };
 
     inline
