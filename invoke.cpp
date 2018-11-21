@@ -23,6 +23,29 @@ void do_op(const uint8_t& which, full_stack& full)
     ///good lord this is tedious
     switch(which)
     {
+        case 0x45:
+            POPA(ieqz<uint32_t>);
+        case 0x46:
+            POPB(eq<uint32_t>);
+        case 0x47:
+            POPB(ne<uint32_t>);
+        case 0x48:
+            POPB(ilt_s<int32_t>);
+        case 0x49:
+            POPB(ilt_u<uint32_t>);
+        case 0x4A:
+            POPB(igt_s<int32_t>);
+        case 0x4B:
+            POPB(igt_u<uint32_t>);
+        case 0x4C:
+            POPB(ile_s<int32_t>);
+        case 0x4D:
+            POPB(ile_u<uint32_t>);
+        case 0x4E:
+            POPB(ige_s<int32_t>);
+        case 0x4F:
+            POPB(ige_u<uint32_t>);
+
         case 0x50:
             POPA(ieqz<uint64_t>);
         case 0x51:
