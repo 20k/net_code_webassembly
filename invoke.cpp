@@ -129,6 +129,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             ctx.capture_vals = full.pop_num_vals(arity);
             ctx.abort_stack = (uint32_t)lidx + 1;
+            ctx.needs_cont_jump = true;
 
             full.pop_all_values_on_stack();
 
@@ -139,7 +140,47 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
                 throw std::runtime_error("not enough labels");
             }
 
+            std::cout << "hit br\n";
+
             break;
+        }
+
+        case 0x0D:
+        {
+            runtime::value val = full.pop_back();
+
+            std::cout << "0x0d" << std::endl;
+
+            if(!val.is_i32())
+                throw std::runtime_error("expected i32 in 0x0D");
+
+            std::cout << "pb\n";
+
+            std::cout << "good " << std::holds_alternative<types::i32>(val.v) << std::endl;
+
+            if((uint32_t)std::get<types::i32>(val.v) != 0)
+            {
+                std::cout << "ibranch\n";
+
+                types::labelidx lidx = std::get<types::labelidx>(is.dat);
+
+                int arity = full.get_current_label().dat.btype.arity();
+
+                ctx.capture_vals = full.pop_num_vals(arity);
+                ctx.abort_stack = (uint32_t)lidx + 1;
+                ctx.needs_cont_jump = true;
+
+                full.pop_all_values_on_stack();
+
+                uint32_t idx = (uint32_t)lidx;
+
+                if((uint32_t)full.num_labels() < idx + 1)
+                {
+                    throw std::runtime_error("not enough labels");
+                }
+
+                std::cout << "hit br_if\n";
+            }
         }
 
         case 0x10:
@@ -502,7 +543,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             POPA((reinterpret<double, uint64_t>));
 
         default:
-            throw std::runtime_error("bad exception");
+            throw std::runtime_error("bad instruction");
     }
 }
 
@@ -521,9 +562,6 @@ void eval_expr(context& ctx, runtime::store& s, const types::expr& exp, full_sta
 
         if(ctx.abort_stack > 0)
         {
-            full.pop_all_values_on_stack();
-
-            ctx.abort_stack--;
             break;
         }
     }
@@ -552,9 +590,21 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
     full.full.pop_back();
 
-    for(auto& i : all_vals)
+    if(ctx.abort_stack > 0)
     {
-        full.push_values(i);
+        ctx.abort_stack--;
+    }
+    else
+    {
+        for(auto& i : all_vals)
+        {
+            full.push_values(i);
+        }
+    }
+
+    if(ctx.abort_stack == 0 && ctx.needs_cont_jump)
+    {
+
     }
 }
 
