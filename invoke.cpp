@@ -1,10 +1,116 @@
 #include "invoke.hpp"
 #include "runtime_types.hpp"
 
+template<typename T>
+bool bool_op(const T& t)
+{
+    return t > 0;
+}
+
+template<typename T>
+T add(const T& v1, const T& v2)
+{
+    return v1 + v2;
+}
+
+template<typename T>
+T sub(const T& v1, const T& v2)
+{
+    return v1 - v2;
+}
+
+template<typename T>
+T mul(const T& v1, const T& v2)
+{
+    return v1 * v2;
+}
+
+template<typename T>
+T divu(const T& v1, const T& v2)
+{
+    if(v2 == 0)
+        throw std::runtime_error("v2 == 0");
+
+    return v1 / v2;
+}
+
+template<typename T>
+T divf(const T& v1, const T& v2)
+{
+    return v1 / v2;
+}
+
+template<typename T>
+T remi(const T& v1, const T& v2)
+{
+    if(v2 == 0)
+        throw std::runtime_error("v2 == 0 in rem");
+
+    return v1 % v2;
+}
+
+template<typename T>
+T remf(const T& v1, const T& v2)
+{
+    return fmod(v1, v2);
+}
+
+template<typename T>
+T iand(const T& v1, const T& v2)
+{
+    return v1 & v2;
+}
+
+template<typename T>
+T ior(const T& v1, const T& v2)
+{
+    return v1 | v2;
+}
+
+template<typename T>
+T ixor(const T& v1, const T& v2)
+{
+    return v1 ^ v2;
+}
+
+template<typename T>
+T ishl(const T& v1, const T& v2)
+{
+    return v1 << v2;
+}
+
+///NEED TO CONVERT TYPES HERE
+template<typename T>
+T ishr_u(const T& v1, const T& v2)
+{
+    return v1 >> v2;
+}
+
+template<typename T>
+T ishr_s(const T& v1, const T& v2)
+{
+    return v1 >> v2;
+}
+
+template<typename T>
+T irotl(const T& v1, const T& v2)
+{
+    return (v1 << v2)|(v1 >> ((sizeof(T)*8) - v2));
+}
+
+template<typename T>
+T irotr(const T& v1, const T& v2)
+{
+    return (v1 >> v2)|(v1 << (sizeof(T)*8 - v2));
+}
+
 void eval_expr(const types::expr& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
+
+
+
 }
 
 void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)

@@ -47,6 +47,13 @@ namespace types
 
             return static_cast<derived&>(*this);
         }
+
+        derived& operator+(const derived& other) // copy assignment
+        {
+            val += other.val;
+
+            return static_cast<derived&>(*this);
+        }
     };
 
     struct i32 : integral<uint32_t, i32>{};
