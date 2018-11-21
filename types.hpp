@@ -392,7 +392,7 @@ namespace types
             single_branch_data sbd;
         } cst;*/
 
-        std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
+        std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, labelidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
     };
 
     struct expr

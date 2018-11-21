@@ -508,7 +508,7 @@ void lowest_get(types::instr& type, parser& p)
 
     if(next == 0x0C || next == 0x0D)
     {
-        lowest_get<types::localidx>(type.dat, p);
+        lowest_get<types::labelidx>(type.dat, p);
     }
 
     if(next == 0x0E)

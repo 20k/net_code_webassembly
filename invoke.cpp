@@ -35,6 +35,9 @@ void push(const T& t, full_stack& full)
 struct context
 {
     int abort_stack = 0;
+    bool needs_cont_jump = false;
+
+    types::vec<runtime::value> capture_vals;
 };
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
@@ -113,6 +116,27 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             else
             {
                 eval_with_label(ctx, s, l, {l.dat.second}, full);
+            }
+
+            break;
+        }
+
+        case 0x0C:
+        {
+            types::labelidx lidx = std::get<types::labelidx>(is.dat);
+
+            int arity = full.get_current_label().dat.btype.arity();
+
+            ctx.capture_vals = full.pop_num_vals(arity);
+            ctx.abort_stack = (uint32_t)lidx + 1;
+
+            full.pop_all_values_on_stack();
+
+            uint32_t idx = (uint32_t)lidx;
+
+            if((uint32_t)full.num_labels() < idx + 1)
+            {
+                throw std::runtime_error("not enough labels");
             }
 
             break;
@@ -494,6 +518,14 @@ void eval_expr(context& ctx, runtime::store& s, const types::expr& exp, full_sta
         const types::instr& ins = exp.i[i];
 
         do_op(ctx, s, ins, full);
+
+        if(ctx.abort_stack > 0)
+        {
+            full.pop_all_values_on_stack();
+
+            ctx.abort_stack--;
+            break;
+        }
     }
 }
 

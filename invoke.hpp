@@ -126,6 +126,17 @@ struct full_stack
         throw std::runtime_error("No current activation");
     }
 
+    label& get_current_label()
+    {
+        for(int i=full.size() - 1; i >= 0; i--)
+        {
+            if(std::holds_alternative<label>(full[i].s))
+                return std::get<label>(full[i].s);
+        }
+
+        throw std::runtime_error("No current label");
+    }
+
     void ensure_activation()
     {
         if(full.size() == 0)
