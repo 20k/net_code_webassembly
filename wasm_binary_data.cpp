@@ -9,6 +9,7 @@
 #include "print.hpp"
 #include <cstring>
 #include "runtime_types.hpp"
+#include "invoke.hpp"
 
 void dump_state(parser& p)
 {
@@ -664,7 +665,7 @@ runtime::globaladdr runtime::store::allocglobal(const types::globaltype& type, c
 
 ///imports are temporarily disabled
 ///but looks like externvals are first then regulars
-runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& ext, const types::vec<runtime::value>& global_init)
+runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& ext)
 {
     runtime::moduleinst inst;
 
@@ -696,9 +697,15 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
     for(int i=0; i < (int)m.section_global.globals.size(); i++)
     {
+        types::global& glob = m.section_global.globals[i];
+
+        runtime::value val = eval_implicit(s, glob.e);
+
+        std::cout << "evald global and got " << val.friendly_val() << std::endl;
+
         ///TODO
         ///EVAL GLOBAL EXPRESSION
-        gaddr.push_back(s.allocglobal(m.section_global.globals[i].type, global_init[i]));
+        gaddr.push_back(s.allocglobal(m.section_global.globals[i].type, val));
     }
 
     std::cout << "faddr " << (uint32_t)faddr.size() << std::endl;
@@ -786,16 +793,16 @@ void wasm_binary_data::init(data d)
 
     ///ideally we'd build this from actually evaluating the expressions for the globals
     ///but we're not there yet
-    types::vec<runtime::value> global_init;
+    /*types::vec<runtime::value> global_init;
     for(int i=0; i < 100; i++)
     {
         runtime::value val;
         val.v = types::i32{0};
 
         global_init.push_back(val);
-    }
+    }*/
 
-    runtime::moduleinst minst = build_from_module(mod, s, {}, global_init);
+    runtime::moduleinst minst = build_from_module(mod, s, {});
 
     //s.invoke({0})
 
