@@ -84,6 +84,35 @@ void do_op(runtime::store& s, const types::instr& is, full_stack& full)
             break;
         }
 
+        case 0x04:
+        {
+            types::double_branch_data dbd = std::get<types::double_branch_data>(is.dat);
+
+            label l;
+            l.dat = dbd;
+            l.continuation = 3;
+
+            runtime::value val = full.pop_back();
+
+            if(!val.is_i32())
+                throw std::runtime_error("0x04 if/else expected i32");
+
+            types::i32 type = std::get<types::i32>(val.v);
+
+            uint32_t c = type.val;
+
+            if(c != 0)
+            {
+                eval_with_label(s, l, {l.dat.first}, full);
+            }
+            else
+            {
+                eval_with_label(s, l, {l.dat.second}, full);
+            }
+
+            break;
+        }
+
         case 0x10:
         {
             types::funcidx fidx = std::get<types::funcidx>(is.dat);
