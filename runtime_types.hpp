@@ -138,6 +138,46 @@ namespace runtime
         }
     };
 
+    inline
+    bool same_type(const value& v1, const value& v2)
+    {
+        if(std::holds_alternative<types::i32>(v1.v) && std::holds_alternative<types::i32>(v2.v))
+            return true;
+        if(std::holds_alternative<types::i64>(v1.v) && std::holds_alternative<types::i64>(v2.v))
+            return true;
+        if(std::holds_alternative<types::f32>(v1.v) && std::holds_alternative<types::f32>(v2.v))
+            return true;
+        if(std::holds_alternative<types::f64>(v1.v) && std::holds_alternative<types::f64>(v2.v))
+            return true;
+
+        return false;
+    }
+
+    template<typename T>
+    inline
+    auto apply(const T& t, const value& u, const value& v)
+    {
+        if(!same_type(u, v))
+            throw std::runtime_error("Not same type");
+
+        if(std::holds_alternative<types::i32>(u.v))
+            return t(std::get<types::i32>(u.v).val, std::get<types::i32>(v.v).val);
+
+        else if(std::holds_alternative<types::i64>(u.v))
+            return t(std::get<types::i64>(u.v).val, std::get<types::i64>(v.v).val);
+
+        else if(std::holds_alternative<types::f32>(u.v))
+            return t(std::get<types::f32>(u.v).val, std::get<types::f32>(v.v).val);
+
+        else if(std::holds_alternative<types::f64>(u.v))
+            return t(std::get<types::f64>(u.v).val, std::get<types::f64>(v.v).val);
+
+        else
+            throw std::runtime_error("apply bad type");
+
+        //return t(u, v);
+    }
+
     struct globalinst
     {
         value val;

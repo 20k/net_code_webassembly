@@ -15,12 +15,42 @@ void push(const T& t, full_stack& full)
 #define POP() full.pop_back()
 
 #define POPA(x) return push(full.pop_back().apply(x), full); break;
+#define POPB(x) {auto a1 = full.pop_back(); auto a2 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break; return;}
 
 inline
 void do_op(const uint8_t& which, full_stack& full)
 {
     switch(which)
     {
+        case 0x99:
+            POPA(absf<double>);
+        case 0x9A:
+            POPA(fneg<double>);
+        case 0x9B:
+            POPA(fceil<double>);
+        case 0x9C:
+            POPA(ffloor<double>);
+        case 0x9D:
+            POPA(ftrunc<double>);
+        case 0x9E:
+            POPA(fnearest<double>);
+        case 0x9F:
+            POPA(fsqrt<double>);
+        case 0xA0:
+            POPB((add<double>));
+        case 0xA1:
+            POPB(sub<double>);
+        case 0xA2:
+            POPB(mul<double>);
+        case 0xA3:
+            POPB(fdiv<double>);
+        case 0xA4:
+            POPB(fmin<double>);
+        case 0xA5:
+            POPB(fmax<double>);
+        case 0xA6:
+            POPB(fcopysign<double>);
+
         ///these functions are all template parameter format
         ///<dest, src>
         ///so trunc_s takes the argument as a float
