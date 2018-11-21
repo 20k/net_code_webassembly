@@ -104,6 +104,90 @@ T irotr(const T& v1, const T& v2)
     return (v1 >> v2)|(v1 << (sizeof(T)*8 - v2));
 }
 
+template<typename T>
+T iclz(const T& v1)
+{
+    return __builtin_clz(v1);
+}
+
+template<typename T>
+T ictz(const T& v1)
+{
+    return __builtin_ctz(v1);
+}
+
+template<typename T>
+T ipopcnt(const T& v1)
+{
+    return __builtin_popcount(v1);
+}
+
+template<typename T>
+T ieqz(const T& v1)
+{
+    return v1 == 0;
+}
+
+template<typename T>
+T ieq(const T& v1, const T& v2)
+{
+    return v1 == v2;
+}
+
+template<typename T>
+T ine(const T& v1, const T& v2)
+{
+    return v1 != v2;
+}
+
+template<typename T>
+T ilt_u(const T& v1, const T& v2)
+{
+    return v1 < v2;
+}
+
+template<typename T>
+T ilt_s(const T& v1, const T& v2)
+{
+    return v1 < v2;
+}
+
+template<typename T>
+T igt_u(const T& v1, const T& v2)
+{
+    return v1 > v2;
+}
+
+template<typename T>
+T igt_s(const T& v1, const T& v2)
+{
+    return v1 > v2;
+}
+
+template<typename T>
+T ile_u(const T& v1, const T& v2)
+{
+    return v1 <= v2;
+}
+
+template<typename T>
+T ile_s(const T& v1, const T& v2)
+{
+    return v1 <= v2;
+}
+
+template<typename T>
+T ige_u(const T& v1, const T& v2)
+{
+    return v1 >= v2;
+}
+
+template<typename T>
+T ige_s(const T& v1, const T& v2)
+{
+    return v1 >= v2;
+}
+
 void eval_expr(const types::expr& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
