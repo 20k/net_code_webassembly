@@ -25,6 +25,12 @@ struct label
     types::expr e;*/
 
     types::double_branch_data dat;
+
+    ///0 = none
+    ///1 = end of block
+    ///2 = start of block
+    ///3 = end of if instruction
+    uint8_t continuation = 0;
 };
 
 struct stk
