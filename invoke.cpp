@@ -28,6 +28,9 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
 
         types::vec<runtime::value> popped = full.pop_num_vals(num_args);
 
+        types::vec<types::local> local_types = fnc.funct.fnc.locals;
+        types::expr expression = fnc.funct.fnc.e;
+
 
     }
     else
