@@ -1,6 +1,7 @@
 #ifndef BASIC_OPS_HPP_INCLUDED
 #define BASIC_OPS_HPP_INCLUDED
 
+#include <algorithm>
 
 template<typename T>
 bool bool_op(const T& t)
@@ -27,7 +28,7 @@ T mul(const T& v1, const T& v2)
 }
 
 template<typename T>
-T divu(const T& v1, const T& v2)
+T idiv(const T& v1, const T& v2)
 {
     if(v2 == 0)
         throw std::runtime_error("v2 == 0");
@@ -36,7 +37,7 @@ T divu(const T& v1, const T& v2)
 }
 
 template<typename T>
-T divf(const T& v1, const T& v2)
+T fdiv(const T& v1, const T& v2)
 {
     return v1 / v2;
 }
@@ -189,5 +190,34 @@ T ige_s(const T& v1, const T& v2)
     return v1 >= v2;
 }
 
+template<typename T>
+T fmin(const T& v1, const T& v2)
+{
+    return std::min(v1, v2);
+}
+
+template<typename T>
+T fmax(const T& v1, const T& v2)
+{
+    return std::max(v1, v2);
+}
+
+template<typename T>
+T fcopysign(const T& v1, const T& v2)
+{
+    if(v1 > 0 && v2 > 0)
+        return v1;
+
+    if(v1 < 0 && v2 < 0)
+        return v2;
+
+    if(v1 > 0 && v2 < 0)
+        return -v1;
+
+    if(v1 < 0 && v2 > 0)
+        return -v1;
+
+    return v1;
+}
 
 #endif // BASIC_OPS_HPP_INCLUDED
