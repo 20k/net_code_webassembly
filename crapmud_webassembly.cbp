@@ -35,6 +35,7 @@
 		</Compiler>
 		<Unit filename="LEB.cpp" />
 		<Unit filename="LEB.hpp" />
+		<Unit filename="invoke.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="print.hpp" />
 		<Unit filename="runtime_types.cpp" />

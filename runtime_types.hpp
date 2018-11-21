@@ -75,6 +75,8 @@ namespace runtime
         types::mut mut;
     };
 
+    struct moduleinst;
+
     ///this is incorrect for the moment due to funcinst
     struct store
     {
@@ -89,6 +91,8 @@ namespace runtime
         tableaddr alloctable(const types::tabletype& type);
         memaddr allocmem(const types::memtype& type);
         globaladdr allocglobal(const types::globaltype& type, const value& v);
+
+        void invoke(const funcaddr& address, moduleinst& minst, const types::vec<value>& vals);
     };
 
     template<typename T>
