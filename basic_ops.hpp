@@ -365,4 +365,10 @@ T get_const(const T& t)
     return t;
 }
 
+template<typename T, int bytes>
+T mem_load(runtime::store& s, const types::memarg& arg)
+{
+
+}
+
 #endif // BASIC_OPS_HPP_INCLUDED

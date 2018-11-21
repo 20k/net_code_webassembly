@@ -25,7 +25,7 @@ void push(const T& t, full_stack& full)
         }
 
 inline
-void do_op(const types::instr& is, full_stack& full)
+void do_op(runtime::store& s, const types::instr& is, full_stack& full)
 {
     uint8_t which = is.which;
 
