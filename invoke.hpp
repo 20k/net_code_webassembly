@@ -107,7 +107,7 @@ struct full_stack
 
     activation& get_current()
     {
-        for(int i=full.size() - 1; i >= 0; i++)
+        for(int i=full.size() - 1; i >= 0; i--)
         {
             if(std::holds_alternative<activation>(full[i].s))
                 return std::get<activation>(full[i].s);

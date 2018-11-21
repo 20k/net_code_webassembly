@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <math.h>
+#include <iostream>
 
 template<typename T>
 bool bool_op(const T& t)
@@ -508,6 +509,8 @@ void tee_local(full_stack& full, const types::localidx& lidx)
 {
     runtime::value top = full.pop_back();
     activation& activate = full.get_current();
+
+    std::cout << "activate locals " << activate.f.locals.size() << std::endl;
 
     uint32_t idx = (uint32_t)lidx;
 

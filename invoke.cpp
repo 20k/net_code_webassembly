@@ -504,22 +504,28 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
         fr.locals.append(local_zeroes);
 
         std::cout << "fr locals " << fr.locals.size() << std::endl;
+        std::cout << "ltypes " << local_types.size() << std::endl;
+        std::cout << "hello " << local_zeroes.size() << std::endl;
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};
         activate.f = fr;
 
+        std::cout << "push " << std::endl;
         full.push_activation(activate);
 
         eval_expr(s, expression, full);
 
         ///not sure i need to refetch this activation here
+        ///get_current basically seems to be getting wrong activation frame
         activation& current = full.get_current();
 
         types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
 
         full.ensure_activation();
         full.pop_back();
+
+        std::cout << "pop" << std::endl;
 
         for(auto& i : found)
             full.push_values(i);
