@@ -20,5 +20,7 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
     if(vals.size() != ftype.params.size())
         throw std::runtime_error("Argument mismatch");
 
+    full_stack full;
+
 
 }

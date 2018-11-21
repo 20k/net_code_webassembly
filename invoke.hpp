@@ -9,14 +9,14 @@ struct frame
 
 struct activation
 {
-    types::s32 n{0};
+    types::s32 return_arity{0};
 
     frame f;
 };
 
 struct label
 {
-    types::s32 n{0};
+    types::s32 argument_arity{0};
     ///?
     types::expr e;
 };
