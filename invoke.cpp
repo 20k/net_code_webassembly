@@ -537,7 +537,8 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
         types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
 
         full.ensure_activation();
-        full.pop_back();
+        //full.pop_back();
+        full.full.pop_back();
 
         std::cout << "pop" << std::endl;
 
@@ -575,6 +576,8 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
     }
 
     invoke_intl(*this, full, address, minst);
+
+    std::cout << "left on stack " << full.full.size() << std::endl;
 
     ///pop val from stack
 
