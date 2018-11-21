@@ -123,6 +123,7 @@ namespace types
             v.resize(n);
         }
 
+        [[nodiscard]]
         vec<T> append(const vec<T>& dat) const
         {
             vec<T> ret;

@@ -501,11 +501,11 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
         fr.inst = &minst;
 
         fr.locals = popped;
-        fr.locals.append(local_zeroes);
+        fr.locals = fr.locals.append(local_zeroes);
 
-        std::cout << "fr locals " << fr.locals.size() << std::endl;
-        std::cout << "ltypes " << local_types.size() << std::endl;
-        std::cout << "hello " << local_zeroes.size() << std::endl;
+        //std::cout << "fr locals " << fr.locals.size() << std::endl;
+        //std::cout << "ltypes " << local_types.size() << std::endl;
+        //std::cout << "hello " << local_zeroes.size() << std::endl;
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};

@@ -1,5 +1,6 @@
 #include "types.hpp"
 #include "runtime_types.hpp"
+#include <iostream>
 
 struct frame
 {
@@ -49,6 +50,9 @@ struct full_stack
         k.s = a;
 
         full.push_back(k);
+
+        /*std::cout <<" in a " << a.f.locals.size() << std::endl;
+        std::cout << "dbga " << get_current().f.locals.size() << std::endl;*/
     }
 
     void push_label(const label& l)
@@ -133,6 +137,9 @@ struct full_stack
             throw std::runtime_error("0 stack");
 
         auto last = full.back();
+
+        if(!std::holds_alternative<runtime::value>(last.s))
+            throw std::runtime_error("pop back on wrong type");
 
         full.pop_back();
 
