@@ -1,6 +1,7 @@
 #include "invoke.hpp"
 #include "runtime_types.hpp"
 #include "basic_ops.hpp"
+#include <iostream>
 
 template<typename T>
 void push(const T& t, full_stack& full)
@@ -501,6 +502,8 @@ void invoke_intl(runtime::store& s, full_stack& full, const runtime::funcaddr& a
 
         fr.locals = popped;
         fr.locals.append(local_zeroes);
+
+        std::cout << "fr locals " << fr.locals.size() << std::endl;
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};

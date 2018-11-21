@@ -492,9 +492,8 @@ void get_local(full_stack& full, const types::localidx& lidx)
 inline
 void set_local(full_stack& full, const types::localidx& lidx)
 {
-    activation& activate = full.get_current();
-
     runtime::value top = full.pop_back();
+    activation& activate = full.get_current();
 
     uint32_t idx = (uint32_t)lidx;
 
@@ -507,9 +506,8 @@ void set_local(full_stack& full, const types::localidx& lidx)
 inline
 void tee_local(full_stack& full, const types::localidx& lidx)
 {
-    activation& activate = full.get_current();
-
     runtime::value top = full.pop_back();
+    activation& activate = full.get_current();
 
     uint32_t idx = (uint32_t)lidx;
 
