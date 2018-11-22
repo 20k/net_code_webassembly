@@ -103,7 +103,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             l.dat.first = sbd.first;
             l.continuation = 1;
 
-            eval_with_label(ctx, s, l, {l.dat.first}, full);
+            eval_with_label(ctx, s, l, l.dat.first, full);
 
             break;
         }
@@ -120,7 +120,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(l.dat.btype.arity() != 0)
                 throw std::runtime_error("Wrong arity?");
 
-            eval_with_label(ctx, s, l, {l.dat.first}, full);
+            eval_with_label(ctx, s, l, l.dat.first, full);
 
             break;
         }
@@ -144,11 +144,11 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             if(c != 0)
             {
-                eval_with_label(ctx, s, l, {l.dat.first}, full);
+                eval_with_label(ctx, s, l, l.dat.first, full);
             }
             else
             {
-                eval_with_label(ctx, s, l, {l.dat.second}, full);
+                eval_with_label(ctx, s, l, l.dat.second, full);
             }
 
             break;
