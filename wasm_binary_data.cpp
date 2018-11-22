@@ -827,6 +827,7 @@ void wasm_binary_data::init(data d)
     //types::vec<runtime::value> vals = s.invoke_by_name("_start", minst, {});
 
     runtime::value arg;
+    //arg.set((uint32_t)(13*17));
     arg.set((uint32_t)(1188179));
     //arg.set((uint32_t)(1188179));
 
