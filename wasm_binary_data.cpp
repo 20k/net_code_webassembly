@@ -285,7 +285,7 @@ namespace sections
             serialise(nm, p, ser);
             serialise(desc, p, ser);
 
-            //std::cout << "export " << nm.friendly() << std::endl;
+            std::cout << "export " << nm.friendly() << std::endl;
         }
     };
 

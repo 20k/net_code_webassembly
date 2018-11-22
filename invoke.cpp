@@ -32,10 +32,13 @@ void push(const T& t, full_stack& full)
 #define INVOKE_LOCAL(f) return f(full, std::get<types::localidx>(is.dat)); break;
 #define INVOKE_GLOBAL(f) return f(s, full, std::get<types::globalidx>(is.dat)); break;
 
+///maybe the trick is that labels don't really exist
+///and it just carries on from that one
 struct context
 {
     int abort_stack = 0;
     bool needs_cont_jump = false;
+    int continuation = 0;
 
     types::vec<runtime::value> capture_vals;
 };
@@ -131,7 +134,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             ctx.abort_stack = (uint32_t)lidx + 1;
             ctx.needs_cont_jump = true;
 
-            full.pop_all_values_on_stack();
+            //full.pop_all_values_on_stack();
 
             uint32_t idx = (uint32_t)lidx;
 
@@ -164,13 +167,18 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-                int arity = full.get_current_label().dat.btype.arity();
+                label& l = full.get_current_label();
 
+                int arity = l.dat.btype.arity();
+                int continuation = l.continuation;
+
+                ///l now invalid
                 ctx.capture_vals = full.pop_num_vals(arity);
                 ctx.abort_stack = (uint32_t)lidx + 1;
                 ctx.needs_cont_jump = true;
+                ctx.continuation = continuation;
 
-                full.pop_all_values_on_stack();
+                //full.pop_all_values_on_stack();
 
                 uint32_t idx = (uint32_t)lidx;
 
@@ -581,32 +589,93 @@ runtime::value eval_implicit(runtime::store& s, const types::expr& exp)
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full)
 {
-    full.push_label(l);
+    bool should_loop = true;
+    bool has_delayed_values_push = false;
 
-    eval_expr(ctx, s, {exp.i}, full);
-
-    auto all_vals = full.pop_all_values_on_stack();
-
-    if(full.full.size() == 0 || !std::holds_alternative<label>(full.full.back().s))
-        throw std::runtime_error("No label in eval with label");
-
-    full.full.pop_back();
-
-    if(ctx.abort_stack > 0)
+    while(should_loop)
     {
-        ctx.abort_stack--;
-    }
-    else
-    {
-        for(auto& i : all_vals)
+        should_loop = false;
+
+        full.push_label(l);
+
+        if(has_delayed_values_push)
         {
-            full.push_values(i);
+            for(auto& i : ctx.capture_vals)
+            {
+                full.push_values(i);
+            }
+
+            ctx.capture_vals.clear();
+
+            has_delayed_values_push = false;
         }
-    }
 
-    if(ctx.abort_stack == 0 && ctx.needs_cont_jump)
-    {
+        eval_expr(ctx, s, {exp.i}, full);
 
+        auto all_vals = full.pop_all_values_on_stack();
+
+        if(full.full.size() == 0 || !std::holds_alternative<label>(full.full.back().s))
+            throw std::runtime_error("No label in eval with label");
+
+        full.full.pop_back();
+
+        if(ctx.abort_stack > 0 && ctx.needs_cont_jump)
+        {
+            ctx.abort_stack--;
+        }
+        else
+        {
+            for(auto& i : all_vals)
+            {
+                full.push_values(i);
+            }
+        }
+
+        if(ctx.abort_stack == 0 && ctx.needs_cont_jump)
+        {
+            if(ctx.continuation != 2)
+            {
+                for(auto& i : ctx.capture_vals)
+                {
+                    full.push_values(i);
+                }
+
+                ctx.capture_vals.clear();
+            }
+            else
+            {
+                has_delayed_values_push = true;
+            }
+
+            ctx.needs_cont_jump = false;
+
+            ///jump to end of block
+            ///no need to push label
+            if(ctx.continuation == 1)
+            {
+                return;
+            }
+
+            if(ctx.continuation == 2)
+            {
+                ///loop and start again from beginning
+
+                ///ok dis wrong because label is trampling
+                should_loop = true;
+                return;
+            }
+
+            if(ctx.continuation == 3)
+            {
+                ///end of if instruction, same as 1
+                return;
+            }
+
+            if(ctx.continuation == 0)
+            {
+                throw std::runtime_error("Bad continuation, 0");
+            }
+        }
     }
 }
 
