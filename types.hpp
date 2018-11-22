@@ -120,8 +120,20 @@ namespace types
             return v.back();
         }
 
-        T operator [](int i) const {return v[i];}
-        T& operator [](int i)      {return v[i];}
+        T operator [](int i) const
+        {
+            if(i >= (int)v.size() || i < 0)
+                throw std::runtime_error("invalid bounds access");
+
+            return v[i];
+        }
+        T& operator [](int i)
+        {
+            if(i >= (int)v.size() || i < 0)
+                throw std::runtime_error("invalid bounds access");
+
+            return v[i];
+        }
 
         void resize(int n)
         {
@@ -223,6 +235,30 @@ namespace types
         vec<valtype> params;
         vec<valtype> results;
     };
+
+    inline
+    bool funcs_equal(const functype& t1, const functype& t2)
+    {
+        if(t1.params.size() != t2.params.size())
+            return false;
+
+        if(t1.results.size() != t2.results.size())
+            return false;
+
+        for(int i=0; i < t1.params.size(); i++)
+        {
+            if(t1.params[i].which != t2.params[i].which)
+                return false;
+        }
+
+        for(int i=0; i < t1.results.size(); i++)
+        {
+            if(t1.results[i].which != t2.results[i].which)
+                return false;
+        }
+
+        return true;
+    }
 
     struct name
     {

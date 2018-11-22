@@ -249,6 +249,69 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             break;
         }
 
+        case 0x11:
+        {
+            ///alright indirect calls
+            types::funcidx found_fidx = std::get<types::funcidx>(is.dat);
+
+            activation& activate = full.get_current();
+
+            runtime::moduleinst* inst = activate.f.inst;
+
+            if(inst->tableaddrs.size() < 1)
+                throw std::runtime_error("Failed table addr < 1 in indirect call");
+
+            runtime::tableaddr taddr = inst->tableaddrs[0];
+
+            uint32_t tidx = (uint32_t)taddr;
+
+            if(tidx >= (uint32_t)s.tables.size())
+                throw std::runtime_error("Bad tidx in indirect call");
+
+            runtime::tableinst& tinst = s.tables[tidx];
+
+            uint32_t fidx = (uint32_t)found_fidx;
+
+            if(fidx >= (uint32_t)inst->typel.size())
+                throw std::runtime_error("Bad fidx");
+
+            types::functype ft_expect = inst->typel[fidx];
+
+
+            runtime::value val = full.pop_back();
+
+            if(!val.is_i32())
+                throw std::runtime_error("Not i32 in call indirect");
+
+            types::i32 i_call = std::get<types::i32>(val.v);
+
+            uint32_t i_call_idx = (uint32_t)i_call;
+
+            if(i_call_idx >= (uint32_t)tinst.elem.size())
+                throw std::runtime_error("Bad i_call in indirect call");
+
+            if(!tinst.elem[i_call_idx].addr.has_value())
+                throw std::runtime_error("No faddr in indirect call");
+
+            runtime::funcaddr runtime_addr = tinst.elem[i_call_idx].addr.value();
+
+            uint32_t runtime_idx = (uint32_t)runtime_addr;
+
+            if(runtime_idx >= (uint32_t)s.funcs.size())
+                throw std::runtime_error("Runtime idx oob (validation)");
+
+            runtime::funcinst& finst = s.funcs[runtime_idx];
+
+            types::functype ft_actual = finst.type;
+
+            if(!types::funcs_equal(ft_actual, ft_expect))
+                throw std::runtime_error("Expected and actual types of funcs differ");
+
+            invoke_intl(ctx, s, full, runtime_addr, *inst);
+
+            break;
+        }
+
         case 0x1A:
         {
             full.pop_back();
