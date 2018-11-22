@@ -37,8 +37,10 @@ void push(const T& t, full_stack& full)
 struct context
 {
     int abort_stack = 0;
-    bool needs_cont_jump = false;
     int continuation = 0;
+    bool needs_cont_jump = false;
+
+    bool frame_abort = false;
 
     types::vec<runtime::value> capture_vals;
 };
@@ -56,6 +58,16 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
     ctx.capture_vals = full.pop_num_vals(arity);
     ctx.abort_stack = (uint32_t)lidx + 1;
     ctx.needs_cont_jump = true;
+}
+
+void fjump_up_frame(context& ctx, full_stack& full)
+{
+    activation& activate = full.get_current();
+
+    int arity = (int32_t)activate.return_arity;
+
+    ctx.capture_vals = full.pop_num_vals(arity);
+    ctx.frame_abort = true;
 }
 
 inline
@@ -211,6 +223,13 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             {
                 fjump(ctx, br_td.fin, full);
             }
+
+            break;
+        }
+
+        case 0x0F:
+        {
+            fjump_up_frame(ctx, full);
 
             break;
         }
@@ -592,7 +611,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::expr& exp, full_sta
 
         do_op(ctx, s, ins, full);
 
-        if(ctx.abort_stack > 0)
+        if(ctx.abort_stack > 0 || ctx.frame_abort)
         {
             break;
         }
@@ -639,7 +658,10 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         if(full.full.size() == 0 || !std::holds_alternative<label>(full.full.back().s))
             throw std::runtime_error("No label in eval with label");
 
-        full.full.pop_back();
+        full.pop_back_label();
+
+        if(ctx.frame_abort)
+            break;
 
         if(ctx.abort_stack > 0 && ctx.needs_cont_jump)
         {
@@ -761,20 +783,32 @@ void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtim
 
         eval_expr(ctx, s, expression, full);
 
-        ///not sure i need to refetch this activation here
-        ///get_current basically seems to be getting wrong activation frame
-        activation& current = full.get_current();
+        if(!ctx.frame_abort)
+        {
+            activation& current = full.get_current();
 
-        types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
+            types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
 
-        full.ensure_activation();
-        //full.pop_back();
-        full.full.pop_back();
+            full.pop_back_frame();
+
+            for(auto& i : found)
+                full.push_values(i);
+        }
+        else if(ctx.frame_abort)
+        {
+            ctx.frame_abort = false;
+
+            full.pop_all_values_on_stack();
+
+            full.pop_back_frame();
+
+            full.push_all_values(ctx.capture_vals);
+
+            ctx.capture_vals.clear();
+        }
 
         std::cout << "pop" << std::endl;
 
-        for(auto& i : found)
-            full.push_values(i);
 
         ///carry on instruction stream after the call
         ///as you do

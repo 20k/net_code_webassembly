@@ -50,6 +50,14 @@ struct full_stack
         full.push_back(k);
     }
 
+    void push_all_values(const types::vec<runtime::value>& val)
+    {
+        for(const auto& i : val)
+        {
+            push_values(i);
+        }
+    }
+
     void push_activation(const activation& a)
     {
         stk k;
@@ -115,6 +123,17 @@ struct full_stack
         return r;
     }
 
+    void pop_back_frame()
+    {
+        if(full.size() == 0)
+            throw std::runtime_error("No elements on stack (pop_back_frame)");
+
+        if(!std::holds_alternative<activation>(full.back().s))
+            throw std::runtime_error("Not a frame on the stack");
+
+        full.pop_back();
+    }
+
     activation& get_current()
     {
         for(int i=full.size() - 1; i >= 0; i--)
@@ -161,6 +180,21 @@ struct full_stack
         full.pop_back();
 
         return std::get<runtime::value>(last.s);
+    }
+
+    label pop_back_label()
+    {
+        if(full.size() == 0)
+            throw std::runtime_error("0 stack");
+
+        auto last = full.back();
+
+        if(!std::holds_alternative<label>(last.s))
+            throw std::runtime_error("pop back on wrong type");
+
+        full.pop_back();
+
+        return std::get<label>(last.s);
     }
 
     std::optional<runtime::value> peek_back()
