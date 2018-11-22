@@ -76,10 +76,10 @@ namespace runtime
 
         union un
         {
-            types::i32 i_32;
-            types::i64 i_64;
-            types::f32 f_32;
-            types::f64 f_64;
+            uint32_t i_32;
+            uint64_t i_64;
+            float f_32;
+            double f_64;
 
             un()
             {
@@ -94,22 +94,22 @@ namespace runtime
                 case 0x7F:
                     //v = types::i32{0};
                     wch = 1;
-                    s.i_32 = types::i32{0};
+                    s.i_32 = 0;
                     return;
                 case 0x7E:
                     //v = types::i64{0};
                     wch = 2;
-                    s.i_64 = types::i64{0};;
+                    s.i_64 = 0;
                     return;
                 case 0x7D:
                     //v = types::f32{0};
                     wch = 3;
-                    s.f_32 = types::f32{0};
+                    s.f_32 = 0;
                     return;
                 case 0x7C:
                     //v = types::f64{0};
                     wch = 4;
-                    s.f_64 = types::f64{0};
+                    s.f_64 = 0;
                     return;
                 default:
                     throw std::runtime_error("Invalid value in which");
@@ -140,37 +140,37 @@ namespace runtime
 
         void set(uint32_t t)
         {
-            s.i_32 = types::i32{t};
+            s.i_32 = t;
             wch = 1;
         }
 
         void set(int32_t t)
         {
-            s.i_32 = types::i32{(uint32_t)t};
+            s.i_32 = (uint32_t)t;
             wch = 1;
         }
 
         void set(uint64_t t)
         {
-            s.i_64 = types::i64{t};
+            s.i_64 = t;
             wch = 2;
         }
 
         void set(int64_t t)
         {
-            s.i_64 = types::i64{(uint64_t)t};
+            s.i_64 = (uint64_t)t;
             wch = 2;
         }
 
         void set(float t)
         {
-            s.f_32 = types::f32{t};
+            s.f_32 = t;
             wch = 3;
         }
 
         void set(double t)
         {
-            s.f_64 = types::f64{t};
+            s.f_64 = t;
             wch = 4;
         }
 
@@ -193,7 +193,7 @@ namespace runtime
         }
 
         template<typename T>
-        static T get(const value& in)
+        static decltype(T::val) get(const value& in)
         {
             if constexpr(std::is_same_v<T, types::i32>)
                 return in.s.i_32;
@@ -212,13 +212,13 @@ namespace runtime
         auto apply(const T& t)
         {
             if(holds_alternative<types::i32>(*this))
-                return t(get<types::i32>(*this).val);
+                return t(get<types::i32>(*this));
             else if(holds_alternative<types::i64>(*this))
-                return t(get<types::i64>(*this).val);
+                return t(get<types::i64>(*this));
             else if(holds_alternative<types::f32>(*this))
-                return t(get<types::f32>(*this).val);
+                return t(get<types::f32>(*this));
             else if(holds_alternative<types::f64>(*this))
-                return t(get<types::f64>(*this).val);
+                return t(get<types::f64>(*this));
 
             throw std::runtime_error("nope");
         }
@@ -257,16 +257,16 @@ namespace runtime
             throw std::runtime_error("Not same type");
 
         if(value::holds_alternative<types::i32>(u))
-            return t(value::get<types::i32>(u).val, value::get<types::i32>(v).val);
+            return t(value::get<types::i32>(u), value::get<types::i32>(v));
 
         else if(value::holds_alternative<types::i64>(u))
-            return t(value::get<types::i64>(u).val, value::get<types::i64>(v).val);
+            return t(value::get<types::i64>(u), value::get<types::i64>(v));
 
         else if(value::holds_alternative<types::f32>(u))
-            return t(value::get<types::f32>(u).val, value::get<types::f32>(v).val);
+            return t(value::get<types::f32>(u), value::get<types::f32>(v));
 
         else if(value::holds_alternative<types::f64>(u))
-            return t(value::get<types::f64>(u).val, value::get<types::f64>(v).val);
+            return t(value::get<types::f64>(u), value::get<types::f64>(v));
 
         else
             throw std::runtime_error("apply bad type");
@@ -279,16 +279,16 @@ namespace runtime
     auto apply(const T& t, const value& u)
     {
         if(value::holds_alternative<types::i32>(u))
-            return t(value::get<types::i32>(u).val);
+            return t(value::get<types::i32>(u));
 
         else if(value::holds_alternative<types::i64>(u))
-            return t(value::get<types::i64>(u).val);
+            return t(value::get<types::i64>(u));
 
         else if(value::holds_alternative<types::f32>(u))
-            return t(value::get<types::f32>(u).val);
+            return t(value::get<types::f32>(u));
 
         else if(value::holds_alternative<types::f64>(u))
-            return t(value::get<types::f64>(u).val);
+            return t(value::get<types::f64>(u));
 
         else
             throw std::runtime_error("apply bad type");

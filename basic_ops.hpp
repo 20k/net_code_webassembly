@@ -634,7 +634,7 @@ void select(full_stack& full)
     runtime::value v2 = full.pop_back();
 
     ///if this  is 1, leave val1 on the stack
-    if(runtime::value::get<types::i32>(val).val)
+    if(runtime::value::get<types::i32>(val))
         return;
 
     ///is 0, therefore push val2 onto the stack
