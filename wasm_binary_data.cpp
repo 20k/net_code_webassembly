@@ -11,6 +11,7 @@
 #include "runtime_types.hpp"
 #include "invoke.hpp"
 #include "logging.hpp"
+#include <SFML/System/Clock.hpp>
 
 void dump_state(parser& p)
 {
@@ -700,7 +701,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     {
         types::global& glob = m.section_global.globals[i];
 
-        runtime::value val = eval_implicit(s, glob.e);
+        runtime::value val = eval_implicit(s, glob.e.i);
 
         std::cout << "evald global and got " << val.friendly_val() << std::endl;
 
@@ -822,12 +823,16 @@ void wasm_binary_data::init(data d)
     //types::vec<runtime::value> vals = s.invoke_by_name("_start", minst, {});
 
     runtime::value arg;
-    arg.set((uint32_t)(7*13));
+    arg.set((uint32_t)(73907));
 
     types::vec<runtime::value> args;
     args.push_back(arg);
 
+    sf::Clock clk;
+
     types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, args);
+
+    std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 
     //std::cout << "rvals " << vals.size() << std::endl;
 

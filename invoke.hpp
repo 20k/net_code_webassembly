@@ -242,4 +242,4 @@ struct full_stack
     }
 };
 
-runtime::value eval_implicit(runtime::store& s, const types::expr& exp);
+runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr>& exp);

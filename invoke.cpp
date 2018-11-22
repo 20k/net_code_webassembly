@@ -45,7 +45,7 @@ struct context
     types::vec<runtime::value> capture_vals;
 };
 
-void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full);
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
 void fjump(context& ctx, types::labelidx lidx, full_stack& full)
@@ -671,16 +671,16 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
     }
 }
 
-void eval_expr(context& ctx, runtime::store& s, const types::expr& exp, full_stack& full)
+void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
 
-    int len = exp.i.size();
+    int len = exp.size();
 
     for(int i=0; i < len; i++)
     {
-        const types::instr& ins = exp.i[i];
+        const types::instr& ins = exp[i];
 
         do_op(ctx, s, ins, full);
 
@@ -691,7 +691,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::expr& exp, full_sta
     }
 }
 
-runtime::value eval_implicit(runtime::store& s, const types::expr& exp)
+runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr>& exp)
 {
     full_stack full;
     context ctx;
@@ -701,7 +701,7 @@ runtime::value eval_implicit(runtime::store& s, const types::expr& exp)
     return full.pop_back();
 }
 
-void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full)
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full)
 {
     bool should_loop = true;
     bool has_delayed_values_push = false;
@@ -724,7 +724,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             has_delayed_values_push = false;
         }
 
-        eval_expr(ctx, s, {exp.i}, full);
+        eval_expr(ctx, s, exp, full);
 
         auto all_vals = full.pop_all_values_on_stack();
 
@@ -814,12 +814,12 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
     if(std::holds_alternative<runtime::webasm_func>(finst.funct))
     {
-        runtime::webasm_func fnc = std::get<runtime::webasm_func>(finst.funct);
+        runtime::webasm_func& fnc = std::get<runtime::webasm_func>(finst.funct);
 
         types::vec<runtime::value> popped = full.pop_num_vals(num_args);
 
         types::vec<types::local> local_types = fnc.funct.fnc.locals;
-        types::expr expression = fnc.funct.fnc.e;
+        types::expr& expression = fnc.funct.fnc.e;
 
         types::vec<runtime::value> local_zeroes;
 
@@ -854,7 +854,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         lg::log("push");
         full.push_activation(activate);
 
-        eval_expr(ctx, s, expression, full);
+        eval_expr(ctx, s, expression.i, full);
 
         if(!ctx.frame_abort)
         {

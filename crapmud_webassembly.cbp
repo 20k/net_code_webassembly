@@ -27,12 +27,29 @@
 					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="Profile">
+				<Option output="bin/Profile/crapmud_webassembly" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Profile/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-pg" />
+					<Add option="-Og" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add option="-pg -lgmon" />
+				</Linker>
+			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-std=c++17" />
 		</Compiler>
+		<Linker>
+			<Add option="-lsfml-system" />
+		</Linker>
 		<Unit filename="LEB.cpp" />
 		<Unit filename="LEB.hpp" />
 		<Unit filename="basic_ops.hpp" />
