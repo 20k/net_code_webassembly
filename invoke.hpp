@@ -58,12 +58,16 @@ struct full_stack
     types::vec<activation> activation_stack;
     types::vec<label> label_stack;
 
+    types::vec<uint32_t> stack_values{{0}};
+
     void push_values(const runtime::value& val)
     {
         stk k;
         k.s = val;
 
         full.push_back(k);
+
+        stack_values.back() += 1;
     }
 
     void push_all_values(const types::vec<runtime::value>& val)
@@ -80,6 +84,8 @@ struct full_stack
     {
         activation_stack.push_back(a);
 
+        stack_values.push_back(0);
+
         /*std::cout <<" in a " << a.f.locals.size() << std::endl;
         std::cout << "dbga " << get_current().f.locals.size() << std::endl;*/
     }
@@ -87,11 +93,13 @@ struct full_stack
     void push_label(const label& l)
     {
         label_stack.push_back(l);
+
+        stack_values.push_back(0);
     }
 
     types::vec<runtime::value> pop_all_values_on_stack()
     {
-        int num = 0;
+        /*int num = 0;
         types::vec<runtime::value> ret;
 
         for(int i = full.size() - 1; i >= 0; i--)
@@ -110,12 +118,30 @@ struct full_stack
 
         full.resize(full.size() - num);
 
+        return ret;*/
+
+        types::vec<runtime::value> ret;
+
+        int32_t to_pop = stack_values.back();
+
+        for(int i = full.size() - 1; i >= 0 && i > full.size() - 1 - to_pop; i--)
+        {
+            ret.push_back(full[i].s);
+        }
+
+        if(ret.size() != to_pop)
+            throw std::runtime_error("weird num error, not sure this is possible");
+
+        full.resize(full.size() - to_pop);
+
+        stack_values.back() = 0;
+
         return ret;
     }
 
     types::vec<runtime::value> pop_num_vals(int num)
     {
-        types::vec<runtime::value> r;
+        /*types::vec<runtime::value> r;
 
         for(int i = full.size() - 1; i > full.size() - 1 - num && i >= 0; i--)
         {
@@ -130,9 +156,23 @@ struct full_stack
         if(r.size() != num)
             throw std::runtime_error("Could not get sufficient args");
 
+        full.resize(full.size() - num);*/
+
+        types::vec<runtime::value> ret;
+
+        for(int i = full.size() - 1; i >= 0 && i > full.size() - 1 - num; i--)
+        {
+            ret.push_back(full[i].s);
+        }
+
+        if(num != ret.size())
+            throw std::runtime_error("Could not get sufficient args");
+
         full.resize(full.size() - num);
 
-        return r;
+        stack_values.back() -= num;
+
+        return ret;
     }
 
     void pop_back_activation()
@@ -141,6 +181,8 @@ struct full_stack
             throw std::runtime_error("No elements on stack (pop_back_frame)");
 
         activation_stack.pop_back();
+
+        stack_values.pop_back();
     }
 
     activation& get_current()
@@ -184,6 +226,8 @@ struct full_stack
             }
         }*/
 
+        int coffset = 0;
+
         for(int i=label_stack.size() - 1; i >= 0; i--)
         {
             coffset++;
@@ -217,12 +261,13 @@ struct full_stack
 
         auto last = full.back();
 
-        if(!std::holds_alternative<runtime::value>(last.s))
-            throw std::runtime_error("pop back on wrong type");
+        /*if(!std::holds_alternative<runtime::value>(last.s))
+            throw std::runtime_error("pop back on wrong type");*/
 
         full.pop_back();
+        stack_values.back() -= 1;
 
-        return std::get<runtime::value>(last.s);
+        return last.s;
     }
 
     label pop_back_label()
@@ -233,6 +278,7 @@ struct full_stack
         auto last = label_stack.back();
 
         label_stack.pop_back();
+        stack_values.pop_back();
 
         return last;
     }
@@ -242,15 +288,16 @@ struct full_stack
         if(full.size() == 0)
             return std::nullopt;
 
-        if(!std::holds_alternative<runtime::value>(full.back().s))
-            return std::nullopt;
+        /*if(!std::holds_alternative<runtime::value>(full.back().s))
+            return std::nullopt;*/
 
-        return std::get<runtime::value>(full.back().s);
+        return full.back().s;
+        //return std::get<runtime::value>(full.back().s);
     }
 
     int num_labels()
     {
-        int num = 0;
+        /*int num = 0;
 
         for(stk& s : full)
         {
@@ -258,7 +305,9 @@ struct full_stack
                 num++;
         }
 
-        return num;
+        return num;*/
+
+        return label_stack.size();
     }
 };
 
