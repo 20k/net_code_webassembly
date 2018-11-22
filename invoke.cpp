@@ -860,7 +860,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
             types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
 
-            full.pop_back_frame();
+            full.pop_back_activation();
 
             for(auto& i : found)
                 full.push_values(i);
@@ -873,7 +873,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
             full.pop_all_values_on_stack();
 
-            full.pop_back_frame();
+            full.pop_back_activation();
 
             auto bvals = ctx.capture_vals;
 

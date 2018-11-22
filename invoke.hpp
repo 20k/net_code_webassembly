@@ -119,7 +119,7 @@ struct full_stack
         return r;
     }
 
-    void pop_back_frame()
+    void pop_back_activation()
     {
         if(full.size() == 0)
             throw std::runtime_error("No elements on stack (pop_back_frame)");
