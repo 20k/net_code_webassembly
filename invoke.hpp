@@ -24,7 +24,9 @@ struct label
     ///?
     types::expr e;*/
 
-    types::double_branch_data dat;
+    //types::double_branch_data dat;
+
+    types::blocktype btype;
 
     ///0 = none
     ///1 = end of block

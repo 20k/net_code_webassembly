@@ -52,7 +52,7 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 {
     label& l = full.get_current_label();
 
-    int arity = l.dat.btype.arity();
+    int arity = l.btype.arity();
 
     label& olab = full.get_label_of_offset((uint32_t)lidx);
 
@@ -99,11 +99,11 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             types::single_branch_data sbd = std::get<types::single_branch_data>(is.dat);
 
             label l;
-            l.dat.btype = sbd.btype;
-            l.dat.first = sbd.first;
+            l.btype = sbd.btype;
+            //l.dat.first = sbd.first;
             l.continuation = 1;
 
-            eval_with_label(ctx, s, l, l.dat.first, full);
+            eval_with_label(ctx, s, l, sbd.first, full);
 
             break;
         }
@@ -113,14 +113,14 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             types::single_branch_data sbd = std::get<types::single_branch_data>(is.dat);
 
             label l;
-            l.dat.btype = sbd.btype;
-            l.dat.first = sbd.first;
+            l.btype = sbd.btype;
+            //l.dat.first = sbd.first;
             l.continuation = 2;
 
-            if(l.dat.btype.arity() != 0)
+            if(l.btype.arity() != 0)
                 throw std::runtime_error("Wrong arity?");
 
-            eval_with_label(ctx, s, l, l.dat.first, full);
+            eval_with_label(ctx, s, l, sbd.first, full);
 
             break;
         }
@@ -130,7 +130,8 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             types::double_branch_data dbd = std::get<types::double_branch_data>(is.dat);
 
             label l;
-            l.dat = dbd;
+            //l.dat = dbd;
+            l.btype = dbd.btype;
             l.continuation = 3;
 
             runtime::value val = full.pop_back();
@@ -144,11 +145,11 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             if(c != 0)
             {
-                eval_with_label(ctx, s, l, l.dat.first, full);
+                eval_with_label(ctx, s, l, dbd.first, full);
             }
             else
             {
-                eval_with_label(ctx, s, l, l.dat.second, full);
+                eval_with_label(ctx, s, l, dbd.second, full);
             }
 
             break;
