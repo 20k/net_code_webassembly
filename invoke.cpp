@@ -78,6 +78,8 @@ void fjump_up_frame(context& ctx, full_stack& full)
     ctx.frame_abort = true;
 }
 
+///so duktape takes about 330ms
+///and we take about 2000ms
 void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack

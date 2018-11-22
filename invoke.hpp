@@ -40,7 +40,7 @@ struct full_stack
 
     void push_values(const runtime::value& val)
     {
-        full.push_back(val);
+        full.emplace_back(val);
 
         stack_values.back() += 1;
     }
