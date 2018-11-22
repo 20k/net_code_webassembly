@@ -51,7 +51,7 @@ T remi(const T& v1, const T& v2)
     if(v2 == 0)
         throw std::runtime_error("v2 == 0 in rem");
 
-    lg::log("mod ", v1, " ", v2);
+    //lg::log("mod ", v1, " ", v2);
 
     return v1 % v2;
 }
@@ -460,7 +460,7 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
 
     uint32_t ea = (uint32_t)arg.offset + found_bytes;
 
-    lg::log("moffset ", found_bytes);
+    //lg::log("moffset ", found_bytes);
 
     if(ea + bytes >= (uint32_t)minst.dat.size())
         throw std::runtime_error("Tried to hit OOB in mem_store");
@@ -495,7 +495,7 @@ void get_local(full_stack& full, const types::localidx& lidx)
 
     runtime::value val = activate.f.locals[idx];
 
-    lg::log("got local ", val.friendly_val());
+    //lg::log("got local ", val.friendly_val());
 
     full.push_values(val);
 }
@@ -520,7 +520,7 @@ void tee_local(full_stack& full, const types::localidx& lidx)
     runtime::value top = full.pop_back();
     activation& activate = full.get_current();
 
-    lg::log("activate locals ", activate.f.locals.size());
+    //lg::log("activate locals ", activate.f.locals.size());
 
     uint32_t idx = (uint32_t)lidx;
 
@@ -529,7 +529,7 @@ void tee_local(full_stack& full, const types::localidx& lidx)
 
     activate.f.locals[idx] = top;
 
-    lg::log("set idx ", std::to_string(idx), " to ", top.friendly_val());
+    //lg::log("set idx ", std::to_string(idx), " to ", top.friendly_val());
 
     full.push_values(top);
 }

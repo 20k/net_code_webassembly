@@ -21,7 +21,7 @@ void push(const T& t, full_stack& full)
 #define PUSH_CONSTANT(xtype)\
         { \
             xtype cst = std::get<xtype>(is.dat); \
-            lg::log("loaded constant ", cst.val); \
+            /*lg::log("loaded constant ", cst.val);*/ \
             return push(cst.val, full); \
             break; \
         }
@@ -56,7 +56,7 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 
     label& olab = full.get_label_of_offset((uint32_t)lidx);
 
-    lg::log("ctype ", std::to_string(olab.continuation));
+    //lg::log("ctype ", std::to_string(olab.continuation));
 
     ctx.continuation = olab.continuation;
     ctx.capture_vals = full.pop_num_vals(arity);
@@ -79,9 +79,9 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 {
     uint8_t which = is.which;
 
-    lg::log("0x");
+    /*lg::log("0x");
     lg::log_hex_noline(which);
-    lg::log(", ");
+    lg::log(", ");*/
 
     ///good lord this is tedious
     switch(which)
@@ -165,7 +165,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             fjump(ctx, lidx, full);
 
-            lg::log("hit br ", std::to_string(idx));
+            //lg::log("hit br ", std::to_string(idx));
 
             break;
         }
@@ -183,7 +183,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             //std::cout << "post good\n";
 
-            lg::log("hit br_if");
+            //lg::log("hit br_if");
 
             if((uint32_t)type != 0)
             {
@@ -250,7 +250,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(idx >= (uint32_t)activate.f.inst->funcaddrs.size())
                 throw std::runtime_error("Bad fidx in 0x10");
 
-            lg::log("calling hi there dum de dum");
+            //lg::log("calling hi there dum de dum");
 
             invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
@@ -828,7 +828,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
                 runtime::value val;
                 val.from_valtype(loc.type);
 
-                lg::log("asdflocal ", val.friendly_val());
+                //lg::log("asdflocal ", val.friendly_val());
 
                 local_zeroes.push_back(val);
             }
@@ -841,15 +841,15 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         fr.locals = popped;
         fr.locals = fr.locals.append(local_zeroes);
 
-        lg::log("fr locals ", fr.locals.size());
+        /*lg::log("fr locals ", fr.locals.size());
         lg::log("ltypes ", local_types.size());
-        lg::log("hello ", local_zeroes.size());
+        lg::log("hello ", local_zeroes.size());*/
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};
         activate.f = fr;
 
-        lg::log("push");
+        //lg::log("push");
         full.push_activation(activate);
 
         eval_expr(ctx, s, expression.i, full);
@@ -884,7 +884,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
             return bvals;
         }
 
-        lg::log("pop");
+        //lg::log("pop");
 
 
         ///carry on instruction stream after the call
