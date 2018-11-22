@@ -20,12 +20,6 @@ struct activation
 
 struct label
 {
-    /*types::s32 argument_arity{0};
-    ///?
-    types::expr e;*/
-
-    //types::double_branch_data dat;
-
     types::blocktype btype;
 
     ///0 = none

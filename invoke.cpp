@@ -96,11 +96,10 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
         case 0x02:
         {
-            types::single_branch_data sbd = std::get<types::single_branch_data>(is.dat);
+            const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
 
             label l;
             l.btype = sbd.btype;
-            //l.dat.first = sbd.first;
             l.continuation = 1;
 
             eval_with_label(ctx, s, l, sbd.first, full);
@@ -110,11 +109,10 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
         case 0x03:
         {
-            types::single_branch_data sbd = std::get<types::single_branch_data>(is.dat);
+            const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
 
             label l;
             l.btype = sbd.btype;
-            //l.dat.first = sbd.first;
             l.continuation = 2;
 
             if(l.btype.arity() != 0)
@@ -127,10 +125,9 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
         case 0x04:
         {
-            types::double_branch_data dbd = std::get<types::double_branch_data>(is.dat);
+            const types::double_branch_data& dbd = std::get<types::double_branch_data>(is.dat);
 
             label l;
-            //l.dat = dbd;
             l.btype = dbd.btype;
             l.continuation = 3;
 
