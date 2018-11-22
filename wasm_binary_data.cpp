@@ -787,8 +787,6 @@ void wasm_binary_data::init(data d)
 {
     parser p(d);
 
-    runtime::store s;
-
     module mod;
     mod.init(p);
 
@@ -804,6 +802,8 @@ void wasm_binary_data::init(data d)
     }*/
 
     runtime::moduleinst minst = build_from_module(mod, s, {});
+
+    m_minst = new runtime::moduleinst(minst);
 
     //s.invoke({0})
 
