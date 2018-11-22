@@ -890,7 +890,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     return types::vec<runtime::value>();
 }
 
-void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
+types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
 {
     uint32_t adr = (uint32_t)address;
 
@@ -913,9 +913,13 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
 
     context ctx;
 
-    invoke_intl(ctx, *this, full, address, minst);
+    types::vec<runtime::value> return_value;
+
+    return_value = invoke_intl(ctx, *this, full, address, minst);
 
     std::cout << "left on stack " << full.full.size() << std::endl;
+
+    return return_value;
 
     ///pop val from stack
 
@@ -925,3 +929,15 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
     }*/
 }
 
+types::vec<runtime::value> runtime::store::invoke_by_name(const std::string& imported, moduleinst& minst, const types::vec<value>& vals)
+{
+    for(runtime::exportinst& einst : minst.exports)
+    {
+        if(einst.name == imported)
+        {
+            return invoke(std::get<runtime::funcaddr>(einst.value.val), minst, vals);
+        }
+    }
+
+    throw std::runtime_error("No such function");
+}

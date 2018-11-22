@@ -232,8 +232,8 @@ namespace runtime
         memaddr allocmem(const types::memtype& type);
         globaladdr allocglobal(const types::globaltype& type, const value& v);
 
-        void invoke(const funcaddr& address, moduleinst& minst, const types::vec<value>& vals);
-        //runtime::value invoke_by_name(const std::string& imported, moduleinst& minst, const types::vec<value>& vals)
+        types::vec<runtime::value> invoke(const funcaddr& address, moduleinst& minst, const types::vec<value>& vals);
+        types::vec<runtime::value> invoke_by_name(const std::string& imported, moduleinst& minst, const types::vec<value>& vals);
     };
 
     template<typename T>
