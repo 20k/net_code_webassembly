@@ -7,11 +7,7 @@ template<typename T>
 inline
 void push(const T& t, full_stack& full)
 {
-    //runtime::value val(t);
-    //val.set(t);
-
     full.push_values(t);
-    //full.push_values(t);
 }
 
 //#define PUSH(x) return push(x, full); break;
