@@ -46,7 +46,7 @@ struct context
 };
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
-void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
+types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
 void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 {
@@ -786,7 +786,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     }
 }
 
-void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
+types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
 {
     uint32_t adr = (uint32_t)address;
 
@@ -856,6 +856,8 @@ void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtim
 
             for(auto& i : found)
                 full.push_values(i);
+
+            return found;
         }
         else if(ctx.frame_abort)
         {
@@ -865,9 +867,13 @@ void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtim
 
             full.pop_back_frame();
 
+            auto bvals = ctx.capture_vals;
+
             full.push_all_values(ctx.capture_vals);
 
             ctx.capture_vals.clear();
+
+            return bvals;
         }
 
         std::cout << "pop" << std::endl;
@@ -880,6 +886,8 @@ void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtim
     {
         throw std::runtime_error("Bad function invocation type");
     }
+
+    return types::vec<runtime::value>();
 }
 
 void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
@@ -916,3 +924,4 @@ void runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleins
         auto res = full.pop_num_vals(1);
     }*/
 }
+
