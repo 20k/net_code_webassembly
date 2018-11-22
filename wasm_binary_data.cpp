@@ -826,7 +826,7 @@ void wasm_binary_data::init(data d)
     types::vec<runtime::value> args;
     args.push_back(arg);
 
-    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, args);
+    types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, args);
 
     //std::cout << "rvals " << vals.size() << std::endl;
 

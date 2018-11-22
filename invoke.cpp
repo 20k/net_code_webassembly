@@ -250,6 +250,8 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(idx >= (uint32_t)activate.f.inst->funcaddrs.size())
                 throw std::runtime_error("Bad fidx in 0x10");
 
+            std::cout << "calling hi there dum de dum\n";
+
             invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
             break;
