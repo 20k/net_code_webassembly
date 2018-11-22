@@ -134,7 +134,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(!val.is_i32())
                 throw std::runtime_error("0x04 if/else expected i32");
 
-            types::i32 type = std::get<types::i32>(val.v);
+            types::i32 type = runtime::value::get<types::i32>(val);
 
             uint32_t c = type.val;
 
@@ -177,7 +177,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             //std::cout << "good " << std::holds_alternative<types::i32>(val.v) << std::endl;
 
-            types::i32 type = std::get<types::i32>(val.v);
+            types::i32 type = runtime::value::get<types::i32>(val);
 
             //std::cout << "post good\n";
 
@@ -213,7 +213,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(!top_val.is_i32())
                 throw std::runtime_error("br_td should have been i32");
 
-            types::i32 val = std::get<types::i32>(top_val.v);
+            types::i32 val = runtime::value::get<types::i32>(top_val);
 
             uint32_t idx = (uint32_t)val;
 
@@ -289,7 +289,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(!val.is_i32())
                 throw std::runtime_error("Not i32 in call indirect");
 
-            types::i32 i_call = std::get<types::i32>(val.v);
+            types::i32 i_call = runtime::value::get<types::i32>(val);
 
             uint32_t i_call_idx = (uint32_t)i_call;
 
