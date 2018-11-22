@@ -110,15 +110,6 @@ struct full_stack
     ///than using the above. is probably cache related
     void pop_all_values_on_stack_unsafe_nocatch()
     {
-        /*int32_t to_pop = full.size() - stack_start_sizes.back();
-
-        int32_t start = full.size() - to_pop;
-
-        //if(start < 0)
-        //    throw std::runtime_error("Bad start in pop all");
-
-        full.resize(start);*/
-
         full.resize(stack_start_sizes.back());
     }
 
@@ -213,17 +204,13 @@ struct full_stack
         return last;
     }
 
-    label pop_back_label()
+    void pop_back_label()
     {
         if(label_stack.size() == 0)
             throw std::runtime_error("0 label stack");
 
-        auto last = label_stack.back();
-
         label_stack.pop_back();
         stack_start_sizes.pop_back();
-
-        return last;
     }
 
     std::optional<runtime::value> peek_back()
