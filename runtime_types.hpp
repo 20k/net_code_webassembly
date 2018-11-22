@@ -131,6 +131,26 @@ namespace runtime
             v = types::f64{t};
         }
 
+        void set(const types::i32& in)
+        {
+            v = in;
+        }
+
+        void set(const types::i64& in)
+        {
+            v = in;
+        }
+
+        void set(const types::f32& in)
+        {
+            v = in;
+        }
+
+        void set(const types::f64& in)
+        {
+            v = in;
+        }
+
         template<typename T>
         auto apply(const T& t)
         {

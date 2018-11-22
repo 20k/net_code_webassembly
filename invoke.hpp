@@ -29,28 +29,6 @@ struct label
     uint8_t continuation = 0;
 };
 
-struct stk
-{
-    //std::variant<runtime::value, label> s;
-
-    runtime::value s;
-
-    /*void operator=(const runtime::value& val)
-    {
-        s = val;
-    }
-
-    stk(const runtime::value& val)
-    {
-        s = val;
-    }
-
-    stk()
-    {
-
-    }*/
-};
-
 struct full_stack
 {
     types::vec<runtime::value> full;

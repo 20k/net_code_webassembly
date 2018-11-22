@@ -20,7 +20,8 @@ void push(const T& t, full_stack& full)
         { \
             xtype cst = std::get<xtype>(is.dat); \
             /*lg::log("loaded constant ", cst.val);*/ \
-            push(cst.val, full); \
+            /*push(cst, full);*/ \
+            full.push_values(cst);                  \
             break; \
         }
 
@@ -87,13 +88,6 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     for(int ilen=0; ilen < len; ilen++)
     {
         const types::instr& is = exp[ilen];
-
-        /*do_op(ctx, s, ins, full);
-
-        if(ctx.abort_stack > 0 || ctx.frame_abort)
-        {
-            break;
-        }*/
 
         uint8_t which = is.which;
 
