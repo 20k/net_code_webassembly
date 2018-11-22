@@ -32,6 +32,21 @@ struct label
 struct stk
 {
     std::variant<runtime::value, label> s;
+
+    /*void operator=(const runtime::value& val)
+    {
+        s = val;
+    }
+
+    stk(const runtime::value& val)
+    {
+        s = val;
+    }
+
+    stk()
+    {
+
+    }*/
 };
 
 struct full_stack
@@ -54,6 +69,8 @@ struct full_stack
         {
             push_values(i);
         }
+
+        //full.insert(full.end(), val.begin(), val.end());
     }
 
     void push_activation(const activation& a)

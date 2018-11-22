@@ -115,6 +115,12 @@ namespace types
             return v.pop_back();
         }
 
+        template<typename U, typename V>
+        void insert(const U& v1, const V& v2, const V& v3)
+        {
+            v.insert(v1, v2, v3);
+        }
+
         T back() const
         {
             return v.back();
