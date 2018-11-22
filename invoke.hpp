@@ -90,36 +90,53 @@ struct full_stack
         stack_values.push_back(0);
     }
 
-    types::vec<runtime::value> pop_all_values_on_stack()
+    ///this is unsafe because it doesn't set
+    ///stasck_values.back() == 0
+    ///however, in all uses of this function, its not an issue
+    types::vec<runtime::value> pop_all_values_on_stack_unsafe()
     {
         types::vec<runtime::value> ret;
 
         int32_t to_pop = stack_values.back();
 
-        int32_t start = full.size() - to_pop;
+        int32_t n = full.size();
 
-        if(start < 0)
-            throw std::runtime_error("weird num error, not sure this is possible");
-
-        ret.v = std::vector<runtime::value>(full.begin() + start, full.end());
-
-        /*for(int i = full.size() - 1; i >= 0 && i > full.size() - 1 - to_pop; i--)
+        for(int32_t i=full.size() - to_pop; i < n; i++)
         {
             ret.push_back(full[i]);
-        }*/
+        }
+
+        if(ret.size() != to_pop)
+            throw std::runtime_error("weird num error, not sure this is possible");
 
         full.resize(full.size() - to_pop);
 
-        stack_values.back() = 0;
+        //stack_values.back() = 0;
 
         return ret;
+    }
+
+    ///for some reason, this is quite a bit slower
+    ///than using the above. is probably cache related
+    void pop_all_values_on_stack_unsafe_nocatch()
+    {
+        int32_t to_pop = stack_values.back();
+
+        int32_t start = full.size() - to_pop;
+
+        if(start < 0)
+            throw std::runtime_error("Bad start in pop all");
+
+        full.resize(start);
     }
 
     types::vec<runtime::value> pop_num_vals(int num)
     {
         types::vec<runtime::value> ret;
 
-        for(int i = full.size() - 1; i >= 0 && i > full.size() - 1 - num; i--)
+        int32_t n = full.size();
+
+        for(int32_t i=full.size() - num; i < n; i++)
         {
             ret.push_back(full[i]);
         }
