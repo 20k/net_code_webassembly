@@ -69,12 +69,8 @@ struct full_stack
 
     void push_all_values(const types::vec<runtime::value>& val)
     {
-        for(const auto& i : val)
-        {
-            push_values(i);
-        }
-
-        //full.insert(full.end(), val.begin(), val.end());
+        full.insert(full.end(), val.begin(), val.end());
+        stack_values.back() += val.size();
     }
 
     void push_activation(const activation& a)
