@@ -452,7 +452,7 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
     if(!top_i32.is_i32())
         throw std::runtime_error("Not i32 for mem load");
 
-    uint32_t ea = (uint32_t)arg.offset + (uint32_t)std::get<types::i32>(top_i32.v);
+    uint32_t ea = (uint32_t)arg.offset + (uint32_t)runtime::value::get<types::i32>(top_i32);
 
     if(ea + bytes >= (uint32_t)minst.dat.size())
         throw std::runtime_error("Out of memory (OOB in mem_load)");
@@ -504,7 +504,7 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
     if(!top_i32.is_i32())
         throw std::runtime_error("Not i32 for mem load");
 
-    uint32_t found_bytes = (uint32_t)std::get<types::i32>(top_i32.v);
+    uint32_t found_bytes = (uint32_t)runtime::value::get<types::i32>(top_i32);
 
     uint32_t ea = (uint32_t)arg.offset + found_bytes;
 
@@ -634,7 +634,7 @@ void select(full_stack& full)
     runtime::value v2 = full.pop_back();
 
     ///if this  is 1, leave val1 on the stack
-    if(std::get<types::i32>(val.v).val)
+    if(runtime::value::get<types::i32>(val))
         return;
 
     ///is 0, therefore push val2 onto the stack
