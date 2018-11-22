@@ -37,7 +37,7 @@ struct context
 {
     int abort_stack = 0;
     int continuation = 0;
-    bool needs_cont_jump = false;
+    //bool needs_cont_jump = false;
 
     bool frame_abort = false;
 
@@ -65,7 +65,7 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
     ctx.continuation = olab.continuation;
     ctx.capture_vals = full.pop_num_vals(arity);
     ctx.abort_stack = (uint32_t)lidx + 1;
-    ctx.needs_cont_jump = true;
+    //ctx.needs_cont_jump = true;
 }
 
 void fjump_up_frame(context& ctx, full_stack& full)
@@ -735,8 +735,6 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         {
             full.push_all_values(ctx.capture_vals);
 
-            ctx.capture_vals.clear();
-
             has_delayed_values_push = false;
         }
 
@@ -750,56 +748,36 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         if(ctx.frame_abort)
             return;
 
-        if(ctx.abort_stack > 0 && ctx.needs_cont_jump)
+        if(ctx.abort_stack > 0)
         {
             ctx.abort_stack--;
+
+            if(ctx.abort_stack == 0)
+            {
+                if(ctx.continuation != 2)
+                {
+                    full.push_all_values(ctx.capture_vals);
+                }
+                else
+                {
+                    has_delayed_values_push = true;
+                }
+
+                if(ctx.continuation == 2)
+                {
+                    ///loop and start again from beginning
+                    should_loop = true;
+                }
+
+                if(ctx.continuation == 0)
+                {
+                    throw std::runtime_error("Bad continuation, 0");
+                }
+            }
         }
         else
         {
             full.push_all_values(all_vals);
-        }
-
-        if(ctx.abort_stack == 0 && ctx.needs_cont_jump)
-        {
-            if(ctx.continuation != 2)
-            {
-                full.push_all_values(ctx.capture_vals);
-
-                ctx.capture_vals.clear();
-            }
-            else
-            {
-                has_delayed_values_push = true;
-            }
-
-            ctx.needs_cont_jump = false;
-
-            ///jump to end of block
-            ///no need to push label
-            if(ctx.continuation == 1)
-            {
-                return;
-            }
-
-            if(ctx.continuation == 2)
-            {
-                ///loop and start again from beginning
-
-                ///ok dis wrong because label is trampling
-                should_loop = true;
-                continue;
-            }
-
-            if(ctx.continuation == 3)
-            {
-                ///end of if instruction, same as 1
-                return;
-            }
-
-            if(ctx.continuation == 0)
-            {
-                throw std::runtime_error("Bad continuation, 0");
-            }
         }
     }
 }

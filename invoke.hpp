@@ -13,9 +13,8 @@ struct frame
 
 struct activation
 {
-    types::s32 return_arity{0};
-
     frame f;
+    types::s32 return_arity{0};
 };
 
 struct label
