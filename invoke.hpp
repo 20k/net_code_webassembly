@@ -101,13 +101,18 @@ struct full_stack
 
         int32_t n = full.size();
 
-        for(int32_t i=full.size() - to_pop; i < n; i++)
+        int32_t start = full.size() - to_pop;
+
+        if(start < 0)
+            throw std::runtime_error("weird num error, not sure this is possible");
+
+        for(int i=start; i < n; i++)
         {
             ret.push_back(full[i]);
         }
 
-        if(ret.size() != to_pop)
-            throw std::runtime_error("weird num error, not sure this is possible");
+        /*if(ret.size() != to_pop)
+            throw std::runtime_error("weird num error, not sure this is possible");*/
 
         full.resize(full.size() - to_pop);
 
@@ -124,8 +129,8 @@ struct full_stack
 
         int32_t start = full.size() - to_pop;
 
-        if(start < 0)
-            throw std::runtime_error("Bad start in pop all");
+        //if(start < 0)
+        //    throw std::runtime_error("Bad start in pop all");
 
         full.resize(start);
     }
@@ -136,15 +141,17 @@ struct full_stack
 
         int32_t n = full.size();
 
-        for(int32_t i=full.size() - num; i < n; i++)
+        int32_t start = n - num;
+
+        //if(start < 0)
+        //    throw std::runtime_error("weird num error, not sure this is possible");
+
+        for(int i=start; i < n; i++)
         {
             ret.push_back(full[i]);
         }
 
-        if(num != ret.size())
-            throw std::runtime_error("Could not get sufficient args");
-
-        full.resize(full.size() - num);
+        full.resize(n - num);
 
         stack_values.back() -= num;
 

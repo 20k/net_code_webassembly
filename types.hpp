@@ -131,17 +131,22 @@ namespace types
             return v.back();
         }
 
-        T operator [](int i) const
+        template<typename U>
+        inline
+        T operator [](const U& i) const
         {
-            if(i >= (int)v.size() || i < 0)
-                throw std::runtime_error("invalid bounds access");
+            //if(i >= (U)v.size() || i < 0)
+            //    throw std::runtime_error("invalid bounds access");
 
             return v[i];
         }
-        T& operator [](int i)
+
+        template<typename U>
+        inline
+        T& operator [](const U& i)
         {
-            if(i >= (int)v.size() || i < 0)
-                throw std::runtime_error("invalid bounds access");
+            //if(i >= (U)v.size() || i < 0)
+            //    throw std::runtime_error("invalid bounds access");
 
             return v[i];
         }
