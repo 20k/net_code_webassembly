@@ -721,7 +721,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
         eval_expr(ctx, s, exp, full);
 
-        auto all_vals = full.pop_all_values_on_stack();
+        auto all_vals = full.pop_all_values_on_stack_unsafe();
 
         full.ensure_label();
         full.pop_back_label();
@@ -859,8 +859,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         {
             ctx.frame_abort = false;
 
-            full.pop_all_values_on_stack();
-
+            full.pop_all_values_on_stack_unsafe();
             full.pop_back_activation();
 
             auto bvals = ctx.capture_vals;
