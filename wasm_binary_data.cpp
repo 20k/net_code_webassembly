@@ -784,6 +784,10 @@ void test_hi(int in)
     printf("hi");
 }
 
+///ok so
+///duktape appears to execute this in 62ms or so
+///whereas currently i am taking 700ms, so looking for a factor 10x speedup here
+///with optimisations on this only takes 350 which is neat
 void wasm_binary_data::init(data d)
 {
     parser p(d);
@@ -824,13 +828,14 @@ void wasm_binary_data::init(data d)
 
     runtime::value arg;
     arg.set((uint32_t)(1188179));
+    //arg.set((uint32_t)(1188179));
 
     types::vec<runtime::value> args;
     args.push_back(arg);
 
     sf::Clock clk;
 
-    types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, args);
+    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, args);
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 
