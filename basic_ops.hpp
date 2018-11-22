@@ -515,20 +515,13 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
 
     ///I believe the semantics for wrap are just integer truncation
 
-    ///we're little endian, so if i start at the bottom itll workcorrectly
-
-    std::array<uint8_t, sizeof(T)> arr;
-
     val.apply([](auto concrete){if(sizeof(T) != sizeof(concrete)){throw std::runtime_error("BAD SIZE");}});
 
-    val.apply([&arr](auto concrete){memcpy(&arr[0], (char*)&concrete, sizeof(concrete));});
-
-    for(int cbyte=0; cbyte < bytes; cbyte++)
-    {
-        uint32_t current_offset = cbyte + ea;
-
-        minst.dat[current_offset] = arr[cbyte];
-    }
+    val.apply([&minst, ea]
+              (auto concrete)
+              {
+                  memcpy(&minst.dat[ea], (char*)&concrete, sizeof(concrete));
+              });
 }
 
 inline
