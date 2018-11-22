@@ -163,6 +163,17 @@ struct full_stack
         return std::get<runtime::value>(last.s);
     }
 
+    std::optional<runtime::value> peek_back()
+    {
+        if(full.size() == 0)
+            return std::nullopt;
+
+        if(!std::holds_alternative<runtime::value>(full.back().s))
+            return std::nullopt;
+
+        return std::get<runtime::value>(full.back().s);
+    }
+
     int num_labels()
     {
         int num = 0;
