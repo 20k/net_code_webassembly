@@ -67,6 +67,7 @@ namespace runtime
     ///hmm
     ///might be better to hold a uint64_t
     ///and then just cast on the fly
+    ///using a union is not better apparently
     struct value
     {
         std::variant<types::i32, types::i64, types::f32, types::f64> v;
