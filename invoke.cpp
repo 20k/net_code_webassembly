@@ -661,7 +661,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         full.pop_back_label();
 
         if(ctx.frame_abort)
-            break;
+            return;
 
         if(ctx.abort_stack > 0 && ctx.needs_cont_jump)
         {
