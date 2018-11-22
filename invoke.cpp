@@ -712,10 +712,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
         if(has_delayed_values_push)
         {
-            for(auto& i : ctx.capture_vals)
-            {
-                full.push_values(i);
-            }
+            full.push_all_values(ctx.capture_vals);
 
             ctx.capture_vals.clear();
 
@@ -740,20 +737,14 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         }
         else
         {
-            for(auto& i : all_vals)
-            {
-                full.push_values(i);
-            }
+            full.push_all_values(all_vals);
         }
 
         if(ctx.abort_stack == 0 && ctx.needs_cont_jump)
         {
             if(ctx.continuation != 2)
             {
-                for(auto& i : ctx.capture_vals)
-                {
-                    full.push_values(i);
-                }
+                full.push_all_values(ctx.capture_vals);
 
                 ctx.capture_vals.clear();
             }
@@ -862,8 +853,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
             full.pop_back_activation();
 
-            for(auto& i : found)
-                full.push_values(i);
+            full.push_all_values(found);
 
             return found;
         }
