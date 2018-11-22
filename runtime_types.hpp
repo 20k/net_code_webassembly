@@ -3,7 +3,6 @@
 
 #include "types.hpp"
 #include <optional>
-#include <type_traits>
 
 struct module;
 
@@ -70,46 +69,23 @@ namespace runtime
     ///and then just cast on the fly
     struct value
     {
-        //std::variant<types::i32, types::i64, types::f32, types::f64> v;
-
-        uint8_t wch = 0;
-
-        union un
-        {
-            uint32_t i_32;
-            uint64_t i_64;
-            float f_32;
-            double f_64;
-
-            un()
-            {
-                //memset(this, 0, sizeof(un));
-            }
-        } s;
+        std::variant<types::i32, types::i64, types::f32, types::f64> v;
 
         void from_valtype(const types::valtype& type)
         {
             switch(type.which)
             {
                 case 0x7F:
-                    //v = types::i32{0};
-                    wch = 1;
-                    s.i_32 = 0;
+                    v = types::i32{0};
                     return;
                 case 0x7E:
-                    //v = types::i64{0};
-                    wch = 2;
-                    s.i_64 = 0;
+                    v = types::i64{0};
                     return;
                 case 0x7D:
-                    //v = types::f32{0};
-                    wch = 3;
-                    s.f_32 = 0;
+                    v = types::f32{0};
                     return;
                 case 0x7C:
-                    //v = types::f64{0};
-                    wch = 4;
-                    s.f_64 = 0;
+                    v = types::f64{0};
                     return;
                 default:
                     throw std::runtime_error("Invalid value in which");
@@ -117,108 +93,54 @@ namespace runtime
         }
 
         template<typename T>
-        value(const T& in)
+        value(T in)
         {
             set(in);
         }
 
-        value() {}
-
-        //value(){memset((char*)&s, 0, sizeof(s));};
-
-        value(const runtime::value& val)
-        {
-            wch = val.wch;
-            s = val.s;
-        }
-
-        /*void set(const runtime::value& val)
-        {
-            which = val.which;
-            s = val.s;
-        }*/
+        value(){};
 
         void set(uint32_t t)
         {
-            s.i_32 = t;
-            wch = 1;
+            v = types::i32{t};
         }
 
         void set(int32_t t)
         {
-            s.i_32 = (uint32_t)t;
-            wch = 1;
+            v = types::i32{(uint32_t)t};
         }
 
         void set(uint64_t t)
         {
-            s.i_64 = t;
-            wch = 2;
+            v = types::i64{t};
         }
 
         void set(int64_t t)
         {
-            s.i_64 = (uint64_t)t;
-            wch = 2;
+            v = types::i64{(uint64_t)t};
         }
 
         void set(float t)
         {
-            s.f_32 = t;
-            wch = 3;
+            v = types::f32{t};
         }
 
         void set(double t)
         {
-            s.f_64 = t;
-            wch = 4;
-        }
-
-        template<typename T>
-        static bool holds_alternative(const value& in)
-        {
-            if(std::is_same_v<T, types::i32> && in.wch == 1)
-                return true;
-
-            if(std::is_same_v<T, types::i64> && in.wch == 2)
-                return true;
-
-            if(std::is_same_v<T, types::f32> && in.wch == 3)
-                return true;
-
-            if(std::is_same_v<T, types::f64> && in.wch == 4)
-                return true;
-
-            return false;
-        }
-
-        template<typename T>
-        static decltype(T::val) get(const value& in)
-        {
-            if constexpr(std::is_same_v<T, types::i32>)
-                return in.s.i_32;
-
-            if constexpr(std::is_same_v<T, types::i64>)
-                return in.s.i_64;
-
-            if constexpr(std::is_same_v<T, types::f32>)
-                return in.s.f_32;
-
-            if constexpr(std::is_same_v<T, types::f64>)
-                return in.s.f_64;
+            v = types::f64{t};
         }
 
         template<typename T>
         auto apply(const T& t)
         {
-            if(holds_alternative<types::i32>(*this))
-                return t(get<types::i32>(*this));
-            else if(holds_alternative<types::i64>(*this))
-                return t(get<types::i64>(*this));
-            else if(holds_alternative<types::f32>(*this))
-                return t(get<types::f32>(*this));
-            else if(holds_alternative<types::f64>(*this))
-                return t(get<types::f64>(*this));
+            if(std::holds_alternative<types::i32>(v))
+                return t(std::get<types::i32>(v).val);
+            else if(std::holds_alternative<types::i64>(v))
+                return t(std::get<types::i64>(v).val);
+            else if(std::holds_alternative<types::f32>(v))
+                return t(std::get<types::f32>(v).val);
+            else if(std::holds_alternative<types::f64>(v))
+                return t(std::get<types::f64>(v).val);
 
             throw std::runtime_error("nope");
         }
@@ -230,20 +152,20 @@ namespace runtime
 
         bool is_i32()
         {
-            return holds_alternative<types::i32>(*this);
+            return std::holds_alternative<types::i32>(v);
         }
     };
 
     inline
     bool same_type(const value& v1, const value& v2)
     {
-        if(value::holds_alternative<types::i32>(v1) && value::holds_alternative<types::i32>(v2))
+        if(std::holds_alternative<types::i32>(v1.v) && std::holds_alternative<types::i32>(v2.v))
             return true;
-        if(value::holds_alternative<types::i64>(v1) && value::holds_alternative<types::i64>(v2))
+        if(std::holds_alternative<types::i64>(v1.v) && std::holds_alternative<types::i64>(v2.v))
             return true;
-        if(value::holds_alternative<types::f32>(v1) && value::holds_alternative<types::f32>(v2))
+        if(std::holds_alternative<types::f32>(v1.v) && std::holds_alternative<types::f32>(v2.v))
             return true;
-        if(value::holds_alternative<types::f64>(v1) && value::holds_alternative<types::f64>(v2))
+        if(std::holds_alternative<types::f64>(v1.v) && std::holds_alternative<types::f64>(v2.v))
             return true;
 
         return false;
@@ -256,17 +178,17 @@ namespace runtime
         if(!same_type(u, v))
             throw std::runtime_error("Not same type");
 
-        if(value::holds_alternative<types::i32>(u))
-            return t(value::get<types::i32>(u), value::get<types::i32>(v));
+        if(std::holds_alternative<types::i32>(u.v))
+            return t(std::get<types::i32>(u.v).val, std::get<types::i32>(v.v).val);
 
-        else if(value::holds_alternative<types::i64>(u))
-            return t(value::get<types::i64>(u), value::get<types::i64>(v));
+        else if(std::holds_alternative<types::i64>(u.v))
+            return t(std::get<types::i64>(u.v).val, std::get<types::i64>(v.v).val);
 
-        else if(value::holds_alternative<types::f32>(u))
-            return t(value::get<types::f32>(u), value::get<types::f32>(v));
+        else if(std::holds_alternative<types::f32>(u.v))
+            return t(std::get<types::f32>(u.v).val, std::get<types::f32>(v.v).val);
 
-        else if(value::holds_alternative<types::f64>(u))
-            return t(value::get<types::f64>(u), value::get<types::f64>(v));
+        else if(std::holds_alternative<types::f64>(u.v))
+            return t(std::get<types::f64>(u.v).val, std::get<types::f64>(v.v).val);
 
         else
             throw std::runtime_error("apply bad type");
@@ -278,17 +200,17 @@ namespace runtime
     inline
     auto apply(const T& t, const value& u)
     {
-        if(value::holds_alternative<types::i32>(u))
-            return t(value::get<types::i32>(u));
+        if(std::holds_alternative<types::i32>(u.v))
+            return t(std::get<types::i32>(u.v).val);
 
-        else if(value::holds_alternative<types::i64>(u))
-            return t(value::get<types::i64>(u));
+        else if(std::holds_alternative<types::i64>(u.v))
+            return t(std::get<types::i64>(u.v).val);
 
-        else if(value::holds_alternative<types::f32>(u))
-            return t(value::get<types::f32>(u));
+        else if(std::holds_alternative<types::f32>(u.v))
+            return t(std::get<types::f32>(u.v).val);
 
-        else if(value::holds_alternative<types::f64>(u))
-            return t(value::get<types::f64>(u));
+        else if(std::holds_alternative<types::f64>(u.v))
+            return t(std::get<types::f64>(u.v).val);
 
         else
             throw std::runtime_error("apply bad type");
