@@ -37,6 +37,7 @@ struct stk
 struct full_stack
 {
     types::vec<stk> full;
+    types::vec<int32_t> activation_offsets;
 
     void push_values(const runtime::value& val)
     {
@@ -58,6 +59,8 @@ struct full_stack
     {
         stk k;
         k.s = a;
+
+        activation_offsets.push_back(full.size());
 
         full.push_back(k);
 
@@ -128,15 +131,22 @@ struct full_stack
             throw std::runtime_error("Not a frame on the stack");
 
         full.pop_back();
+        activation_offsets.pop_back();
     }
 
     activation& get_current()
     {
-        for(int i=full.size() - 1; i >= 0; i--)
+        /*for(int i=full.size() - 1; i >= 0; i--)
         {
             if(std::holds_alternative<activation>(full[i].s))
                 return std::get<activation>(full[i].s);
-        }
+        }*/
+
+        if(activation_offsets.size() == 0)
+            throw std::runtime_error("rip activation stack");
+
+        if(std::holds_alternative<activation>(full[activation_offsets.back()].s))
+            return std::get<activation>(full[activation_offsets.back()].s);
 
         throw std::runtime_error("No current activation");
     }
