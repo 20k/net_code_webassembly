@@ -4,6 +4,7 @@
 #include <iostream>
 
 template<typename T>
+inline
 void push(const T& t, full_stack& full)
 {
     runtime::value val;

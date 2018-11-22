@@ -215,8 +215,11 @@ struct full_stack
 
     runtime::value pop_back()
     {
+        ///adds about 10ms
+        #ifdef SAFER
         if(full.size() == 0)
             throw std::runtime_error("0 stack");
+        #endif // SAFER
 
         auto last = full.back();
 
