@@ -188,6 +188,12 @@ struct full_stack
             throw std::runtime_error("No stack");
     }
 
+    void ensure_label()
+    {
+        if(full.size() == 0 || !std::holds_alternative<label>(full.back().s))
+            throw std::runtime_error("No label in eval with label");
+    }
+
     runtime::value pop_back()
     {
         if(full.size() == 0)

@@ -723,9 +723,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
         auto all_vals = full.pop_all_values_on_stack();
 
-        if(full.full.size() == 0 || !std::holds_alternative<label>(full.full.back().s))
-            throw std::runtime_error("No label in eval with label");
-
+        full.ensure_label();
         full.pop_back_label();
 
         if(ctx.frame_abort)
