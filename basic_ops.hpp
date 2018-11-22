@@ -7,30 +7,35 @@
 #include "logging.hpp"
 
 template<typename T>
+inline
 bool bool_op(const T& t)
 {
     return t > 0;
 }
 
 template<typename T>
+inline
 T add(const T& v1, const T& v2)
 {
     return v1 + v2;
 }
 
 template<typename T>
+inline
 T sub(const T& v1, const T& v2)
 {
     return v1 - v2;
 }
 
 template<typename T>
+inline
 T mul(const T& v1, const T& v2)
 {
     return v1 * v2;
 }
 
 template<typename T>
+inline
 T idiv(const T& v1, const T& v2)
 {
     if(v2 == 0)
@@ -40,12 +45,14 @@ T idiv(const T& v1, const T& v2)
 }
 
 template<typename T>
+inline
 T fdiv(const T& v1, const T& v2)
 {
     return v1 / v2;
 }
 
 template<typename T>
+inline
 T remi(const T& v1, const T& v2)
 {
     if(v2 == 0)
@@ -57,30 +64,35 @@ T remi(const T& v1, const T& v2)
 }
 
 template<typename T>
+inline
 T remf(const T& v1, const T& v2)
 {
     return fmod(v1, v2);
 }
 
 template<typename T>
+inline
 T iand(const T& v1, const T& v2)
 {
     return v1 & v2;
 }
 
 template<typename T>
+inline
 T ior(const T& v1, const T& v2)
 {
     return v1 | v2;
 }
 
 template<typename T>
+inline
 T ixor(const T& v1, const T& v2)
 {
     return v1 ^ v2;
 }
 
 template<typename T>
+inline
 T ishl(const T& v1, const T& v2)
 {
     return v1 << v2;
@@ -88,126 +100,147 @@ T ishl(const T& v1, const T& v2)
 
 ///NEED TO CONVERT TYPES HERE
 template<typename T>
+inline
 T ishr_u(const T& v1, const T& v2)
 {
     return v1 >> v2;
 }
 
 template<typename T>
+inline
 T ishr_s(const T& v1, const T& v2)
 {
     return v1 >> v2;
 }
 
 template<typename T>
+inline
 T irotl(const T& v1, const T& v2)
 {
     return (v1 << v2)|(v1 >> ((sizeof(T)*8) - v2));
 }
 
 template<typename T>
+inline
 T irotr(const T& v1, const T& v2)
 {
     return (v1 >> v2)|(v1 << (sizeof(T)*8 - v2));
 }
 
 template<typename T>
+inline
 T iclz(const T& v1)
 {
     return __builtin_clz(v1);
 }
 
 template<typename T>
+inline
 T ictz(const T& v1)
 {
     return __builtin_ctz(v1);
 }
 
 template<typename T>
+inline
 T ipopcnt(const T& v1)
 {
     return __builtin_popcount(v1);
 }
 
 template<typename T>
+inline
 T ieqz(const T& v1)
 {
     return v1 == 0;
 }
 
 template<typename T>
+inline
 T eq(const T& v1, const T& v2)
 {
     return v1 == v2;
 }
 
 template<typename T>
+inline
 T ne(const T& v1, const T& v2)
 {
     return v1 != v2;
 }
 
 template<typename T>
+inline
 T ilt_u(const T& v1, const T& v2)
 {
     return v1 < v2;
 }
 
 template<typename T>
+inline
 T ilt_s(const T& v1, const T& v2)
 {
     return v1 < v2;
 }
 
 template<typename T>
+inline
 T igt_u(const T& v1, const T& v2)
 {
     return v1 > v2;
 }
 
 template<typename T>
+inline
 T igt_s(const T& v1, const T& v2)
 {
     return v1 > v2;
 }
 
 template<typename T>
+inline
 T ile_u(const T& v1, const T& v2)
 {
     return v1 <= v2;
 }
 
 template<typename T>
+inline
 T ile_s(const T& v1, const T& v2)
 {
     return v1 <= v2;
 }
 
 template<typename T>
+inline
 T ige_u(const T& v1, const T& v2)
 {
     return v1 >= v2;
 }
 
 template<typename T>
+inline
 T ige_s(const T& v1, const T& v2)
 {
     return v1 >= v2;
 }
 
 template<typename T>
+inline
 T fmin(const T& v1, const T& v2)
 {
     return std::min(v1, v2);
 }
 
 template<typename T>
+inline
 T fmax(const T& v1, const T& v2)
 {
     return std::max(v1, v2);
 }
 
 template<typename T>
+inline
 T fcopysign(const T& v1, const T& v2)
 {
     if(v1 > 0 && v2 > 0)
@@ -226,36 +259,42 @@ T fcopysign(const T& v1, const T& v2)
 }
 
 template<typename T>
+inline
 T absf(const T& v1)
 {
     return fabs(v1);
 }
 
 template<typename T>
+inline
 T fneg(const T& t)
 {
     return -t;
 }
 
 template<typename T>
+inline
 T fsqrt(const T& t)
 {
     return sqrt(t);
 }
 
 template<typename T>
+inline
 T fceil(const T& t)
 {
     return ceil(t);
 }
 
 template<typename T>
+inline
 T ffloor(const T& t)
 {
     return floor(t);
 }
 
 template<typename T>
+inline
 T ftrunc(const T& t)
 {
     if(t > 0 && t < 1)
@@ -268,6 +307,7 @@ T ftrunc(const T& t)
 }
 
 template<typename T>
+inline
 T fnearest(const T& t)
 {
     if(t > 0 && t < 0.5)
@@ -280,96 +320,112 @@ T fnearest(const T& t)
 }
 
 template<typename T>
+inline
 T flt(const T& v1, const T& v2)
 {
     return v1 < v2;
 }
 
 template<typename T>
+inline
 T fgt(const T& v1, const T& v2)
 {
     return v1 > v2;
 }
 
 template<typename T>
+inline
 T fle(const T& v1, const T& v2)
 {
     return v1 <= v2;
 }
 
 template<typename T>
+inline
 T fge(const T& v1, const T& v2)
 {
     return v1 >= v2;
 }
 
 template<typename T, typename U>
+inline
 T extend_u(const U& in)
 {
     return (T)&in;
 }
 
 template<typename T, typename U>
+inline
 T extend_s(const U& in)
 {
     return (T)in;
 }
 
 template<typename T, int N>
+inline
 T wrap(const T& in)
 {
     return in % (T)pow(2, N);
 }
 
 template<typename T, typename U>
+inline
 T trunc_u(const U& in)
 {
     return (T)in;
 }
 
 template<typename T, typename U>
+inline
 T trunc_s(const U& in)
 {
     return (T)in;
 }
 
 template<typename T, typename U>
+inline
 T promote(const U& in)
 {
     return (T)in;
 }
 
 template<typename T, typename U>
+inline
 T demote(const U& in)
 {
     return (T)in;
 }
 
 template<typename T, typename U>
+inline
 T convert_u(const U& in)
 {
     return (T)in;
 }
 
 template<typename T, typename U>
+inline
 T convert_s(const U& in)
 {
     return (T)in;
 }
 
 template<typename T, typename U>
+inline
 T reinterpret(const U& in)
 {
     return *(T*)&in;
 }
 
 template<typename T>
+inline
 T get_const(const T& t)
 {
     return t;
 }
 
 template<typename T, int bytes>
+inline
 void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 {
     if(s.mems.size() < 1)
@@ -422,6 +478,7 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 }
 
 template<typename T, int bytes>
+inline
 void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
 {
     static_assert(bytes <= sizeof(T));
