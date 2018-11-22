@@ -198,7 +198,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
                     throw std::runtime_error("not enough labels");
                 }
 
-                lg::log("took branch to ", std::to_string(idx));
+                //lg::log("took branch to ", std::to_string(idx));
 
                 //std::cout << "hit br_if\n";
             }
