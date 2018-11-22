@@ -7,12 +7,14 @@ namespace lg
 {
     extern bool enable_logging;
 
+    inline
     void log_unpack()
     {
 
     }
 
     template<typename U, typename... T>
+    inline
     void log_unpack(const U& first, const T&... data)
     {
         std::cout << first;
@@ -21,12 +23,24 @@ namespace lg
     }
 
     template<typename... T>
+    inline
     void log(const T&... data)
     {
         if(!enable_logging)
             return;
 
         log_unpack(data...);
+
+        std::cout << std::endl;
+    }
+
+    template<typename T>
+    void log_hex_noline(const T& data)
+    {
+        if(!enable_logging)
+            return;
+
+        std::cout << std::hex << data << std::dec;
     }
 }
 

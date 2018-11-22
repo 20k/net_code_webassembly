@@ -21,7 +21,7 @@ void push(const T& t, full_stack& full)
 #define PUSH_CONSTANT(xtype)\
         { \
             xtype cst = std::get<xtype>(is.dat); \
-            std::cout << "loaded constant " << cst.val << std::endl; \
+            lg::log("loaded constant ", cst.val); \
             return push(cst.val, full); \
             break; \
         }
@@ -56,7 +56,7 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 
     label& olab = full.get_label_of_offset((uint32_t)lidx);
 
-    std::cout << "ctype " << std::to_string(olab.continuation) << std::endl;
+    lg::log("ctype ", std::to_string(olab.continuation));
 
     ctx.continuation = olab.continuation;
     ctx.capture_vals = full.pop_num_vals(arity);
@@ -79,7 +79,9 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 {
     uint8_t which = is.which;
 
-    std::cout << "0x" << std::hex << (uint32_t)which << std::dec << ", " << std::endl;
+    lg::log("0x");
+    lg::log_hex_noline(which);
+    lg::log(", ");
 
     ///good lord this is tedious
     switch(which)
@@ -165,7 +167,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             fjump(ctx, lidx, full);
 
-            std::cout << "hit br " << std::to_string(idx) << std::endl;
+            lg::log("hit br ", std::to_string(idx));
 
             break;
         }
@@ -183,7 +185,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             //std::cout << "post good\n";
 
-            std::cout << "hit br_if\n";
+            lg::log("hit br_if");
 
             if((uint32_t)type != 0)
             {
@@ -198,7 +200,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
                     throw std::runtime_error("not enough labels");
                 }
 
-                std::cout << "took branch to " << std::to_string(idx) << std::endl;
+                lg::log("took branch to ", std::to_string(idx));
 
                 //std::cout << "hit br_if\n";
             }
@@ -250,7 +252,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(idx >= (uint32_t)activate.f.inst->funcaddrs.size())
                 throw std::runtime_error("Bad fidx in 0x10");
 
-            std::cout << "calling hi there dum de dum\n";
+            lg::log("calling hi there dum de dum");
 
             invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
@@ -828,7 +830,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
                 runtime::value val;
                 val.from_valtype(loc.type);
 
-                std::cout << "asdflocal " << val.friendly_val() << std::endl;
+                lg::log("asdflocal ", val.friendly_val());
 
                 local_zeroes.push_back(val);
             }
@@ -841,15 +843,15 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         fr.locals = popped;
         fr.locals = fr.locals.append(local_zeroes);
 
-        std::cout << "fr locals " << fr.locals.size() << std::endl;
-        std::cout << "ltypes " << local_types.size() << std::endl;
-        std::cout << "hello " << local_zeroes.size() << std::endl;
+        lg::log("fr locals ", fr.locals.size());
+        lg::log("ltypes ", local_types.size());
+        lg::log("hello ", local_zeroes.size());
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};
         activate.f = fr;
 
-        std::cout << "push " << std::endl;
+        lg::log("push");
         full.push_activation(activate);
 
         eval_expr(ctx, s, expression, full);
@@ -884,7 +886,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
             return bvals;
         }
 
-        std::cout << "pop" << std::endl;
+        lg::log("pop");
 
 
         ///carry on instruction stream after the call
@@ -925,7 +927,7 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
 
     return_value = invoke_intl(ctx, *this, full, address, minst);
 
-    std::cout << "left on stack " << full.full.size() << std::endl;
+    lg::log("left on stack ", full.full.size());
 
     return return_value;
 

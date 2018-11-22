@@ -10,6 +10,7 @@
 #include <cstring>
 #include "runtime_types.hpp"
 #include "invoke.hpp"
+#include "logging.hpp"
 
 void dump_state(parser& p)
 {
@@ -35,7 +36,7 @@ namespace sections
             serialise(id, p, ser);
             serialise(len, p, ser);
 
-            std::cout << "found id " << std::to_string(id) << std::endl;
+            lg::log("found id ", std::to_string(id));
         }
     };
 
@@ -65,7 +66,7 @@ namespace sections
 
             p.advance(len);
 
-            std::cout << "custom name " << name.friendly() << std::endl;
+            lg::log("custom name ", name.friendly());
         }
     };
 
@@ -140,8 +141,8 @@ namespace sections
             serialise(nm, p, ser);
             serialise(desc, p, ser);
 
-            std::cout << "import1 " << mod.friendly() << std::endl;
-            std::cout << "import2 " << nm.friendly() << std::endl;
+            lg::log("import1 ", mod.friendly());
+            lg::log("import2 ", nm.friendly());
             ///so mod is the module
             ///env seems to be environment, eg passive imports
             ///nm is the name, in this example the function hi
@@ -285,7 +286,7 @@ namespace sections
             serialise(nm, p, ser);
             serialise(desc, p, ser);
 
-            std::cout << "export " << nm.friendly() << std::endl;
+            lg::log("export ", nm.friendly());
         }
     };
 
