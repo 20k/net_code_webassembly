@@ -46,6 +46,18 @@ struct context
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::expr& exp, full_stack& full);
 void invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
+void fjump(context& ctx, types::labelidx lidx, full_stack& full)
+{
+    label& l = full.get_current_label();
+
+    int arity = l.dat.btype.arity();
+
+    ctx.continuation = l.continuation;
+    ctx.capture_vals = full.pop_num_vals(arity);
+    ctx.abort_stack = (uint32_t)lidx + 1;
+    ctx.needs_cont_jump = true;
+}
+
 inline
 void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& full)
 {
@@ -128,20 +140,14 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
         {
             types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-            int arity = full.get_current_label().dat.btype.arity();
-
-            ctx.capture_vals = full.pop_num_vals(arity);
-            ctx.abort_stack = (uint32_t)lidx + 1;
-            ctx.needs_cont_jump = true;
-
-            //full.pop_all_values_on_stack();
-
             uint32_t idx = (uint32_t)lidx;
 
             if((uint32_t)full.num_labels() < idx + 1)
             {
                 throw std::runtime_error("not enough labels");
             }
+
+            fjump(ctx, lidx, full);
 
             std::cout << "hit br\n";
 
@@ -167,18 +173,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-                label& l = full.get_current_label();
-
-                int arity = l.dat.btype.arity();
-                int continuation = l.continuation;
-
-                ///l now invalid
-                ctx.capture_vals = full.pop_num_vals(arity);
-                ctx.abort_stack = (uint32_t)lidx + 1;
-                ctx.needs_cont_jump = true;
-                ctx.continuation = continuation;
-
-                //full.pop_all_values_on_stack();
+                fjump(ctx, lidx, full);
 
                 uint32_t idx = (uint32_t)lidx;
 
@@ -188,6 +183,33 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
                 }
 
                 std::cout << "hit br_if\n";
+            }
+
+            break;
+        }
+
+        case 0x0E:
+        {
+            types::br_table_data br_td = std::get<types::br_table_data>(is.dat);
+
+            runtime::value top_val = full.pop_back();
+
+            if(!top_val.is_i32())
+                throw std::runtime_error("br_td should have been i32");
+
+            types::i32 val = std::get<types::i32>(top_val.v);
+
+            uint32_t idx = (uint32_t)val;
+
+            if(idx < (uint32_t)br_td.labels.size())
+            {
+                types::labelidx lidx = br_td.labels[idx];
+
+                fjump(ctx, lidx, full);
+            }
+            else
+            {
+                fjump(ctx, br_td.fin, full);
             }
 
             break;
