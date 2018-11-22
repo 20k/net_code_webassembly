@@ -96,13 +96,17 @@ struct full_stack
 
         int32_t to_pop = stack_values.back();
 
-        for(int i = full.size() - 1; i >= 0 && i > full.size() - 1 - to_pop; i--)
+        int32_t start = full.size() - to_pop;
+
+        if(start < 0)
+            throw std::runtime_error("weird num error, not sure this is possible");
+
+        ret.v = std::vector<runtime::value>(full.begin() + start, full.end());
+
+        /*for(int i = full.size() - 1; i >= 0 && i > full.size() - 1 - to_pop; i--)
         {
             ret.push_back(full[i]);
-        }
-
-        if(ret.size() != to_pop)
-            throw std::runtime_error("weird num error, not sure this is possible");
+        }*/
 
         full.resize(full.size() - to_pop);
 
