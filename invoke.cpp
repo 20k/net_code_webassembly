@@ -54,7 +54,11 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 
     int arity = l.dat.btype.arity();
 
-    ctx.continuation = l.continuation;
+    label& olab = full.get_label_of_offset((uint32_t)lidx);
+
+    std::cout << "ctype " << std::to_string(olab.continuation) << std::endl;
+
+    ctx.continuation = olab.continuation;
     ctx.capture_vals = full.pop_num_vals(arity);
     ctx.abort_stack = (uint32_t)lidx + 1;
     ctx.needs_cont_jump = true;
@@ -161,7 +165,7 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
 
             fjump(ctx, lidx, full);
 
-            std::cout << "hit br\n";
+            std::cout << "hit br " << std::to_string(idx) << std::endl;
 
             break;
         }
@@ -173,16 +177,16 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
             if(!val.is_i32())
                 throw std::runtime_error("expected i32 in 0x0D");
 
-            std::cout << "good " << std::holds_alternative<types::i32>(val.v) << std::endl;
+            //std::cout << "good " << std::holds_alternative<types::i32>(val.v) << std::endl;
 
             types::i32 type = std::get<types::i32>(val.v);
 
-            std::cout << "post good\n";
+            //std::cout << "post good\n";
+
+            std::cout << "hit br_if\n";
 
             if((uint32_t)type != 0)
             {
-                std::cout << "ibranch\n";
-
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
                 fjump(ctx, lidx, full);
@@ -194,7 +198,9 @@ void do_op(context& ctx, runtime::store& s, const types::instr& is, full_stack& 
                     throw std::runtime_error("not enough labels");
                 }
 
-                std::cout << "hit br_if\n";
+                std::cout << "took branch to " << std::to_string(idx) << std::endl;
+
+                //std::cout << "hit br_if\n";
             }
 
             break;
@@ -769,7 +775,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
                 ///ok dis wrong because label is trampling
                 should_loop = true;
-                return;
+                continue;
             }
 
             if(ctx.continuation == 3)

@@ -806,7 +806,7 @@ void wasm_binary_data::init(data d)
 
     //s.invoke({0})
 
-    for(int i=0; i < (int)minst.exports.v.size(); i++)
+    /*for(int i=0; i < (int)minst.exports.v.size(); i++)
     {
         runtime::exportinst& einst = minst.exports.v[i];
 
@@ -816,5 +816,22 @@ void wasm_binary_data::init(data d)
 
             s.invoke(std::get<runtime::funcaddr>(einst.value.val), minst, {});
         }
+    }*/
+
+    //types::vec<runtime::value> vals = s.invoke_by_name("_start", minst, {});
+
+    runtime::value arg;
+    arg.set((uint32_t)9);
+
+    types::vec<runtime::value> args;
+    args.push_back(arg);
+
+    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, args);
+
+    //std::cout << "rvals " << vals.size() << std::endl;
+
+    for(runtime::value& val : vals)
+    {
+        std::cout << "rval " << val.friendly_val() << std::endl;
     }
 }

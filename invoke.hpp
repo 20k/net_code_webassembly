@@ -156,6 +156,26 @@ struct full_stack
         throw std::runtime_error("No current label");
     }
 
+    label& get_label_of_offset(int offset)
+    {
+        offset++;
+
+        int coffset = 0;
+
+        for(int i=full.size() - 1; i >= 0; i--)
+        {
+            if(std::holds_alternative<label>(full[i].s))
+            {
+                coffset++;
+
+                if(coffset == offset)
+                    return std::get<label>(full[i].s);
+            }
+        }
+
+        throw std::runtime_error("Could not get label of offset " + std::to_string(offset));
+    }
+
     void ensure_activation()
     {
         if(full.size() == 0)

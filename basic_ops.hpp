@@ -50,6 +50,8 @@ T remi(const T& v1, const T& v2)
     if(v2 == 0)
         throw std::runtime_error("v2 == 0 in rem");
 
+    std::cout << "mod " << v1 << " " << v2 << std::endl;
+
     return v1 % v2;
 }
 
