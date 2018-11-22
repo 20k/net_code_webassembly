@@ -457,17 +457,8 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
     if(ea + bytes >= (uint32_t)minst.dat.size())
         throw std::runtime_error("Out of memory (OOB in mem_load)");
 
-    std::array<uint8_t, bytes> arr;
-
-    for(uint32_t cbyte = 0; cbyte < bytes; cbyte++)
-    {
-        uint32_t current_offset = cbyte + ea;
-
-        arr[cbyte] = minst.dat[current_offset];
-    }
-
     T ret;
-    memcpy(&ret, &arr[0], bytes);
+    memcpy(&ret, &minst.dat[ea], bytes);
 
     runtime::value rval;
     rval.set(ret);
