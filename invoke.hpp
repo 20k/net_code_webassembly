@@ -31,13 +31,14 @@ struct label
 
 struct stk
 {
-    std::variant<runtime::value, label, activation> s;
+    std::variant<runtime::value, label> s;
 };
 
 struct full_stack
 {
     types::vec<stk> full;
-    types::vec<int32_t> activation_offsets;
+    //types::vec<int32_t> activation_offsets;
+    types::vec<activation> activation_stack;
 
     void push_values(const runtime::value& val)
     {
@@ -57,12 +58,7 @@ struct full_stack
 
     void push_activation(const activation& a)
     {
-        stk k;
-        k.s = a;
-
-        activation_offsets.push_back(full.size());
-
-        full.push_back(k);
+        activation_stack.push_back(a);
 
         /*std::cout <<" in a " << a.f.locals.size() << std::endl;
         std::cout << "dbga " << get_current().f.locals.size() << std::endl;*/
@@ -124,14 +120,14 @@ struct full_stack
 
     void pop_back_activation()
     {
-        if(full.size() == 0)
+        if(activation_stack.size() == 0)
             throw std::runtime_error("No elements on stack (pop_back_frame)");
 
-        if(!std::holds_alternative<activation>(full.back().s))
-            throw std::runtime_error("Not a frame on the stack");
+        /*if(!std::holds_alternative<activation>(full.back().s))
+            throw std::runtime_error("Not a frame on the stack");*/
 
-        full.pop_back();
-        activation_offsets.pop_back();
+        //full.pop_back();
+        activation_stack.pop_back();
     }
 
     activation& get_current()
@@ -142,13 +138,15 @@ struct full_stack
                 return std::get<activation>(full[i].s);
         }*/
 
-        if(activation_offsets.size() == 0)
+        if(activation_stack.size() == 0)
             throw std::runtime_error("rip activation stack");
 
-        if(std::holds_alternative<activation>(full[activation_offsets.back()].s))
+        /*if(std::holds_alternative<activation>(full[activation_offsets.back()].s))
             return std::get<activation>(full[activation_offsets.back()].s);
 
-        throw std::runtime_error("No current activation");
+        throw std::runtime_error("No current activation");*/
+
+        return activation_stack.back();
     }
 
     label& get_current_label()
@@ -184,11 +182,11 @@ struct full_stack
 
     void ensure_activation()
     {
-        if(full.size() == 0)
+        if(activation_stack.size() == 0)
             throw std::runtime_error("No stack");
 
-        if(std::holds_alternative<activation>(full.back().s))
-            return;
+        /*if(std::holds_alternative<activation>(full.back().s))
+            return;*/
 
         throw std::runtime_error("No activation on stack");
     }

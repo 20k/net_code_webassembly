@@ -115,7 +115,12 @@ namespace types
             return v.pop_back();
         }
 
-        auto back()
+        T back() const
+        {
+            return v.back();
+        }
+
+        T& back()
         {
             return v.back();
         }
