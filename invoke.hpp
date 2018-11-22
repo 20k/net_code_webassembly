@@ -31,7 +31,9 @@ struct label
 
 struct stk
 {
-    std::variant<runtime::value, label> s;
+    //std::variant<runtime::value, label> s;
+
+    runtime::value s;
 
     /*void operator=(const runtime::value& val)
     {
@@ -54,6 +56,7 @@ struct full_stack
     types::vec<stk> full;
     //types::vec<int32_t> activation_offsets;
     types::vec<activation> activation_stack;
+    types::vec<label> label_stack;
 
     void push_values(const runtime::value& val)
     {
@@ -83,10 +86,7 @@ struct full_stack
 
     void push_label(const label& l)
     {
-        stk k;
-        k.s = l;
-
-        full.push_back(k);
+        label_stack.push_back(l);
     }
 
     types::vec<runtime::value> pop_all_values_on_stack()
@@ -153,20 +153,25 @@ struct full_stack
 
     label& get_current_label()
     {
-        for(int i=full.size() - 1; i >= 0; i--)
+        /*for(int i=full.size() - 1; i >= 0; i--)
         {
             if(std::holds_alternative<label>(full[i].s))
                 return std::get<label>(full[i].s);
         }
 
-        throw std::runtime_error("No current label");
+        throw std::runtime_error("No current label");*/
+
+        if(label_stack.size() == 0)
+            throw std::runtime_error("No current label");
+
+        return label_stack.back();
     }
 
     label& get_label_of_offset(int offset)
     {
         offset++;
 
-        int coffset = 0;
+        /*int coffset = 0;
 
         for(int i=full.size() - 1; i >= 0; i--)
         {
@@ -177,6 +182,14 @@ struct full_stack
                 if(coffset == offset)
                     return std::get<label>(full[i].s);
             }
+        }*/
+
+        for(int i=label_stack.size() - 1; i >= 0; i--)
+        {
+            coffset++;
+
+            if(coffset == offset)
+                return label_stack[i];
         }
 
         throw std::runtime_error("Could not get label of offset " + std::to_string(offset));
@@ -190,7 +203,10 @@ struct full_stack
 
     void ensure_label()
     {
-        if(full.size() == 0 || !std::holds_alternative<label>(full.back().s))
+        /*if(full.size() == 0 || !std::holds_alternative<label>(full.back().s))
+            throw std::runtime_error("No label in eval with label");*/
+
+        if(label_stack.size() == 0)
             throw std::runtime_error("No label in eval with label");
     }
 
@@ -211,17 +227,14 @@ struct full_stack
 
     label pop_back_label()
     {
-        if(full.size() == 0)
-            throw std::runtime_error("0 stack");
+        if(label_stack.size() == 0)
+            throw std::runtime_error("0 label stack");
 
-        auto last = full.back();
+        auto last = label_stack.back();
 
-        if(!std::holds_alternative<label>(last.s))
-            throw std::runtime_error("pop back on wrong type");
+        label_stack.pop_back();
 
-        full.pop_back();
-
-        return std::get<label>(last.s);
+        return last;
     }
 
     std::optional<runtime::value> peek_back()
