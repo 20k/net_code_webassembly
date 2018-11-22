@@ -38,6 +38,8 @@
 		<Unit filename="basic_ops.hpp" />
 		<Unit filename="invoke.cpp" />
 		<Unit filename="invoke.hpp" />
+		<Unit filename="logging.cpp" />
+		<Unit filename="logging.hpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="print.hpp" />
 		<Unit filename="runtime_types.cpp" />
