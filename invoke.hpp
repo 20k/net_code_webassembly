@@ -67,6 +67,14 @@ struct full_stack
         stack_values.back() += 1;
     }
 
+    template<typename T>
+    void push_values(const T& t)
+    {
+        full.emplace_back(t);
+
+        stack_values.back() += 1;
+    }
+
     void push_all_values(const types::vec<runtime::value>& val)
     {
         full.insert(full.end(), val.begin(), val.end());

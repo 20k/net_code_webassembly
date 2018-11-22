@@ -20,7 +20,7 @@ namespace types
         T val = 0;
 
         integral(const T& t) : val(t){}
-        integral(){}
+        integral() = default;
 
         explicit operator T() const noexcept {return val;}
 
@@ -108,6 +108,12 @@ namespace types
         void push_back(const T& t)
         {
             v.push_back(t);
+        }
+
+        template<typename U>
+        void emplace_back(const U& t)
+        {
+            v.emplace_back(t);
         }
 
         auto pop_back()

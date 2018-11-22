@@ -92,6 +92,14 @@ namespace runtime
             }
         }
 
+        template<typename T>
+        value(T in)
+        {
+            set(in);
+        }
+
+        value(){};
+
         void set(uint32_t t)
         {
             v = types::i32{t};
