@@ -123,28 +123,13 @@ struct full_stack
         if(activation_stack.size() == 0)
             throw std::runtime_error("No elements on stack (pop_back_frame)");
 
-        /*if(!std::holds_alternative<activation>(full.back().s))
-            throw std::runtime_error("Not a frame on the stack");*/
-
-        //full.pop_back();
         activation_stack.pop_back();
     }
 
     activation& get_current()
     {
-        /*for(int i=full.size() - 1; i >= 0; i--)
-        {
-            if(std::holds_alternative<activation>(full[i].s))
-                return std::get<activation>(full[i].s);
-        }*/
-
         if(activation_stack.size() == 0)
             throw std::runtime_error("rip activation stack");
-
-        /*if(std::holds_alternative<activation>(full[activation_offsets.back()].s))
-            return std::get<activation>(full[activation_offsets.back()].s);
-
-        throw std::runtime_error("No current activation");*/
 
         return activation_stack.back();
     }
@@ -184,11 +169,6 @@ struct full_stack
     {
         if(activation_stack.size() == 0)
             throw std::runtime_error("No stack");
-
-        /*if(std::holds_alternative<activation>(full.back().s))
-            return;*/
-
-        throw std::runtime_error("No activation on stack");
     }
 
     runtime::value pop_back()
