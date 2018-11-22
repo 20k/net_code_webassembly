@@ -30,18 +30,21 @@ struct label
 
 struct full_stack
 {
+    ///todo tomorrow
+    ///experiment with making these actual indexed stacks
+    ///with a fixed max size and stuff
     types::vec<runtime::value> full;
     //types::vec<int32_t> activation_offsets;
     types::vec<activation> activation_stack;
     types::vec<label> label_stack;
 
-    types::vec<uint32_t> stack_values{{0}};
+    types::vec<uint32_t> stack_start_sizes{{0}};
 
     void push_values(const runtime::value& val)
     {
         full.emplace_back(val);
 
-        stack_values.back() += 1;
+        //stack_values.back() += 1;
     }
 
     /*template<typename T>
@@ -55,14 +58,13 @@ struct full_stack
     void push_all_values(const types::vec<runtime::value>& val)
     {
         full.insert(full.end(), val.begin(), val.end());
-        stack_values.back() += val.size();
     }
 
     void push_activation(const activation& a)
     {
         activation_stack.push_back(a);
 
-        stack_values.push_back(0);
+        stack_start_sizes.push_back(full.size());
 
         /*std::cout <<" in a " << a.f.locals.size() << std::endl;
         std::cout << "dbga " << get_current().f.locals.size() << std::endl;*/
@@ -72,7 +74,7 @@ struct full_stack
     {
         label_stack.push_back(l);
 
-        stack_values.push_back(0);
+        stack_start_sizes.push_back(full.size());
     }
 
     ///this is unsafe because it doesn't set
@@ -82,7 +84,7 @@ struct full_stack
     {
         types::vec<runtime::value> ret;
 
-        int32_t to_pop = stack_values.back();
+        int32_t to_pop = full.size() - stack_start_sizes.back();
 
         int32_t n = full.size();
 
@@ -101,8 +103,6 @@ struct full_stack
 
         full.resize(full.size() - to_pop);
 
-        //stack_values.back() = 0;
-
         return ret;
     }
 
@@ -110,14 +110,16 @@ struct full_stack
     ///than using the above. is probably cache related
     void pop_all_values_on_stack_unsafe_nocatch()
     {
-        int32_t to_pop = stack_values.back();
+        /*int32_t to_pop = full.size() - stack_start_sizes.back();
 
         int32_t start = full.size() - to_pop;
 
         //if(start < 0)
         //    throw std::runtime_error("Bad start in pop all");
 
-        full.resize(start);
+        full.resize(start);*/
+
+        full.resize(stack_start_sizes.back());
     }
 
     types::vec<runtime::value> pop_num_vals(int num)
@@ -138,8 +140,6 @@ struct full_stack
 
         full.resize(n - num);
 
-        stack_values.back() -= num;
-
         return ret;
     }
 
@@ -150,7 +150,7 @@ struct full_stack
 
         activation_stack.pop_back();
 
-        stack_values.pop_back();
+        stack_start_sizes.pop_back();
     }
 
     activation& get_current()
@@ -209,7 +209,6 @@ struct full_stack
         auto last = full.back();
 
         full.pop_back();
-        stack_values.back() -= 1;
 
         return last;
     }
@@ -222,7 +221,7 @@ struct full_stack
         auto last = label_stack.back();
 
         label_stack.pop_back();
-        stack_values.pop_back();
+        stack_start_sizes.pop_back();
 
         return last;
     }
