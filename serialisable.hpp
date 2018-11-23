@@ -109,7 +109,7 @@ void lowest_get(serialisable& v, parser& p)
 inline
 void lowest_get(types::i32& val, parser& p)
 {
-    val = leb::unsigned_decode<types::i32>(p);
+    val = leb::signed_decode<types::i32>(p);
 }
 
 inline
@@ -127,7 +127,7 @@ void lowest_get(types::s32& val, parser& p)
 inline
 void lowest_get(types::i64& val, parser& p)
 {
-    val = leb::unsigned_decode<types::i64>(p);
+    val = leb::signed_decode<types::i64>(p);
 }
 
 inline
