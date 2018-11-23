@@ -525,6 +525,12 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
 }
 
 inline
+void tmalloc(runtime::store& s, const types::memarg& arg, full_stack& full)
+{
+
+}
+
+inline
 void get_local(full_stack& full, const types::localidx& lidx)
 {
     activation& activate = full.get_current();

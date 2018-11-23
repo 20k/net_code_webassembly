@@ -833,15 +833,15 @@ void wasm_binary_data::init(data d)
 
     runtime::value arg;
     //arg.set((uint32_t)(13*17));
-    arg.set((uint32_t)(10139737));
+    //arg.set((uint32_t)(10139737));
     //arg.set((uint32_t)(1188179));
 
-    types::vec<runtime::value> args;
-    args.push_back(arg);
+    //types::vec<runtime::value> args;
+    //args.push_back(arg);
 
     sf::Clock clk;
 
-    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, args);
+    types::vec<runtime::value> vals = s.invoke_by_name("capi_test", minst, {});
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 
