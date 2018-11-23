@@ -129,6 +129,8 @@ struct full_stack
             ret.push_back(full[i]);
         }
 
+        //types::vec<runtime::value> ret(full.begin() + start, full.begin() + n);
+
         full.resize(n - num);
 
         return ret;

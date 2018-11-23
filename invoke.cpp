@@ -92,7 +92,7 @@ struct binary_profiler
 
     ~binary_profiler()
     {
-        int sum = 0;
+        //int sum = 0;
 
         for(auto& i : i_count)
         {

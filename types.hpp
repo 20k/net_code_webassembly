@@ -75,6 +75,19 @@ namespace types
     {
         std::vector<T> v;
 
+        template<typename U>
+        vec(const U& v1, const U& v2) : v(v1, v2)
+        {
+
+        }
+
+        vec() = default;
+
+        vec(const std::initializer_list<T>& lst) : v(lst)
+        {
+
+        }
+
         auto begin()
         {
             return v.begin();
