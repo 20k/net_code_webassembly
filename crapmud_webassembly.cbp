@@ -46,6 +46,7 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-std=c++17" />
+			<Add option="-march=nehalem" />
 		</Compiler>
 		<Linker>
 			<Add option="-lsfml-system" />
