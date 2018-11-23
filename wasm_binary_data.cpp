@@ -791,6 +791,8 @@ void test_hi(int in)
 
 ///inlining might not be possible because the functions are mutually dependent
 ///try converting to an explicit callstack
+
+///in the latest test, duktape hits 350 but I hit 1800
 void wasm_binary_data::init(data d)
 {
     parser p(d);
