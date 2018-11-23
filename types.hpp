@@ -177,6 +177,135 @@ namespace types
         }
     };
 
+    template<typename T>
+    struct fvec
+    {
+        std::vector<T> v;
+        uint32_t idx = 0;
+
+        auto begin()
+        {
+            return v.begin();
+        }
+
+        auto end()
+        {
+            return v.begin() + idx;
+        }
+
+        auto begin() const
+        {
+            return v.begin();
+        }
+
+        auto end() const
+        {
+            return v.begin() + idx;
+        }
+
+        void clear()
+        {
+            idx = 0;
+            v.clear();
+        }
+
+        int32_t size() const
+        {
+            return idx;
+        }
+
+        void push_back(const T& t)
+        {
+            //v.push_back(t);
+
+            if(idx >= (uint32_t)v.size())
+                v.resize(idx + 1);
+
+            v[idx] = t;
+
+            idx++;
+        }
+
+        template<typename U>
+        void emplace_back(const U& t)
+        {
+            if(idx >= (uint32_t)v.size())
+                v.emplace_back(t);
+
+            v[idx] = T{t};
+
+            idx++;
+        }
+
+        void pop_back()
+        {
+            idx--;
+            //v.pop_back();
+        }
+
+        /*template<typename U, typename V>
+        void insert(const U& v1, const V& v2, const V& v3)
+        {
+            v.insert(v1, v2, v3);
+            ///?
+        }*/
+
+        T back() const
+        {
+            return v[idx - 1];
+        }
+
+        T& back()
+        {
+            return v[idx - 1];
+        }
+
+        template<typename U>
+        inline
+        T operator [](const U& i) const
+        {
+            //if(i >= (U)v.size() || i < 0)
+            //    throw std::runtime_error("invalid bounds access");
+
+            return v[i];
+        }
+
+        template<typename U>
+        inline
+        T& operator [](const U& i)
+        {
+            //if(i >= (U)v.size() || i < 0)
+            //    throw std::runtime_error("invalid bounds access");
+
+            return v[i];
+        }
+
+        void resize(uint32_t n)
+        {
+            if(n > idx)
+            {
+                v.resize(n);
+            }
+
+            idx = n;
+        }
+
+        [[nodiscard]]
+        fvec<T> append(const fvec<T>& dat) const
+        {
+            fvec<T> ret;
+            ret.v = v;
+            ret.idx = idx;
+
+            for(int i=0; i < dat.size(); i++)
+            {
+                ret.push_back(dat[i]);
+            }
+
+            return ret;
+        }
+    };
+
     /**0x7F -> i32
     0x7E -> i64
     0x7D -> f32

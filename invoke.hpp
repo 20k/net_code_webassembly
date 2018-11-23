@@ -33,7 +33,7 @@ struct full_stack
     ///todo tomorrow
     ///experiment with making these actual indexed stacks
     ///with a fixed max size and stuff
-    types::vec<runtime::value> full;
+    types::fvec<runtime::value> full;
     //types::vec<int32_t> activation_offsets;
     types::vec<activation> activation_stack;
     types::vec<label> label_stack;
@@ -57,7 +57,12 @@ struct full_stack
 
     void push_all_values(const types::vec<runtime::value>& val)
     {
-        full.insert(full.end(), val.begin(), val.end());
+        //full.insert(full.end(), val.begin(), val.end());
+
+        for(auto& i : val)
+        {
+            full.push_back(i);
+        }
     }
 
     void push_activation(const activation& a)
