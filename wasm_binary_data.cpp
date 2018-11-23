@@ -788,6 +788,9 @@ void test_hi(int in)
 ///duktape appears to execute this in 62ms or so
 ///whereas currently i am taking 700ms, so looking for a factor 10x speedup here
 ///with optimisations on this only takes 350 which is neat
+
+///inlining might not be possible because the functions are mutually dependent
+///try converting to an explicit callstack
 void wasm_binary_data::init(data d)
 {
     parser p(d);
