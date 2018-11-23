@@ -536,7 +536,9 @@ void get_local(full_stack& full, const types::localidx& lidx)
 
     runtime::value val = activate.f.locals[idx];
 
-    //lg::log("got local ", val.friendly_val());
+    #ifdef DEBUGGING
+    lg::log("got local id ", idx, " val ", val.friendly_val());
+    #endif // DEBUGGING
 
     full.push_values(val);
 }
@@ -570,7 +572,9 @@ void tee_local(full_stack& full, const types::localidx& lidx)
 
     activate.f.locals[idx] = top;
 
-    //lg::log("set idx ", std::to_string(idx), " to ", top.friendly_val());
+    #ifdef DEBUGGING
+    lg::log("set idx ", std::to_string(idx), " to ", top.friendly_val());
+    #endif // DEBUGGING
 
     full.push_values(top);
 }

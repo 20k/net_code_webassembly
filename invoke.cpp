@@ -19,7 +19,7 @@ void push(const T& t, full_stack& full)
 #define PUSH_CONSTANT(xtype)\
         { \
             xtype cst = std::get<xtype>(dat.dat); \
-            /*lg::log("loaded constant ", cst.val);*/ \
+            lg::log("loaded constant ", cst.val); \
             /*push(cst, full);*/ \
             full.push_values(cst);                  \
             break; \
@@ -94,9 +94,14 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr_wh
 
         uint8_t which = is.which;
 
-        /*lg::log("0x");
+
+        #ifdef DEBUGGING
+        /*lg::logn("0x");
         lg::log_hex_noline(which);
-        lg::log(", ");*/
+        lg::logn(", ");
+        lg::log("");*/
+        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << ", " << std::endl;
+        #endif // DEBUGGING
 
         ///good lord this is tedious
         switch(which)
@@ -191,7 +196,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr_wh
                 if(ctx.break_op_loop())
                     return;
 
-                //lg::log("hit br ", std::to_string(idx));
+                #ifdef DEBUGGING
+                lg::log("hit br ", std::to_string(idx));
+                #endif // DEBUGGING
 
                 break;
             }
@@ -209,7 +216,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr_wh
 
                 //std::cout << "post good\n";
 
-                //lg::log("hit br_if");
+                #ifdef DEBUGGING
+                lg::log("hit br_if, ", type.val);
+                #endif // DEBUGGING
 
                 if((uint32_t)type != 0)
                 {
@@ -224,10 +233,12 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr_wh
                         throw std::runtime_error("not enough labels");
                     }
 
-                    if(ctx.break_op_loop())
-                        return;;
+                    #ifdef DEBUGGING
+                    lg::log("took branch to ", std::to_string(idx));
+                    #endif // DEBUGGING
 
-                    //lg::log("took branch to ", std::to_string(idx));
+                    if(ctx.break_op_loop())
+                        return;
 
                     //std::cout << "hit br_if\n";
                 }

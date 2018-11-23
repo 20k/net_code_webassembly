@@ -182,5 +182,13 @@ void leb_tests()
 
         assert(d.offset == 3);
     }
+
+    {
+        int32_t check = -1;
+
+        data d = leb::signed_encode<int32_t, data>(check);
+
+        assert(leb::signed_decode<int32_t>(d) == check);
+    }
 }
 
