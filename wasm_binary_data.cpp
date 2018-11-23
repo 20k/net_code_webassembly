@@ -701,7 +701,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     {
         types::global& glob = m.section_global.globals[i];
 
-        runtime::value val = eval_implicit(s, glob.e.i);
+        runtime::value val = eval_implicit(s, glob.e.i, glob.e.d);
 
         std::cout << "evald global and got " << val.friendly_val() << std::endl;
 

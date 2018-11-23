@@ -411,7 +411,8 @@ namespace types
         labelidx fin;
     };
 
-    struct instr;
+    struct instr_which;
+    struct instr_data;
 
     struct double_branch_data
     {
@@ -419,18 +420,21 @@ namespace types
 
         bool has_second_branch = false;
 
-        vec<instr> first;
-        vec<instr> second;
+        vec<instr_which> first;
+        vec<instr_data> first_data;
+        vec<instr_which> second;
+        vec<instr_data> second_data;
     };
 
     struct single_branch_data
     {
         blocktype btype;
 
-        vec<instr> first;
+        vec<instr_which> first;
+        vec<instr_data> first_data;
     };
 
-    struct instr
+    struct instr_which
     {
         uint8_t which = 0;
 
@@ -454,13 +458,17 @@ namespace types
             double_branch_data dbd;
             single_branch_data sbd;
         } cst;*/
+    };
 
+    struct instr_data
+    {
         std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, labelidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
     };
 
     struct expr
     {
-        vec<instr> i;
+        vec<instr_which> i;
+        vec<instr_data> d;
     };
 
     struct global

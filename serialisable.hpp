@@ -383,7 +383,7 @@ void lowest_get(types::br_table_data& type, parser& p)
 }
 
 inline
-void lowest_get(types::instr&, parser& p);
+void lowest_get(types::instr_which&, types::instr_data& dat, parser& p);
 
 inline
 void lowest_get(types::double_branch_data& type, parser& p)
@@ -392,10 +392,12 @@ void lowest_get(types::double_branch_data& type, parser& p)
 
     while(p.peek() != 0x05 && p.peek() != 0x0B)
     {
-        types::instr temp;
-        lowest_get(temp, p);
+        types::instr_which temp;
+        types::instr_data tempd;
+        lowest_get(temp, tempd, p);
 
         type.first.push_back(temp);
+        type.first_data.push_back(tempd);
     }
 
     if(p.peek() == 0x05)
@@ -405,10 +407,12 @@ void lowest_get(types::double_branch_data& type, parser& p)
 
         while(p.peek() != 0x0B)
         {
-            types::instr temp;
-            lowest_get(temp, p);
+            types::instr_which temp;
+            types::instr_data tempd;
+            lowest_get(temp, tempd, p);
 
             type.second.push_back(temp);
+            type.second_data.push_back(tempd);
         }
     }
 
@@ -422,10 +426,12 @@ void lowest_get(types::single_branch_data& type, parser& p)
 
     while(p.peek() != 0x0B)
     {
-        types::instr temp;
-        lowest_get(temp, p);
+        types::instr_which temp;
+        types::instr_data tempd;
+        lowest_get(temp, tempd, p);
 
         type.first.push_back(temp);
+        type.first_data.push_back(tempd);
     }
 
     p.checked_fetch<1>({0x0B});
@@ -443,7 +449,7 @@ void lowest_get(std::variant<U...>& type, parser& p)
 
 ///https://webassembly.github.io/spec/core/binary/instructions.html#binary-expr
 inline
-void lowest_get(types::instr& type, parser& p)
+void lowest_get(types::instr_which& type, types::instr_data& dat, parser& p)
 {
     uint8_t next = p.next();
 
@@ -454,29 +460,29 @@ void lowest_get(types::instr& type, parser& p)
 
     if(next == 0x41)
     {
-        lowest_get<types::i32>(type.dat, p);
+        lowest_get<types::i32>(dat.dat, p);
 
-        std::cout << "fval " << std::get<types::i32>(type.dat).val << std::endl;
+        std::cout << "fval " << std::get<types::i32>(dat.dat).val << std::endl;
     }
 
     if(next == 0x42)
     {
-        lowest_get<types::i64>(type.dat, p);
+        lowest_get<types::i64>(dat.dat, p);
     }
 
     if(next == 0x43)
     {
-        lowest_get<types::f32>(type.dat, p);
+        lowest_get<types::f32>(dat.dat, p);
     }
 
     if(next == 0x44)
     {
-        lowest_get<types::f64>(type.dat, p);
+        lowest_get<types::f64>(dat.dat, p);
     }
 
     if(next >= 0x28 && next <= 0x3E)
     {
-        lowest_get<types::memarg>(type.dat, p);
+        lowest_get<types::memarg>(dat.dat, p);
     }
 
     if(next >= 0x3F && next <= 0x40)
@@ -488,42 +494,42 @@ void lowest_get(types::instr& type, parser& p)
 
     if(next >= 0x20 && next <= 0x22)
     {
-        lowest_get<types::localidx>(type.dat, p);
+        lowest_get<types::localidx>(dat.dat, p);
     }
 
     if(next >= 0x23 && next <= 0x24)
     {
-        lowest_get<types::globalidx>(type.dat, p);
+        lowest_get<types::globalidx>(dat.dat, p);
     }
 
     if(next == 0x03 || next == 0x02)
     {
-        lowest_get<types::single_branch_data>(type.dat, p);
+        lowest_get<types::single_branch_data>(dat.dat, p);
     }
 
     if(next == 0x04)
     {
-        lowest_get<types::double_branch_data>(type.dat, p);
+        lowest_get<types::double_branch_data>(dat.dat, p);
     }
 
     if(next == 0x0C || next == 0x0D)
     {
-        lowest_get<types::labelidx>(type.dat, p);
+        lowest_get<types::labelidx>(dat.dat, p);
     }
 
     if(next == 0x0E)
     {
-        lowest_get<types::br_table_data>(type.dat, p);
+        lowest_get<types::br_table_data>(dat.dat, p);
     }
 
     if(next == 0x10)
     {
-        lowest_get<types::funcidx>(type.dat, p);
+        lowest_get<types::funcidx>(dat.dat, p);
     }
 
     if(next == 0x11)
     {
-        lowest_get<types::typeidx>(type.dat, p);
+        lowest_get<types::typeidx>(dat.dat, p);
 
         p.checked_fetch<1>({0x00});
     }
@@ -534,10 +540,17 @@ void lowest_get(types::expr& type, parser& p)
 {
     while(p.peek() != 0x0B)
     {
-        types::instr temp;
+        /*types::instr temp;
         lowest_get(temp, p);
 
+        type.i.push_back(temp);*/
+
+        types::instr_which temp;
+        types::instr_data tempd;
+        lowest_get(temp, tempd, p);
+
         type.i.push_back(temp);
+        type.d.push_back(tempd);
     }
 
     p.checked_fetch<1>({0x0B});

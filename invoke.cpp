@@ -18,18 +18,18 @@ void push(const T& t, full_stack& full)
 
 #define PUSH_CONSTANT(xtype)\
         { \
-            xtype cst = std::get<xtype>(is.dat); \
+            xtype cst = std::get<xtype>(dat.dat); \
             /*lg::log("loaded constant ", cst.val);*/ \
             /*push(cst, full);*/ \
             full.push_values(cst);                  \
             break; \
         }
 
-#define MEM_LOAD(x, y) mem_load<x, y>(s, std::get<types::memarg>(is.dat), full); break;
-#define MEM_STORE(x, y) mem_store<x, y>(s, std::get<types::memarg>(is.dat), full); break;
+#define MEM_LOAD(x, y) mem_load<x, y>(s, std::get<types::memarg>(dat.dat), full); break;
+#define MEM_STORE(x, y) mem_store<x, y>(s, std::get<types::memarg>(dat.dat), full); break;
 
-#define INVOKE_LOCAL(f) f(full, std::get<types::localidx>(is.dat)); break;
-#define INVOKE_GLOBAL(f) f(s, full, std::get<types::globalidx>(is.dat)); break;
+#define INVOKE_LOCAL(f) f(full, std::get<types::localidx>(dat.dat)); break;
+#define INVOKE_GLOBAL(f) f(s, full, std::get<types::globalidx>(dat.dat)); break;
 
 ///maybe the trick is that labels don't really exist
 ///and it just carries on from that one
@@ -49,7 +49,7 @@ struct context
     }
 };
 
-void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full);
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr_which>& exp, const types::vec<types::instr_data>& dat, full_stack& full);
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
 void fjump(context& ctx, types::labelidx lidx, full_stack& full)
@@ -80,7 +80,7 @@ void fjump_up_frame(context& ctx, full_stack& full)
 
 ///so duktape takes about 330ms
 ///and we take about 2000ms
-void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full)
+void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr_which>& exp, const types::vec<types::instr_data>& idat, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
@@ -89,7 +89,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
     for(int ilen=0; ilen < len; ilen++)
     {
-        const types::instr& is = exp[ilen];
+        const types::instr_which& is = exp[ilen];
+        const types::instr_data& dat = idat[ilen];
 
         uint8_t which = is.which;
 
@@ -109,13 +110,13 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x02:
             {
-                const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
+                const types::single_branch_data& sbd = std::get<types::single_branch_data>(dat.dat);
 
                 label l;
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
-                eval_with_label(ctx, s, l, sbd.first, full);
+                eval_with_label(ctx, s, l, sbd.first, sbd.first_data, full);
 
                 if(ctx.break_op_loop())
                     return;
@@ -125,7 +126,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x03:
             {
-                const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
+                const types::single_branch_data& sbd = std::get<types::single_branch_data>(dat.dat);
 
                 label l;
                 l.btype = sbd.btype;
@@ -134,7 +135,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 if(l.btype.arity() != 0)
                     throw std::runtime_error("Wrong arity?");
 
-                eval_with_label(ctx, s, l, sbd.first, full);
+                eval_with_label(ctx, s, l, sbd.first, sbd.first_data, full);
 
                 if(ctx.break_op_loop())
                     return;
@@ -144,7 +145,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x04:
             {
-                const types::double_branch_data& dbd = std::get<types::double_branch_data>(is.dat);
+                const types::double_branch_data& dbd = std::get<types::double_branch_data>(dat.dat);
 
                 label l;
                 l.btype = dbd.btype;
@@ -161,11 +162,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 if(c != 0)
                 {
-                    eval_with_label(ctx, s, l, dbd.first, full);
+                    eval_with_label(ctx, s, l, dbd.first, dbd.first_data, full);
                 }
                 else
                 {
-                    eval_with_label(ctx, s, l, dbd.second, full);
+                    eval_with_label(ctx, s, l, dbd.second, dbd.second_data, full);
                 }
 
                 if(ctx.break_op_loop())
@@ -176,7 +177,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x0C:
             {
-                types::labelidx lidx = std::get<types::labelidx>(is.dat);
+                types::labelidx lidx = std::get<types::labelidx>(dat.dat);
 
                 uint32_t idx = (uint32_t)lidx;
 
@@ -212,7 +213,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 if((uint32_t)type != 0)
                 {
-                    types::labelidx lidx = std::get<types::labelidx>(is.dat);
+                    types::labelidx lidx = std::get<types::labelidx>(dat.dat);
 
                     fjump(ctx, lidx, full);
 
@@ -236,7 +237,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x0E:
             {
-                types::br_table_data br_td = std::get<types::br_table_data>(is.dat);
+                types::br_table_data br_td = std::get<types::br_table_data>(dat.dat);
 
                 runtime::value top_val = full.pop_back();
 
@@ -276,7 +277,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x10:
             {
-                types::funcidx fidx = std::get<types::funcidx>(is.dat);
+                types::funcidx fidx = std::get<types::funcidx>(dat.dat);
 
                 uint32_t idx = (uint32_t)fidx;
                 activation& activate = full.get_current();
@@ -297,7 +298,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x11:
             {
                 ///alright indirect calls
-                types::funcidx found_fidx = std::get<types::funcidx>(is.dat);
+                types::funcidx found_fidx = std::get<types::funcidx>(dat.dat);
 
                 activation& activate = full.get_current();
 
@@ -710,17 +711,17 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     }
 }
 
-runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr>& exp)
+runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr_which>& exp, const types::vec<types::instr_data>& dat)
 {
     full_stack full;
     context ctx;
 
-    eval_expr(ctx, s, exp, full);
+    eval_expr(ctx, s, exp, dat, full);
 
     return full.pop_back();
 }
 
-void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full)
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr_which>& exp, const types::vec<types::instr_data>& dat, full_stack& full)
 {
     bool should_loop = true;
     bool has_delayed_values_push = false;
@@ -738,7 +739,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             has_delayed_values_push = false;
         }
 
-        eval_expr(ctx, s, exp, full);
+        eval_expr(ctx, s, exp, dat, full);
 
         auto all_vals = full.pop_all_values_on_stack_unsafe();
 
@@ -840,7 +841,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         //lg::log("push");
         full.push_activation(activate);
 
-        eval_expr(ctx, s, expression.i, full);
+        eval_expr(ctx, s, expression.i, expression.d, full);
 
         if(!ctx.frame_abort)
         {
