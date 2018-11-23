@@ -2,6 +2,7 @@
 #include "runtime_types.hpp"
 #include "basic_ops.hpp"
 #include <iostream>
+#include <map>
 
 template<typename T>
 inline
@@ -78,12 +79,40 @@ void fjump_up_frame(context& ctx, full_stack& full)
     ctx.frame_abort = true;
 }
 
+//#define PERF
+
+struct binary_profiler
+{
+    std::map<uint8_t, int> i_count;
+
+    void add(uint8_t in)
+    {
+        i_count[in]++;
+    }
+
+    ~binary_profiler()
+    {
+        int sum = 0;
+
+        for(auto& i : i_count)
+        {
+            std::cout << std::hex << "0x" << (uint32_t)i.first << " " << i.second << std::dec << ", ";
+        }
+
+        std::cout << std::endl;
+    }
+};
+
 ///so duktape takes about 330ms
 ///and we take about 2000ms
 void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
+
+    #ifdef PERF
+    binary_profiler prof;
+    #endif // PERF
 
     int len = exp.size();
 
@@ -92,6 +121,10 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
         const types::instr& is = exp[ilen];
 
         uint8_t which = is.which;
+
+        #ifdef PERF
+        prof.add(which);
+        #endif // PERF
 
         /*lg::log("0x");
         lg::log_hex_noline(which);
