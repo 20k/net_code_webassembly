@@ -19,7 +19,7 @@ void push(const T& t, full_stack& full)
 #define PUSH_CONSTANT(xtype)\
         { \
             xtype cst = std::get<xtype>(dat.dat); \
-            lg::log("loaded constant ", cst.val); \
+            /*lg::log("loaded constant ", cst.val);*/ \
             /*push(cst, full);*/ \
             full.push_values(cst);                  \
             break; \

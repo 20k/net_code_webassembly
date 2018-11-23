@@ -54,6 +54,6 @@ namespace lg
     }
 }
 
-#define DEBUGGING 1
+//#define DEBUGGING 1
 
 #endif // LOGGING_HPP_INCLUDED
