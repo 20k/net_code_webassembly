@@ -836,7 +836,7 @@ void wasm_binary_data::init(data d)
 
     sf::Clock clk;
 
-    types::vec<runtime::value> vals = s.invoke_by_name("heavy_function", minst, args);
+    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, args);
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 

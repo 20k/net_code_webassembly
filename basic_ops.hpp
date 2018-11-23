@@ -541,7 +541,7 @@ void get_local(full_stack& full, const types::localidx& lidx)
     full.push_values(val);
 }
 
-/*inline
+inline
 void set_local(full_stack& full, const types::localidx& lidx)
 {
     runtime::value top = full.pop_back();
@@ -553,10 +553,10 @@ void set_local(full_stack& full, const types::localidx& lidx)
         throw std::runtime_error("idx > max locals get_local");
 
     activate.f.locals[idx] = top;
-}*/
+}
 
 inline
-void handle_local(full_stack& full, const types::localidx& lidx, bool should_push)
+void tee_local(full_stack& full, const types::localidx& lidx)
 {
     runtime::value top = full.pop_back();
     activation& activate = full.get_current();
@@ -572,20 +572,7 @@ void handle_local(full_stack& full, const types::localidx& lidx, bool should_pus
 
     //lg::log("set idx ", std::to_string(idx), " to ", top.friendly_val());
 
-    if(should_push)
-        full.push_values(top);
-}
-
-inline
-void tee_local(full_stack& full, const types::localidx& lidx)
-{
-    handle_local(full, lidx, true);
-}
-
-inline
-void set_local(full_stack& full, const types::localidx& lidx)
-{
-    handle_local(full, lidx, false);
+    full.push_values(top);
 }
 
 inline
