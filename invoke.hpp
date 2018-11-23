@@ -164,19 +164,14 @@ struct full_stack
 
     label& get_label_of_offset(int offset)
     {
-        offset++;
+        int n = label_stack.size();
 
-        int coffset = 0;
+        int idx = n - offset - 1;
 
-        for(int i=label_stack.size() - 1; i >= 0; i--)
-        {
-            coffset++;
+        //if(idx < 0)
+        //    throw std::runtime_error("Could not get label of offset " + std::to_string(offset));
 
-            if(coffset == offset)
-                return label_stack[i];
-        }
-
-        throw std::runtime_error("Could not get label of offset " + std::to_string(offset));
+        return label_stack[idx];
     }
 
     void ensure_activation()
