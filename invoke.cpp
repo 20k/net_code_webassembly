@@ -37,6 +37,9 @@ void push(const T& t, full_stack& full)
 
 ///maybe the trick is that labels don't really exist
 ///and it just carries on from that one
+
+struct info_stack;
+
 struct context
 {
     int abort_stack = 0;
@@ -45,6 +48,13 @@ struct context
     //bool needs_cont_jump = false;
 
     bool frame_abort = false;
+
+    types::vec<info_stack>& istack;
+
+    context(types::vec<info_stack>& st) : istack(st)
+    {
+
+    }
 
     types::vec<runtime::value> capture_vals;
 
@@ -812,10 +822,195 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     #endif // DEBUGGING
 }
 
+struct info_stack
+{
+    int pc = 0;
+
+    ///type 1 = label
+    ///type 2 = activation
+    int type = 0;
+    int offset = 0;
+    bool should_loop = false;
+    bool has_delayed_values_push = false;
+
+    const types::vec<types::instr>& in;
+
+    info_stack(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst) : in(start_function(s, full, address, minst))
+    {
+        type = 1;
+    }
+
+    info_stack(context& ctx, const label& l, const types::vec<types::instr>& exp, full_stack& full) : in(start_label(ctx, l, exp, full))
+    {
+        type = 2;
+    }
+
+    const types::vec<types::instr>& start_function(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
+    {
+        uint32_t adr = (uint32_t)address;
+
+        if(adr >= (uint32_t)s.funcs.size())
+            throw std::runtime_error("Adr out of bounds");
+
+        const runtime::funcinst& finst = s.funcs[adr];
+
+        types::functype ftype = finst.type;
+
+        int num_args = ftype.params.size();
+
+        if(std::holds_alternative<runtime::webasm_func>(finst.funct))
+        {
+            const runtime::webasm_func& fnc = std::get<runtime::webasm_func>(finst.funct);
+
+            types::vec<runtime::value> popped = full.pop_num_vals(num_args);
+
+            types::vec<types::local> local_types = fnc.funct.fnc.locals;
+            const types::expr& expression = fnc.funct.fnc.e;
+
+            types::vec<runtime::value> local_zeroes;
+
+            for(const types::local& loc : local_types)
+            {
+                for(uint32_t i=0; i < (uint32_t)loc.n; i++)
+                {
+                    runtime::value val;
+                    val.from_valtype(loc.type);
+
+                    local_zeroes.push_back(val);
+                }
+            }
+
+            frame fr;
+            fr.inst = &minst;
+            fr.locals = popped;
+            fr.locals = fr.locals.append(local_zeroes);
+
+            activation activate;
+            activate.return_arity = types::s32{ftype.results.size()};
+            activate.f = fr;
+
+            full.push_activation(activate);
+
+            return expression.i;
+        }
+        else
+        {
+            throw std::runtime_error("unimplemented;");
+        }
+    }
+
+    const types::vec<types::instr>& start_label(context& ctx, const label& l, const types::vec<types::instr>& exp, full_stack& full)
+    {
+        should_loop = false;
+
+        full.push_label(l);
+
+        if(has_delayed_values_push)
+        {
+            full.push_all_values(ctx.capture_vals);
+
+            has_delayed_values_push = false;
+        }
+
+        return exp;
+    }
+
+    void end_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full)
+    {
+        auto all_vals = full.pop_all_values_on_stack_unsafe();
+
+        full.ensure_label();
+        full.pop_back_label();
+
+        if(ctx.frame_abort)
+        {
+            should_loop = false;
+            return;
+        }
+
+        if(ctx.abort_stack > 0)
+        {
+            ctx.abort_stack--;
+
+            if(ctx.abort_stack == 0)
+            {
+                if(ctx.continuation != 2)
+                {
+                    full.push_all_values(ctx.capture_vals);
+                }
+                else
+                {
+                    has_delayed_values_push = true;
+                }
+
+                if(ctx.continuation == 2)
+                {
+                    ///loop and start again from beginning
+                    should_loop = true;
+                }
+
+                if(ctx.continuation == 0)
+                {
+                    throw std::runtime_error("Bad continuation, 0");
+                }
+            }
+        }
+        else
+        {
+            full.push_all_values(all_vals);
+        }
+    }
+
+    bool loop()
+    {
+        return should_loop;
+    }
+
+    types::vec<runtime::value> end_function(context& ctx, full_stack& full)
+    {
+        if(!ctx.frame_abort)
+        {
+            activation& current = full.get_current();
+
+            types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
+
+            full.pop_back_activation();
+
+            full.push_all_values(found);
+
+            return found;
+        }
+        else if(ctx.frame_abort)
+        {
+            ctx.frame_abort = false;
+
+            full.pop_all_values_on_stack_unsafe();
+            full.pop_back_activation();
+
+            auto bvals = ctx.capture_vals;
+
+            full.push_all_values(ctx.capture_vals);
+
+            ctx.capture_vals.clear();
+
+            return bvals;
+        }
+    }
+};
+
+types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
+{
+    types::vec<info_stack> func_stack;
+
+
+}
+
+
 types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
 {
+    types::vec<info_stack> istack;
     full_stack full;
-    context ctx;
+    context ctx(istack);
 
     frame fr;
     ///SUPER BAD CODE ALERT
@@ -1044,188 +1239,6 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     return types::vec<runtime::value>();
 }
 
-struct info_stack
-{
-    int pc = 0;
-
-    ///type 1 = label
-    ///type 2 = activation
-    int type = 0;
-    int offset = 0;
-    bool should_loop = false;
-    bool has_delayed_values_push = false;
-
-    const types::vec<types::instr>& in;
-
-    info_stack(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst) : in(start_function(s, full, address, minst))
-    {
-        type = 1;
-    }
-
-    info_stack(context& ctx, const label& l, const types::vec<types::instr>& exp, full_stack& full) : in(start_label(ctx, l, exp, full))
-    {
-        type = 2;
-    }
-
-    const types::vec<types::instr>& start_function(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
-    {
-        uint32_t adr = (uint32_t)address;
-
-        if(adr >= (uint32_t)s.funcs.size())
-            throw std::runtime_error("Adr out of bounds");
-
-        const runtime::funcinst& finst = s.funcs[adr];
-
-        types::functype ftype = finst.type;
-
-        int num_args = ftype.params.size();
-
-        if(std::holds_alternative<runtime::webasm_func>(finst.funct))
-        {
-            const runtime::webasm_func& fnc = std::get<runtime::webasm_func>(finst.funct);
-
-            types::vec<runtime::value> popped = full.pop_num_vals(num_args);
-
-            types::vec<types::local> local_types = fnc.funct.fnc.locals;
-            const types::expr& expression = fnc.funct.fnc.e;
-
-            types::vec<runtime::value> local_zeroes;
-
-            for(const types::local& loc : local_types)
-            {
-                for(uint32_t i=0; i < (uint32_t)loc.n; i++)
-                {
-                    runtime::value val;
-                    val.from_valtype(loc.type);
-
-                    local_zeroes.push_back(val);
-                }
-            }
-
-            frame fr;
-            fr.inst = &minst;
-            fr.locals = popped;
-            fr.locals = fr.locals.append(local_zeroes);
-
-            activation activate;
-            activate.return_arity = types::s32{ftype.results.size()};
-            activate.f = fr;
-
-            full.push_activation(activate);
-
-            return expression.i;
-        }
-        else
-        {
-            throw std::runtime_error("unimplemented;");
-        }
-    }
-
-    const types::vec<types::instr>& start_label(context& ctx, const label& l, const types::vec<types::instr>& exp, full_stack& full)
-    {
-        should_loop = false;
-
-        full.push_label(l);
-
-        if(has_delayed_values_push)
-        {
-            full.push_all_values(ctx.capture_vals);
-
-            has_delayed_values_push = false;
-        }
-
-        return exp;
-    }
-
-    void end_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full)
-    {
-        auto all_vals = full.pop_all_values_on_stack_unsafe();
-
-        full.ensure_label();
-        full.pop_back_label();
-
-        if(ctx.frame_abort)
-        {
-            should_loop = false;
-            return;
-        }
-
-        if(ctx.abort_stack > 0)
-        {
-            ctx.abort_stack--;
-
-            if(ctx.abort_stack == 0)
-            {
-                if(ctx.continuation != 2)
-                {
-                    full.push_all_values(ctx.capture_vals);
-                }
-                else
-                {
-                    has_delayed_values_push = true;
-                }
-
-                if(ctx.continuation == 2)
-                {
-                    ///loop and start again from beginning
-                    should_loop = true;
-                }
-
-                if(ctx.continuation == 0)
-                {
-                    throw std::runtime_error("Bad continuation, 0");
-                }
-            }
-        }
-        else
-        {
-            full.push_all_values(all_vals);
-        }
-    }
-
-    bool loop()
-    {
-        return should_loop;
-    }
-
-    types::vec<runtime::value> end_function(context& ctx, full_stack& full)
-    {
-        if(!ctx.frame_abort)
-        {
-            activation& current = full.get_current();
-
-            types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
-
-            full.pop_back_activation();
-
-            full.push_all_values(found);
-
-            return found;
-        }
-        else if(ctx.frame_abort)
-        {
-            ctx.frame_abort = false;
-
-            full.pop_all_values_on_stack_unsafe();
-            full.pop_back_activation();
-
-            auto bvals = ctx.capture_vals;
-
-            full.push_all_values(ctx.capture_vals);
-
-            ctx.capture_vals.clear();
-
-            return bvals;
-        }
-    }
-};
-
-types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
-{
-    types::vec<info_stack> func_stack;
-
-
-}
 
 types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
 {
@@ -1242,13 +1255,14 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
         throw std::runtime_error("Argument mismatch");
 
     full_stack full;
+    types::vec<info_stack> istack;
 
     for(auto& val : vals)
     {
         full.push_values(val);
     }
 
-    context ctx;
+    context ctx(istack);
 
     types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
 
