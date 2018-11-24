@@ -204,7 +204,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 eval_with_label(ctx, s, l, sbd.first, full);
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 break;
             }
@@ -223,7 +223,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 eval_with_label(ctx, s, l, sbd.first, full);
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 break;
             }
@@ -255,7 +255,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 }
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 break;
             }
@@ -274,7 +274,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 fjump(ctx, lidx, full);
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 //lg::log("hit br ", std::to_string(idx));
 
@@ -310,7 +310,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                     }
 
                     if(ctx.break_op_loop())
-                        return;;
+                        ilen = len;
 
                     //lg::log("took branch to ", std::to_string(idx));
 
@@ -345,7 +345,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 }
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 break;
             }
@@ -360,7 +360,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 fjump_up_frame(ctx, full);
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 break;
             }
@@ -382,7 +382,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 break;
             }
@@ -448,7 +448,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 invoke_intl(ctx, s, full, runtime_addr, *inst);
 
                 if(ctx.break_op_loop())
-                    return;
+                    ilen = len;
 
                 break;
             }
