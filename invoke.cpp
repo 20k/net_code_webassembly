@@ -1065,7 +1065,9 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
 
     return_value = invoke_intl(ctx, *this, full, address, minst);
 
+    #ifdef DEBUGGING
     lg::log("left on stack ", full.full.size());
+    #endif // DEBUGGING
 
     return return_value;
 
