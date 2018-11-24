@@ -467,6 +467,8 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 
     full.push_values(rval);
 
+    lg::log("Loaded ", (uint32_t)ret, " from ", ea);;
+
     //return ret;
 }
 
@@ -523,6 +525,8 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
               (auto concrete)
               {
                   memcpy(&minst.dat[ea], (char*)&concrete, sizeof(concrete));
+
+                  lg::log("Stored ", (uint32_t)concrete, " to ", (uint32_t)ea);
               });
 }
 
@@ -544,7 +548,7 @@ void get_local(full_stack& full, const types::localidx& lidx)
 
     runtime::value val = activate.f.locals[idx];
 
-    //lg::log("got local ", val.friendly_val());
+    lg::log("got local ", val.friendly_val(), " from ", idx);
 
     full.push_values(val);
 }
@@ -561,6 +565,8 @@ void set_local(full_stack& full, const types::localidx& lidx)
         throw std::runtime_error("idx > max locals get_local");
 
     activate.f.locals[idx] = top;
+
+    lg::log("Set local ", top.friendly_val(), " at ", idx);
 }
 
 inline
@@ -581,6 +587,8 @@ void tee_local(full_stack& full, const types::localidx& lidx)
     //lg::log("set idx ", std::to_string(idx), " to ", top.friendly_val());
 
     full.push_values(top);
+
+    lg::log("set/got local ", top.friendly_val(), " at ", idx);
 }
 
 inline

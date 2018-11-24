@@ -38,6 +38,7 @@ struct context
 {
     int abort_stack = 0;
     int continuation = 0;
+    int expression_counter = 0;
     //bool needs_cont_jump = false;
 
     bool frame_abort = false;
@@ -115,6 +116,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
 
+    ctx.expression_counter++;
+
     #ifdef PERF
     binary_profiler prof;
     #endif // PERF
@@ -133,7 +136,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
 
         #ifdef DEBUGGING
-        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << std::endl;
+        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " " << ctx.expression_counter << std::endl;
         #endif // DEBUGGING
 
         /*lg::log("0x");
@@ -753,6 +756,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 throw std::runtime_error("bad instruction");
         }
     }
+
+    lg::log("Left Expr");
 }
 
 runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr>& exp)
