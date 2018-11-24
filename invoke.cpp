@@ -938,12 +938,12 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
     if(std::holds_alternative<runtime::webasm_func>(finst.funct))
     {
-        runtime::webasm_func& fnc = std::get<runtime::webasm_func>(finst.funct);
+        const runtime::webasm_func& fnc = std::get<runtime::webasm_func>(finst.funct);
 
         types::vec<runtime::value> popped = full.pop_num_vals(num_args);
 
         types::vec<types::local> local_types = fnc.funct.fnc.locals;
-        types::expr& expression = fnc.funct.fnc.e;
+        const types::expr& expression = fnc.funct.fnc.e;
 
         #ifdef DEBUGGING
         lg::log("Function has ", num_args, " arguments and returns ", ftype.results.size(), " values");
