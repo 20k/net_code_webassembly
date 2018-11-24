@@ -123,7 +123,7 @@ struct nest_counter
     }
 };
 
-struct stack_counter
+struct stack_counte
 {
     full_stack& stk;
 
@@ -144,6 +144,7 @@ struct stack_counter
 
 ///dump value of globals and follow everything through to see
 ///if its the leadup to strlen which is incorrect
+//__attribute__((optimize("unroll-loops")))
 void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
