@@ -188,6 +188,13 @@ namespace types
 
             return ret;
         }
+
+        template<typename U>
+        void check(const U& u)
+        {
+            if(u >= (U)v.size() || u < 0)
+                throw std::runtime_error("Not in bounds");
+        }
     };
 
     /**0x7F -> i32

@@ -836,7 +836,8 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
         uint32_t eo = (uint32_t)std::get<types::i32>(val.v);
         uint32_t einit = e.funcs.size();
 
-        if(eo + einit >= (uint32_t)tinst.elem.size())
+        ///this check is correct
+        if(eo + einit > (uint32_t)tinst.elem.size())
             throw std::runtime_error("Bad tinst");
 
         for(int j=0; j < e.funcs.size(); j++)
@@ -850,6 +851,41 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
                 throw std::runtime_error("bad faddr idx");
 
             tinst.elem[eo + j].addr = faddr[idx];
+        }
+    }
+
+    for(int i=0; i < m.section_data.dats.size(); i++)
+    {
+        types::dataseg& data_seg = m.section_data.dats[i];
+
+        types::vec<runtime::value> vals = eval_with_frame(inst, s, data_seg.e.i);
+
+        if(vals.size() != 1 || !vals[0].is_i32())
+            throw std::runtime_error("Bad data eval");
+
+        runtime::value val = vals[0];
+
+        types::memidx midx = data_seg.x;
+
+        maddr.check((uint32_t)midx);
+
+        runtime::memaddr mem_addr = maddr[(uint32_t)midx];
+
+        s.mems.check((uint32_t)mem_addr);
+
+        runtime::meminst& mem_inst = s.mems[(uint32_t)mem_addr];
+
+        uint32_t do_i = (uint32_t)std::get<types::i32>(val.v);
+        uint32_t dend = do_i + data_seg.b.size();
+
+        if(dend > (uint32_t)mem_inst.dat.size())
+            throw std::runtime_error("Bad data segment end");
+
+        for(int j=0; j < data_seg.b.size(); j++)
+        {
+            uint8_t byte = data_seg.b[j];
+
+            mem_inst.dat[do_i + j] = byte;
         }
     }
 
