@@ -222,6 +222,11 @@ struct full_stack
     {
         return label_stack.size();
     }
+
+    int value_stack_size()
+    {
+        return full.size();
+    }
 };
 
 runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr>& exp);

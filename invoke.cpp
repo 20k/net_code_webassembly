@@ -106,6 +106,38 @@ struct binary_profiler
 
 #define DEBUGGING
 
+#ifdef DEBUGGING
+struct nest_counter
+{
+    context& ctx;
+
+    nest_counter(context& lctx) : ctx(lctx)
+    {
+        ctx.expression_counter++;
+    }
+
+    ~nest_counter()
+    {
+        ctx.expression_counter--;
+    }
+};
+
+struct stack_counter
+{
+    full_stack& stk;
+
+    stack_counter(full_stack& lstk) : stk(lstk)
+    {
+
+    }
+
+    ~stack_counter()
+    {
+        lg::log("s ", stk.value_stack_size());
+    }
+};
+#endif // DEBUGGING
+
 ///so duktape takes about 330ms
 ///and we take about 2000ms
 
@@ -116,16 +148,22 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
 
-    ctx.expression_counter++;
-
     #ifdef PERF
     binary_profiler prof;
     #endif // PERF
+
+    #ifdef DEBUGGING
+    nest_counter nest(ctx);
+    #endif // DEBUGGING
 
     int len = exp.size();
 
     for(int ilen=0; ilen < len; ilen++)
     {
+        #ifdef DEBUGGING
+        stack_counter stk(full);
+        #endif // DEBUGGING
+
         const types::instr& is = exp[ilen];
 
         uint8_t which = is.which;
@@ -312,7 +350,12 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x0F:
             {
+                lg::log("Stk size ", full.value_stack_size());
+                lg::log("THIS IS RETURNING HELLO ", full.peek_back().value_or(runtime::value{types::i32{543}}).friendly_val());
+
                 fjump_up_frame(ctx, full);
+
+                lg::log("Stk size2 ", full.value_stack_size());
 
                 if(ctx.break_op_loop())
                     return;
@@ -331,7 +374,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                     throw std::runtime_error("Bad fidx in 0x10");
 
                 #ifdef DEBUGGING
-                lg::log("calling hi there dum de dum ");
+                lg::log("calling hi there, value stack size is ", full.value_stack_size());
                 #endif // DEBUGGING
 
                 invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
@@ -856,6 +899,10 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
         types::vec<types::local> local_types = fnc.funct.fnc.locals;
         types::expr& expression = fnc.funct.fnc.e;
+
+        #ifdef DEBUGGING
+        lg::log("Function has ", num_args, " arguments and returns ", ftype.results.size(), " values");
+        #endif // DEBUGGING
 
         types::vec<runtime::value> local_zeroes;
 
