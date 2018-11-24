@@ -803,14 +803,50 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     lg::log("Left Expr");
 }
 
-runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr>& exp)
+types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
 {
     full_stack full;
     context ctx;
 
+    frame fr;
+    ///SUPER BAD CODE ALERT
+    fr.inst = &minst;
+
+    activation activate;
+    activate.return_arity = {1};
+    activate.f = fr;
+
+    full.push_activation(activate);
+
     eval_expr(ctx, s, exp, full);
 
-    return full.pop_back();
+    if(!ctx.frame_abort)
+    {
+        activation& current = full.get_current();
+
+        types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
+
+        full.pop_back_activation();
+
+        full.push_all_values(found);
+
+        return found;
+    }
+    else if(ctx.frame_abort)
+    {
+        ctx.frame_abort = false;
+
+        full.pop_all_values_on_stack_unsafe();
+        full.pop_back_activation();
+
+        auto bvals = ctx.capture_vals;
+
+        full.push_all_values(ctx.capture_vals);
+
+        ctx.capture_vals.clear();
+
+        return bvals;
+    }
 }
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full)

@@ -456,7 +456,7 @@ void lowest_get(types::instr& type, parser& p)
     {
         lowest_get<types::i32>(type.dat, p);
 
-        std::cout << "fval " << std::get<types::i32>(type.dat).val << std::endl;
+        //std::cout << "fval " << std::get<types::i32>(type.dat).val << std::endl;
     }
 
     if(next == 0x42)

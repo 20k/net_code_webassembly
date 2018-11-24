@@ -229,4 +229,4 @@ struct full_stack
     }
 };
 
-runtime::value eval_implicit(runtime::store& s, const types::vec<types::instr>& exp);
+types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp);

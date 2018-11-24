@@ -447,6 +447,7 @@ struct module
     sections::startsec section_start;
     sections::elemsec section_elem;
     sections::codesec section_code;
+    sections::datasec section_data;
 
     void init(parser& p)
     {
@@ -551,6 +552,13 @@ struct module
                 serialise(section_code, p, false);
 
                 std::cout << "Imported code section\n";
+            }
+            else if(head.id == 11)
+            {
+                section_data = sections::datasec(head);
+                serialise(section_data,p, false);
+
+                std::cout << "Imported data section\n";
             }
             else
             {
@@ -718,17 +726,26 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
     types::vec<runtime::globaladdr> gaddr;
 
+    ///TODO: IMPORTED GLOBALS GET PUT INTO A TEMPORARY MINST
+    ///IMPORTS ARE REALLY NOT SUPPORTED ATM
+    //inst.globaladdrs
+
     for(int i=0; i < (int)m.section_global.globals.size(); i++)
     {
         types::global& glob = m.section_global.globals[i];
 
-        runtime::value val = eval_implicit(s, glob.e.i);
+        types::vec<runtime::value> val = eval_with_frame(inst, s, glob.e.i);
 
-        std::cout << "evald global and got " << val.friendly_val() << std::endl;
+        if(val.size() == 1)
+        {
+            std::cout << "evald global and got " << val[0].friendly_val() << std::endl;
 
-        ///TODO
-        ///EVAL GLOBAL EXPRESSION
-        gaddr.push_back(s.allocglobal(m.section_global.globals[i].type, val));
+            gaddr.push_back(s.allocglobal(m.section_global.globals[i].type, val[0]));
+        }
+        else
+        {
+            throw std::runtime_error("val.size() != 1");
+        }
     }
 
     std::cout << "faddr " << (uint32_t)faddr.size() << std::endl;
