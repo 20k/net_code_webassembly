@@ -391,13 +391,29 @@ namespace sections
 
             int hlen = (uint32_t)header.len;
 
-            assert(post - pre == hlen);
+            if(post - pre != hlen)
+            {
+                throw std::runtime_error("Bad parse in code section");
+            }
         }
     };
 
     struct datasec : section
     {
-        //datasec()
+        datasec(const section_header& head) : section(head){}
+        datasec(){}
+
+        types::vec<types::dataseg> dats;
+
+        virtual void handle_serialise(parser& p, bool ser) override
+        {
+            if(header.id != 11)
+            {
+                throw std::runtime_error("Expected 11, got " + std::to_string(header.id));
+            }
+
+            serialise(dats, p, ser);
+        }
     };
 }
 

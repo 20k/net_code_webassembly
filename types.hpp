@@ -499,6 +499,13 @@ namespace types
         u32 size;
         code_func fnc;
     };
+
+    struct dataseg
+    {
+        memidx x;
+        expr e;
+        types::vec<uint8_t> b;
+    };
 }
 
 struct data

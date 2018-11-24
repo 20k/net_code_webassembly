@@ -571,6 +571,14 @@ void lowest_get(types::code& type, parser& p)
     lowest_get(type.fnc, p);
 }
 
+inline
+void lowest_get(types::dataseg& type, parser& p)
+{
+    lowest_get(type.x, p);
+    lowest_get(type.e, p);
+    lowest_get(type.b, p);
+}
+
 template<typename T>
 void serialise(T& type, parser& p, bool ser)
 {
