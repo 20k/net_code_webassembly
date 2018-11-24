@@ -920,6 +920,11 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     }
 }
 
+///alright: transforming from recursive to linear plan
+///so currently there's invoke_intl, which calls eval_expr
+///and there's eval_with_label which calls eval_expr
+///eval_expr calls both invoke_intl and eval_expr
+///so maybe initially unify invoke_intl and eval_with_label with a flat (note that the return value of invoke_intl is ignored everywhere internally)
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
 {
     uint32_t adr = (uint32_t)address;
