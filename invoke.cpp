@@ -161,7 +161,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     for(int ilen=0; ilen < len; ilen++)
     {
         #ifdef DEBUGGING
-        stack_counter stk(full);
+        //stack_counter stk(full);
         #endif // DEBUGGING
 
         const types::instr& is = exp[ilen];

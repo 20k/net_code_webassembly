@@ -394,6 +394,11 @@ namespace sections
             assert(post - pre == hlen);
         }
     };
+
+    struct datasec : section
+    {
+        //datasec()
+    };
 }
 
 ///skips custom segments
