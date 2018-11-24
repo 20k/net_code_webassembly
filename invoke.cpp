@@ -813,7 +813,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     fr.inst = &minst;
 
     activation activate;
-    activate.return_arity = {1};
+    activate.return_arity = {0};
     activate.f = fr;
 
     full.push_activation(activate);
@@ -822,9 +822,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
 
     if(!ctx.frame_abort)
     {
-        activation& current = full.get_current();
-
-        types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
+        types::vec<runtime::value> found = full.pop_all_values_on_stack_unsafe();
 
         full.pop_back_activation();
 
@@ -847,6 +845,8 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
 
         return bvals;
     }
+
+    throw std::runtime_error("unreachable");
 }
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full)

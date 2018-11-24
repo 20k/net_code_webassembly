@@ -764,6 +764,8 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     std::cout << "emaddr " << (uint32_t)emaddr.size() << std::endl;
     std::cout << "egaddr " << (uint32_t)egaddr.size() << std::endl;
 
+    inst.globaladdrs = egaddr;
+
     types::vec<runtime::exportinst> my_exports;
 
     for(int i=0; i < m.section_export.exports.size(); i++)
@@ -803,12 +805,60 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
         my_exports.push_back(out);
     }
 
+    for(int i=0; i < m.section_elem.elems.size(); i++)
+    {
+        sections::elem& e = m.section_elem.elems[i];
+
+        types::vec<runtime::value> vals = eval_with_frame(inst, s, e.e.i);
+
+        if(vals.size() != 1)
+            throw std::runtime_error("Bad section element size");
+
+        runtime::value val = vals[0];
+
+        if(!val.is_i32())
+            throw std::runtime_error("Eval'd section element and did not get i32");
+
+        types::tableidx tidx = e.tidx;
+
+        if((uint32_t)tidx >= (uint32_t)taddr.size())
+            throw std::runtime_error("Bad tidx in section element");
+
+        runtime::tableaddr tdr = taddr[(uint32_t)tidx];
+
+        uint32_t t_addr_idx = (uint32_t)tdr;
+
+        if(t_addr_idx >= (uint32_t)s.tables.size())
+            throw std::runtime_error("Bad t_addr_idx");
+
+        runtime::tableinst& tinst = s.tables[t_addr_idx];
+
+        uint32_t eo = (uint32_t)std::get<types::i32>(val.v);
+        uint32_t einit = e.funcs.size();
+
+        if(eo + einit >= (uint32_t)tinst.elem.size())
+            throw std::runtime_error("Bad tinst");
+
+        for(int j=0; j < e.funcs.size(); j++)
+        {
+            types::funcidx fidx = e.funcs[j];
+
+            uint32_t idx = (uint32_t)fidx;
+
+            ///warning, import
+            if(idx >= (uint32_t)faddr.size())
+                throw std::runtime_error("bad faddr idx");
+
+            tinst.elem[eo + j].addr = faddr[idx];
+        }
+    }
+
     inst.typel = m.section_type.types;
 
     inst.funcaddrs = efaddr;
     inst.tableaddrs = etaddr;
     inst.memaddrs = emaddr;
-    inst.globaladdrs = egaddr;
+    //inst.globaladdrs = egaddr;
 
     inst.exports = my_exports;
 
