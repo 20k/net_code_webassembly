@@ -34,6 +34,16 @@ namespace lg
         std::cout << std::endl;
     }
 
+    template<typename... T>
+    inline
+    void logn(const T&... data)
+    {
+        if(!enable_logging)
+            return;
+
+        log_unpack(data...);
+    }
+
     template<typename T>
     void log_hex_noline(const T& data)
     {

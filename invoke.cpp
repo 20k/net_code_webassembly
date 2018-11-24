@@ -103,8 +103,13 @@ struct binary_profiler
     }
 };
 
+#define DEBUGGING
+
 ///so duktape takes about 330ms
 ///and we take about 2000ms
+
+///dump value of globals and follow everything through to see
+///if its the leadup to strlen which is incorrect
 void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full)
 {
     ///thisll break until at minimum we pop the values off the stack
@@ -125,6 +130,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
         #ifdef PERF
         prof.add(which);
         #endif // PERF
+
+
+        #ifdef DEBUGGING
+        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << std::endl;
+        #endif // DEBUGGING
 
         /*lg::log("0x");
         lg::log_hex_noline(which);
@@ -317,7 +327,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 if(idx >= (uint32_t)activate.f.inst->funcaddrs.size())
                     throw std::runtime_error("Bad fidx in 0x10");
 
-                //lg::log("calling hi there dum de dum");
+                #ifdef DEBUGGING
+                lg::log("calling hi there dum de dum ");
+                #endif // DEBUGGING
 
                 invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
@@ -419,33 +431,33 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 INVOKE_GLOBAL(set_global);
 
             case 0x28:
-                MEM_LOAD(uint32_t, sizeof(uint32_t));
+                MEM_LOAD(uint32_t, uint32_t);
             case 0x29:
-                MEM_LOAD(uint64_t, sizeof(uint64_t));
+                MEM_LOAD(uint64_t, uint64_t);
             case 0x2A:
-                MEM_LOAD(float, sizeof(float));
+                MEM_LOAD(float, float);
             case 0x2B:
-                MEM_LOAD(double, sizeof(double));
+                MEM_LOAD(double, double);
             case 0x2C:
-                MEM_LOAD(int32_t, 1);
+                MEM_LOAD(int32_t, int8_t);
             case 0x2D:
-                MEM_LOAD(uint32_t, 1);
+                MEM_LOAD(uint32_t, uint8_t);
             case 0x2E:
-                MEM_LOAD(int32_t, 2);
+                MEM_LOAD(int32_t, int16_t);
             case 0x2F:
-                MEM_LOAD(uint32_t, 2);
+                MEM_LOAD(uint32_t, uint16_t);
             case 0x30:
-                MEM_LOAD(int64_t, 1);
+                MEM_LOAD(int64_t, int8_t);
             case 0x31:
-                MEM_LOAD(uint64_t, 1);
+                MEM_LOAD(uint64_t, uint8_t);
             case 0x32:
-                MEM_LOAD(int64_t, 2);
+                MEM_LOAD(int64_t, int16_t);
             case 0x33:
-                MEM_LOAD(uint64_t, 2);
+                MEM_LOAD(uint64_t, uint16_t);
             case 0x34:
-                MEM_LOAD(int64_t, 4);
+                MEM_LOAD(int64_t, int32_t);
             case 0x35:
-                MEM_LOAD(uint64_t, 4);
+                MEM_LOAD(uint64_t, uint32_t);
 
             case 0x36:
                 MEM_STORE(uint32_t, 4);
@@ -869,6 +881,19 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};
         activate.f = fr;
+
+
+        #ifdef DEBUGGING
+        lg::logn("Returns ", ftype.results.size(), " values, expects ", num_args, " args. Arg is ");
+
+        for(auto& i : popped)
+        {
+            lg::logn(i.friendly_val(), " ");
+        }
+
+        lg::log("");
+        #endif // DEBUGGING
+
 
         //lg::log("push");
         full.push_activation(activate);

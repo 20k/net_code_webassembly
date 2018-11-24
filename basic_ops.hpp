@@ -424,7 +424,7 @@ T get_const(const T& t)
     return t;
 }
 
-template<typename T, int bytes>
+template<typename T, typename U>
 inline
 void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 {
@@ -454,11 +454,13 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 
     uint32_t ea = (uint32_t)arg.offset + (uint32_t)std::get<types::i32>(top_i32.v);
 
-    if(ea + bytes >= (uint32_t)minst.dat.size())
+    if(ea + sizeof(U) >= (uint32_t)minst.dat.size())
         throw std::runtime_error("Out of memory (OOB in mem_load)");
 
-    T ret;
-    memcpy(&ret, &minst.dat[ea], bytes);
+    U str{0};
+    memcpy(&str, &minst.dat[ea], sizeof(U));
+
+    T ret = (T)str;
 
     runtime::value rval;
     rval.set(ret);
