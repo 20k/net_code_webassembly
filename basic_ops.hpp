@@ -467,7 +467,9 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 
     full.push_values(rval);
 
-    lg::log("Loaded ", (uint32_t)ret, " from ", ea);;
+    #ifdef DEBUGGING
+    lg::log("Loaded ", (uint32_t)ret, " from ", ea);
+    #endif // DEBUGGING
 
     //return ret;
 }
@@ -526,7 +528,9 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
               {
                   memcpy(&minst.dat[ea], (char*)&concrete, sizeof(concrete));
 
+                  #ifdef DEBUGGING
                   lg::log("Stored ", (uint32_t)concrete, " to ", (uint32_t)ea);
+                  #endif // DEBUGGING
               });
 }
 
@@ -548,7 +552,9 @@ void get_local(full_stack& full, const types::localidx& lidx)
 
     runtime::value val = activate.f.locals[idx];
 
+    #ifdef DEBUGGING
     lg::log("got local ", val.friendly_val(), " from ", idx);
+    #endif // DEBUGGING
 
     full.push_values(val);
 }
@@ -566,7 +572,9 @@ void set_local(full_stack& full, const types::localidx& lidx)
 
     activate.f.locals[idx] = top;
 
+    #ifdef DEBUGGING
     lg::log("Set local ", top.friendly_val(), " at ", idx);
+    #endif // DEBUGGING
 }
 
 inline
@@ -588,7 +596,9 @@ void tee_local(full_stack& full, const types::localidx& lidx)
 
     full.push_values(top);
 
+    #ifdef DEBUGGING
     lg::log("set/got local ", top.friendly_val(), " at ", idx);
+    #endif // DEBUGGING
 }
 
 inline

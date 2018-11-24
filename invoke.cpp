@@ -104,8 +104,6 @@ struct binary_profiler
     }
 };
 
-#define DEBUGGING
-
 #ifdef DEBUGGING
 struct nest_counter
 {
@@ -350,12 +348,12 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x0F:
             {
+                #ifdef DEBUGGING
                 lg::log("Stk size ", full.value_stack_size());
                 lg::log("THIS IS RETURNING HELLO ", full.peek_back().value_or(runtime::value{types::i32{543}}).friendly_val());
+                #endif // DEBUGGING
 
                 fjump_up_frame(ctx, full);
-
-                lg::log("Stk size2 ", full.value_stack_size());
 
                 if(ctx.break_op_loop())
                     return;
@@ -800,7 +798,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
         }
     }
 
+    #ifdef DEBUGGING
     lg::log("Left Expr");
+    #endif // DEBUGGING
 }
 
 types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
