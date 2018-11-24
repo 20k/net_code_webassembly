@@ -673,7 +673,7 @@ runtime::memaddr runtime::store::allocmem(const types::memtype& type)
     ///SANDBOXING ALERT
     ///this is simply as per spec but might need tweaking
     inst.max = type.lim.get_max();
-    inst.dat.resize(64 * 1024 * (uint32_t)type.lim.n);
+    inst.dat.resize(runtime::page_size * (uint32_t)type.lim.n);
 
     mems.push_back(inst);
 

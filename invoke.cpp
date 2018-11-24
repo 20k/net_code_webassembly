@@ -29,6 +29,9 @@ void push(const T& t, full_stack& full)
 #define MEM_LOAD(x, y) mem_load<x, y>(s, std::get<types::memarg>(is.dat), full); break;
 #define MEM_STORE(x, y) mem_store<x, y>(s, std::get<types::memarg>(is.dat), full); break;
 
+#define MEM_SIZE() memory_size(full, s); break;
+#define MEM_GROW() memory_grow(full, s); break;
+
 #define INVOKE_LOCAL(f) f(full, std::get<types::localidx>(is.dat)); break;
 #define INVOKE_GLOBAL(f) f(s, full, std::get<types::globalidx>(is.dat)); break;
 
@@ -522,6 +525,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x3E:
                 MEM_STORE(uint64_t, 4);
 
+            case 0x3F:
+                MEM_SIZE();
+            case 0x40:
+                MEM_GROW();
+
             ///TODO size and grow
 
             case 0x41:
@@ -794,7 +802,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 POPA((reinterpret<double, uint64_t>));
 
             default:
-                throw std::runtime_error("bad instruction");
+                throw std::runtime_error("bad instruction " + std::to_string(which));
         }
     }
 

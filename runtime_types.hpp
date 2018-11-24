@@ -319,6 +319,10 @@ namespace runtime
 
         types::vec<exportinst> exports;
     };
+
+    constexpr size_t page_size = 64*1024;
+    ///128 MB
+    constexpr size_t sandbox_mem_cap = 128 * 1024 * 1024;
 }
 
 #endif // RUNTIME_TYPES_HPP_INCLUDED

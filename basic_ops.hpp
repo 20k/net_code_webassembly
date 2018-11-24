@@ -534,10 +534,80 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
               });
 }
 
-inline
+/*inline
 void tmalloc(runtime::store& s, const types::memarg& arg, full_stack& full)
 {
 
+}*/
+
+inline
+void memory_size(full_stack& full, runtime::store& s)
+{
+    activation& activate = full.get_current();
+
+    activate.f.inst->memaddrs.check(0);
+    runtime::memaddr maddr = activate.f.inst->memaddrs[0];
+
+    s.mems.check((uint32_t)maddr);
+
+    runtime::meminst& minst = s.mems[(uint32_t)maddr];
+
+    uint32_t sz = minst.dat.size() / runtime::page_size;
+
+    types::i32 ret{sz};
+
+    full.push_values(ret);
+}
+
+inline
+void memory_grow(full_stack& full, runtime::store& s)
+{
+    activation& activate = full.get_current();
+
+    activate.f.inst->memaddrs.check(0);
+    runtime::memaddr maddr = activate.f.inst->memaddrs[0];
+
+    s.mems.check((uint32_t)maddr);
+
+    runtime::meminst& minst = s.mems[(uint32_t)maddr];
+
+    uint32_t sz = minst.dat.size() / runtime::page_size;
+
+    //full.push_values(ret);
+
+    runtime::value found_n = full.pop_back();
+
+    if(!found_n.is_i32())
+        throw std::runtime_error("Not i32 in mem grow");
+
+    ///mem grow
+
+    uint32_t pages = (uint32_t)std::get<types::i32>(found_n.v);
+
+    #ifdef DEBUGGING
+    std::cout << "old size " << minst.dat.size() << std::endl;
+    #endif // DEBUGGING
+
+    uint32_t total_pages = sz + pages;
+
+    #ifdef DEBUGGING
+    lg::log("Growing by ", pages, " pages");
+    #endif // DEBUGGING
+
+    if(total_pages * runtime::page_size > runtime::sandbox_mem_cap)
+    {
+        full.push_values(types::i32{-1});
+    }
+    else
+    {
+        minst.dat.resize(total_pages * runtime::page_size);
+
+        #ifdef DEBUGGING
+        std::cout << "new size " << minst.dat.size() << std::endl;
+        #endif // DEBUGGING
+
+        full.push_values(types::i32{sz});
+    }
 }
 
 inline
