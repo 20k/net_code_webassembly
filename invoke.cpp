@@ -1746,7 +1746,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
             ///branch outwards, hit a loop
             ///this condition is prolly wrong
-            if(current_stack->should_loop && current_stack->type == 2)
+            /*if(current_stack->should_loop && current_stack->type == 2)
             {
                 label temp = full.get_current_label();
 
@@ -1766,7 +1766,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 #endif // DEBUGGING
 
                 //num++;
-            }
+            }*/
 
             ///enter block
             if(push_label)
