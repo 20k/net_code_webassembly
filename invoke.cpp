@@ -64,7 +64,7 @@ struct context
     }
 };
 
-#define DEBUGGING
+//#define DEBUGGING
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full);
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
@@ -961,17 +961,19 @@ void info_stack::end_label(context& ctx, full_stack& full)
     }
 }
 
-void info_stack::destroy()
+types::vec<runtime::value> info_stack::destroy()
 {
     if(type == 1)
     {
-        end_function(ctx, full);
+        return end_function(ctx, full);
     }
 
     if(type == 2)
     {
         end_label(ctx, full);
     }
+
+    return types::vec<runtime::value>();
 }
 
 bool info_stack::loop()
@@ -1222,7 +1224,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         //std::cout << "post good\n";
 
+                        #ifdef DEBUGGING
                         lg::log("hit br_if");
+                        #endif // DEBUGGING
 
                         if((uint32_t)type != 0)
                         {
@@ -1240,7 +1244,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                             //if(ctx.break_op_loop())
                                 should_term = true;
 
+                            #ifdef DEBUGGING
                             lg::log("took branch to ", std::to_string(idx));
+                            #endif // DEBUGGING
+
 
                             //std::cout << "hit br_if\n";
                         }
@@ -1750,6 +1757,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             {
                 label temp = full.get_current_label();
 
+                std::cout << "popping " << istack.back().type << std::endl;
+
                 current_stack->destroy();
                 istack.pop_back();
                 istack.emplace_back(ctx, temp, *to_push_istream, full);
@@ -1794,12 +1803,44 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 throw std::runtime_error("serious logic error");
         }
 
-        istack.back().destroy();
-
-        if(istack.size() == 1)
+        /*if(istack.size() == 1)
         {
             return_vals = full.pop_all_values_on_stack_unsafe();
+        }*/
+
+        istack.back().should_loop = false;
+
+        if(istack.back().type == 2)
+        {
+            label clab = full.get_current_label();
+
+            #ifdef DEBUGGING
+            std::cout << "type " << istack.back().type << std::endl;
+            #endif
+
+            istack.back().destroy();
+
+            if(istack.back().should_loop)
+            {
+                info_stack& lst = istack.back();
+
+                istack.back().start_label(ctx, clab, lst.in, full);
+                istack.back().pc = 0;
+
+                //std::cout << "hello\n";
+
+                continue;
+            }
         }
+        else if(istack.back().type == 1)
+        {
+            return_vals = istack.back().destroy();
+        }
+
+        /*if(istack.size() == 1)
+        {
+            return_vals = full.pop_all_values_on_stack_unsafe();
+        }*/
 
         istack.pop_back();
     }
@@ -1901,6 +1942,10 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                 {
                     ///loop and start again from beginning
                     should_loop = true;
+
+                    #ifdef DEBUGGING
+                    lg::log("continuation pt 2 loop\n");
+                    #endif // DEBUGGING
                 }
 
                 if(ctx.continuation == 0)

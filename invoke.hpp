@@ -251,7 +251,6 @@ struct info_stack
 
     const types::vec<types::instr>& in;
 
-
     info_stack(context& _ctx, runtime::store& s, full_stack& _full, const runtime::funcaddr& address, runtime::moduleinst& minst);
     info_stack(context& _ctx, const label& l, const types::vec<types::instr>& exp, full_stack& _full);
 
@@ -263,5 +262,5 @@ struct info_stack
     void end_label(context& ctx, full_stack& full);
     types::vec<runtime::value> end_function(context& ctx, full_stack& full);
 
-    void destroy();
+    types::vec<runtime::value> destroy();
 };
