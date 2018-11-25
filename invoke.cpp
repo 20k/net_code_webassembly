@@ -1042,6 +1042,26 @@ types::vec<runtime::value> info_stack::end_function_final(context& ctx, full_sta
     throw std::runtime_error("unreachable");
 }
 
+void push_label(context& ctx, label& to_push, const types::vec<types::instr>& in, full_stack& full, types::vec<info_stack>& istack, int cpc, info_stack*& current_stack)
+{
+    current_stack->pc = cpc + 1;
+
+    istack.emplace_back(ctx, to_push, in, full);
+
+    current_stack = &istack.back();
+    current_stack->should_loop = true;
+}
+
+void push_activation(context& ctx, runtime::store& s, runtime::moduleinst& minst, runtime::funcaddr& faddr_to_push, full_stack& full, types::vec<info_stack>& istack, int cpc, info_stack*& current_stack)
+{
+    current_stack->pc = cpc + 1;
+
+    istack.emplace_back(ctx, s, full, faddr_to_push, minst);
+
+    current_stack = &istack.back();
+    current_stack->should_loop = true;
+}
+
 types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
 {
     types::vec<info_stack>& istack = ctx.istack;
