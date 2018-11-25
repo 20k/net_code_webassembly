@@ -2121,42 +2121,6 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     return types::vec<runtime::value>();
 }
 
-/*0x41 1
-0x21 1
-0x2 1
-0x2 2
-0x20 3
-0x41 3
-0x49 3
-0xd 3
-hit br_if
-0x41 3
-0x21 3
-0x3 3
-0x20 4
-0x20 4
-0x70 4
-0x45 4
-0xd 4
-hit br_if
-0x41 4
-0x21 4
-0x20 4
-0x41 4
-0x6a 4
-0x22 4
-0x20 4
-0x49 4
-0xd 4
-hit br_if
-took branch to 0
-Left Expr
-0x20 4
-0x20 4
-0x70 4
-0x45 4
-0xd 4*/
-
 types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
 {
     uint32_t adr = (uint32_t)address;
@@ -2181,9 +2145,9 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
 
     context ctx(istack);
 
-    types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
+    //types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
 
-    //types::vec<runtime::value> return_value = invoke_intl(ctx, *this, full, address, minst);
+    types::vec<runtime::value> return_value = invoke_intl(ctx, *this, full, address, minst);
 
     #ifdef DEBUGGING
     lg::log("left on stack ", full.full.size());
