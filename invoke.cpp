@@ -1737,7 +1737,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             }
 
 
-            int num = 0;
+            //int num = 0;
 
             if(s_ilen != -1)
                 current_stack->pc = s_ilen + 1;
@@ -1765,7 +1765,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 std::cout << "hit condition\n";
                 #endif // DEBUGGING
 
-                num++;
+                //num++;
             }
 
             ///enter block
@@ -1781,7 +1781,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 //std::cout << "clabel\n";
                 //std::cout << "loop? " << current_stack->loop() << std::endl;
 
-                num++;
+                //num++;
             }
 
             ///call
@@ -1795,11 +1795,11 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 std::cout << "hit condition 2\n";
                 #endif // DEBUGGING
 
-                num++;
+                //num++;
             }
 
-            if(num > 1)
-                throw std::runtime_error("serious logic error");
+            //if(num > 1)
+            //    throw std::runtime_error("serious logic error");
         }
 
         /*if(istack.size() == 1)
@@ -1811,24 +1811,31 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
         if(istack.back().type == 2)
         {
-            label clab = full.get_current_label();
-
-            #ifdef DEBUGGING
-            std::cout << "type " << istack.back().type << std::endl;
-            #endif
-
-            istack.back().destroy();
-
-            if(istack.back().should_loop)
+            if(ctx.abort_stack == 1 && ctx.continuation == 2)
             {
-                info_stack& lst = istack.back();
+                label clab = full.get_current_label();
 
-                istack.back().start_label(ctx, clab, lst.in, full);
-                istack.back().pc = 0;
+                #ifdef DEBUGGING
+                std::cout << "type " << istack.back().type << std::endl;
+                #endif
 
-                //std::cout << "hello\n";
+                istack.back().destroy();
 
-                continue;
+                if(istack.back().should_loop)
+                {
+                    info_stack& lst = istack.back();
+
+                    istack.back().start_label(ctx, clab, lst.in, full);
+                    istack.back().pc = 0;
+
+                    //std::cout << "hello\n";
+
+                    continue;
+                }
+            }
+            else
+            {
+                istack.back().destroy();
             }
         }
         else if(istack.back().type == 1)
