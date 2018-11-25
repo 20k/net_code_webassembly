@@ -94,12 +94,12 @@ namespace runtime
         }
 
         template<typename T>
-        value(T in)
+        value(const T& in)
         {
             set(in);
         }
 
-        value(){};
+        value() = default;
 
         void set(uint32_t t)
         {
