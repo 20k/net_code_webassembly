@@ -155,6 +155,7 @@ struct stack_counter
 ///so duktape takes about 330ms
 ///and we take about 2000ms
 ///now we take about 1100
+///or in the recursive version, seemingly about 980
 
 ///dump value of globals and follow everything through to see
 ///if its the leadup to strlen which is incorrect
@@ -1071,24 +1072,21 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             current_stack->should_loop = false;
 
             ///this is... always 0?
-            int& ilen = current_stack->pc;
+            int ilen = current_stack->pc;
             const types::vec<types::instr>& in = current_stack->in;
 
             label to_push;
             bool push_label = false;
             const types::vec<types::instr>* to_push_istream = &current_stack->in;
-            //const types::instr* iptr_storage = nullptr;
-            //int iptr_type = -1;
-            //int iptr_which = -1;
 
             runtime::funcaddr faddr_to_push;
             bool push_act = false;
 
             int len = in.size();
 
-            bool should_term = false;
+            int s_ilen = -1;
 
-            for(; ilen < len && !should_term; ilen++)
+            for(; ilen < len; ilen++)
             {
                 const types::instr& is = in[ilen];
 
@@ -1131,6 +1129,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         push_label = true;
                         to_push_istream = &(std::get_if<types::single_branch_data>(&is.dat)->first);
 
+                        s_ilen = ilen;
+
                         //const types::instr* cis = &is;
 
                         //iptr_storage = &is;
@@ -1143,7 +1143,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         std::cout << (*to_push_istream)[0].which << std::endl;*/
 
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         break;
                     }
@@ -1168,8 +1168,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         //iptr_storage = &is;
                         //iptr_type = 0;
 
+                        s_ilen = ilen;
+
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         break;
                     }
@@ -1207,12 +1209,14 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                             to_push_istream = &dbd.second;
                         }
 
+                        s_ilen = ilen;
+
                         //iptr_storage = &is;
                         //iptr_type = 1;
                         //iptr_which = c;
 
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         break;
                     }
@@ -1230,8 +1234,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         fjump(ctx, lidx, full);
 
+                        s_ilen = ilen;
+
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         //lg::log("hit br ", std::to_string(idx));
 
@@ -1268,8 +1274,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                                 throw std::runtime_error("not enough labels");
                             }
 
+                            s_ilen = ilen;
+
                             //if(ctx.break_op_loop())
-                                should_term = true;
+                                ilen = len;
 
                             #ifdef DEBUGGING
                             lg::log("took branch to ", std::to_string(idx));
@@ -1306,8 +1314,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                             fjump(ctx, br_td.fin, full);
                         }
 
+                        s_ilen = ilen;
+
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         break;
                     }
@@ -1321,8 +1331,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         fjump_up_frame(ctx, full);
 
+                        s_ilen = ilen;
+
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         break;
                     }
@@ -1346,8 +1358,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         push_act = true;
                         faddr_to_push = activate.f.inst->funcaddrs[idx];
 
+                        s_ilen = ilen;
+
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         break;
                     }
@@ -1415,8 +1429,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         push_act = true;
                         faddr_to_push = runtime_addr;
 
+                        s_ilen = ilen;
+
                         //if(ctx.break_op_loop())
-                            should_term = true;
+                            ilen = len;
 
                         break;
                     }
@@ -1777,6 +1793,11 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
 
             int num = 0;
+
+            if(s_ilen != -1)
+                current_stack->pc = s_ilen + 1;
+            else
+                current_stack->pc = ilen;
 
             ///branch outwards, hit a loop
             ///this condition is prolly wrong
@@ -2145,9 +2166,9 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
 
     context ctx(istack);
 
-    //types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
+    types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
 
-    types::vec<runtime::value> return_value = invoke_intl(ctx, *this, full, address, minst);
+    //types::vec<runtime::value> return_value = invoke_intl(ctx, *this, full, address, minst);
 
     #ifdef DEBUGGING
     lg::log("left on stack ", full.full.size());
