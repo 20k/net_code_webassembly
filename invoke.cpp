@@ -1123,27 +1123,12 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         l.btype = sbd.btype;
                         l.continuation = 1;
 
-                        //eval_with_label(ctx, s, l, sbd.first, full);
-
                         to_push = l;
                         push_label = true;
-                        to_push_istream = &(std::get_if<types::single_branch_data>(&is.dat)->first);
+                        to_push_istream = &std::get<types::single_branch_data>(is.dat).first;
 
                         s_ilen = ilen;
-
-                        //const types::instr* cis = &is;
-
-                        //iptr_storage = &is;
-                        //iptr_type = 0;
-
-                        /*std::cout << to_push_istream << std::endl;
-
-                        std::cout << "push prep\n";
-
-                        std::cout << (*to_push_istream)[0].which << std::endl;*/
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         break;
                     }
@@ -1159,19 +1144,12 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         if(l.btype.arity() != 0)
                             throw std::runtime_error("Wrong arity?");
 
-                        //eval_with_label(ctx, s, l, sbd.first, full);
-
                         to_push = l;
                         push_label = true;
                         to_push_istream = &sbd.first;
 
-                        //iptr_storage = &is;
-                        //iptr_type = 0;
-
                         s_ilen = ilen;
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         break;
                     }
@@ -1198,25 +1176,15 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         if(c != 0)
                         {
-                            //eval_with_label(ctx, s, l, dbd.first, full);
-
                             to_push_istream = &dbd.first;
                         }
                         else
                         {
-                            //eval_with_label(ctx, s, l, dbd.second, full);
-
                             to_push_istream = &dbd.second;
                         }
 
                         s_ilen = ilen;
-
-                        //iptr_storage = &is;
-                        //iptr_type = 1;
-                        //iptr_which = c;
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         break;
                     }
@@ -1235,9 +1203,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         fjump(ctx, lidx, full);
 
                         s_ilen = ilen;
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         //lg::log("hit br ", std::to_string(idx));
 
@@ -1251,11 +1217,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         if(!val.is_i32())
                             throw std::runtime_error("expected i32 in 0x0D");
 
-                        //std::cout << "good " << std::holds_alternative<types::i32>(val.v) << std::endl;
-
                         types::i32 type = std::get<types::i32>(val.v);
-
-                        //std::cout << "post good\n";
 
                         #ifdef DEBUGGING
                         lg::log("hit br_if");
@@ -1275,16 +1237,11 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                             }
 
                             s_ilen = ilen;
-
-                            //if(ctx.break_op_loop())
-                                ilen = len;
+                            ilen = len;
 
                             #ifdef DEBUGGING
                             lg::log("took branch to ", std::to_string(idx));
                             #endif // DEBUGGING
-
-
-                            //std::cout << "hit br_if\n";
                         }
 
                         break;
@@ -1315,9 +1272,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         }
 
                         s_ilen = ilen;
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         break;
                     }
@@ -1332,9 +1287,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         fjump_up_frame(ctx, full);
 
                         s_ilen = ilen;
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         break;
                     }
@@ -1353,15 +1306,11 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         lg::log("calling hi there, value stack size is ", full.value_stack_size());
                         #endif // DEBUGGING
 
-                        //invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
-
                         push_act = true;
                         faddr_to_push = activate.f.inst->funcaddrs[idx];
 
                         s_ilen = ilen;
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         break;
                     }
@@ -1424,15 +1373,11 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         if(!types::funcs_equal(ft_actual, ft_expect))
                             throw std::runtime_error("Expected and actual types of funcs differ");
 
-                        //invoke_intl(ctx, s, full, runtime_addr, *inst);
-
                         push_act = true;
                         faddr_to_push = runtime_addr;
 
                         s_ilen = ilen;
-
-                        //if(ctx.break_op_loop())
-                            ilen = len;
+                        ilen = len;
 
                         break;
                     }
