@@ -9,6 +9,7 @@
 #include <cstring>
 #include <variant>
 #include <optional>
+#include <assert.h>
 
 namespace types
 {
@@ -152,7 +153,7 @@ namespace types
 
         template<typename U>
         inline
-        T operator [](const U& i) const
+        const T& operator [](const U& i) const
         {
             //if(i >= (U)v.size() || i < 0)
             //    throw std::runtime_error("invalid bounds access");
@@ -452,6 +453,8 @@ namespace types
 
     struct instr
     {
+        static inline bool assert_on_destruct = false;
+
         uint8_t which = 0;
 
         /*union constant
@@ -476,6 +479,19 @@ namespace types
         } cst;*/
 
         std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, labelidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
+
+        instr()
+        {
+
+        }
+
+        ~instr()
+        {
+            //printf("destruct\n");
+
+            if(assert_on_destruct)
+                assert(false);
+        }
     };
 
     struct expr

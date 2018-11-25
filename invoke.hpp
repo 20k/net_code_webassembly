@@ -243,7 +243,7 @@ struct info_stack
     ///type 2 = activation
     int type = 0;
     int offset = 0;
-    bool should_loop = true;
+    bool should_loop = false;
     bool has_delayed_values_push = false;
 
     context& ctx;

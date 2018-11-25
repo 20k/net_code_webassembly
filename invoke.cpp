@@ -999,22 +999,34 @@ types::vec<runtime::value> info_stack::end_function(context& ctx, full_stack& fu
     throw std::runtime_error("unreachable");
 }
 
+//#define DEBUGGING
+
 types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
 {
     types::vec<info_stack>& istack = ctx.istack;
 
     istack.emplace_back(ctx, s, full, address, minst);
 
+    types::vec<runtime::value> return_vals;
+
     while(istack.size() > 0)
     {
         info_stack* current_stack = &istack[istack.size() - 1];
+        current_stack->should_loop = true;
 
         ///so
         ///we need to loop through the instructions in the current info stack
         ///then we need to execute the instructions
         ///at the other end in evaluating an op, if we hit a condition we should add to the info stack, and then act depending on the result condition
 
-        while(current_stack->loop())
+        #ifdef DEBUGGING
+        std::cout <<"istack\n";
+        std::cout << "frame abort? " << ctx.frame_abort << " abort stack " << ctx.abort_stack << std::endl;
+        #endif // DEBUGGING
+
+        //types::instr::assert_on_destruct = true;
+
+        while(current_stack->loop() && !ctx.frame_abort && ctx.abort_stack == 0)
         {
             current_stack->should_loop = false;
 
@@ -1025,6 +1037,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             label to_push;
             bool push_label = false;
             const types::vec<types::instr>* to_push_istream = &current_stack->in;
+            //const types::instr* iptr_storage = nullptr;
+            //int iptr_type = -1;
+            //int iptr_which = -1;
 
             runtime::funcaddr faddr_to_push;
             bool push_act = false;
@@ -1074,7 +1089,18 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         to_push = l;
                         push_label = true;
-                        to_push_istream = &sbd.first;
+                        to_push_istream = &(std::get_if<types::single_branch_data>(&is.dat)->first);
+
+                        const types::instr* cis = &is;
+
+                        //iptr_storage = &is;
+                        //iptr_type = 0;
+
+                        /*std::cout << to_push_istream << std::endl;
+
+                        std::cout << "push prep\n";
+
+                        std::cout << (*to_push_istream)[0].which << std::endl;*/
 
 
                         //if(ctx.break_op_loop())
@@ -1099,6 +1125,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         to_push = l;
                         push_label = true;
                         to_push_istream = &sbd.first;
+
+                        //iptr_storage = &is;
+                        //iptr_type = 0;
 
                         //if(ctx.break_op_loop())
                             should_term = true;
@@ -1138,6 +1167,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                             to_push_istream = &dbd.second;
                         }
+
+                        //iptr_storage = &is;
+                        //iptr_type = 1;
+                        //iptr_which = c;
 
                         //if(ctx.break_op_loop())
                             should_term = true;
@@ -1698,23 +1731,22 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 }
             }
 
-            current_stack->destroy();
 
             int num = 0;
 
             ///branch outwards, hit a loop
+            ///this condition is prolly wrong
             if(current_stack->should_loop && current_stack->type == 2)
             {
                 label temp = full.get_current_label();
 
+                current_stack->destroy();
                 istack.pop_back();
                 istack.emplace_back(ctx, temp, *to_push_istream, full);
 
                 current_stack = &istack.back();
 
-                ///reset pc
-                ilen = -1;
-                len = to_push_istream->size();
+                //std::cout << "hit condition\n";
 
                 num++;
             }
@@ -1722,8 +1754,15 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             ///enter block
             if(push_label)
             {
+                //std::cout << "to_push " << (*to_push_istream)[0].which << std::endl;
+
+
                 istack.emplace_back(ctx, to_push, *to_push_istream, full);
                 current_stack = &istack.back();
+                current_stack->should_loop = true;
+
+                //std::cout << "clabel\n";
+                //std::cout << "loop? " << current_stack->loop() << std::endl;
 
                 num++;
             }
@@ -1733,6 +1772,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             {
                 istack.emplace_back(ctx, s, full, faddr_to_push, minst);
                 current_stack = &istack.back();
+                current_stack->should_loop = true;
+
+                std::cout << "hit condition 2\n";
 
                 num++;
             }
@@ -1741,10 +1783,17 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 throw std::runtime_error("serious logic error");
         }
 
+        istack.back().destroy();
+
+        if(istack.size() == 1)
+        {
+            return_vals = full.pop_all_values_on_stack_unsafe();
+        }
+
         istack.pop_back();
     }
 
-    return types::vec<runtime::value>();
+    return return_vals;
 }
 
 types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
