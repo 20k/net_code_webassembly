@@ -58,7 +58,10 @@ struct context
 
     }
 
-    types::vec<runtime::value> capture_vals;
+    //types::vec<runtime::value> capture_vals;
+
+    runtime::value capture_val;
+    int capture_arity = 0;
 
     bool break_op_loop()
     {
@@ -85,7 +88,9 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
     ctx.continuation = olab.continuation;
 
     if(arity == 1)
-        ctx.capture_vals = {full.pop_back()};
+        ctx.capture_val = full.pop_back();
+
+    ctx.capture_arity = arity;
 
     //ctx.capture_vals = full.pop_num_vals(arity);
 
@@ -100,7 +105,9 @@ void fjump_up_frame(context& ctx, full_stack& full)
     int arity = (int32_t)activate.return_arity;
 
     if(arity == 1)
-        ctx.capture_vals = {full.pop_back()};
+        ctx.capture_val = full.pop_back();
+
+    ctx.capture_arity = arity;
 
     //ctx.capture_vals = full.pop_num_vals(arity);
     ctx.frame_abort = true;
@@ -920,7 +927,10 @@ const types::vec<types::instr>& info_stack::start_label(context& ctx, const labe
 
     if(has_delayed_values_push)
     {
-        full.push_all_values(ctx.capture_vals);
+        if(ctx.capture_arity)
+            full.push_values(ctx.capture_val);
+
+        ctx.capture_arity = 0;
 
         has_delayed_values_push = false;
     }
@@ -952,7 +962,10 @@ void info_stack::end_label(context& ctx, full_stack& full)
         {
             if(ctx.continuation != 2)
             {
-                full.push_all_values(ctx.capture_vals);
+                if(ctx.capture_arity)
+                    full.push_values(ctx.capture_val);
+
+                ctx.capture_arity = 0;
             }
             else
             {
@@ -1025,11 +1038,10 @@ void info_stack::end_function(context& ctx, full_stack& full)
         full.pop_all_values_on_stack_unsafe();
         full.pop_back_activation();
 
-        auto bvals = ctx.capture_vals;
+        if(ctx.capture_arity)
+            full.push_values(ctx.capture_val);
 
-        full.push_all_values(ctx.capture_vals);
-
-        ctx.capture_vals.clear();
+        ctx.capture_arity = 0;
     }
 }
 
@@ -1054,13 +1066,18 @@ types::vec<runtime::value> info_stack::end_function_final(context& ctx, full_sta
         full.pop_all_values_on_stack_unsafe();
         full.pop_back_activation();
 
-        auto bvals = ctx.capture_vals;
+        auto bval = ctx.capture_val;
 
-        full.push_all_values(ctx.capture_vals);
+        /*full.push_all_values(ctx.capture_vals);
 
-        ctx.capture_vals.clear();
+        ctx.capture_vals.clear();*/
 
-        return bvals;
+        if(ctx.capture_arity)
+            full.push_values(ctx.capture_val);
+
+        ctx.capture_arity = 0;
+
+        return {bval};
     }
 
     throw std::runtime_error("unreachable");
@@ -1849,13 +1866,14 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
         full.pop_all_values_on_stack_unsafe();
         full.pop_back_activation();
 
-        auto bvals = ctx.capture_vals;
+        auto bval = ctx.capture_val;
 
-        full.push_all_values(ctx.capture_vals);
+        if(ctx.capture_arity)
+            full.push_values(ctx.capture_val);
 
-        ctx.capture_vals.clear();
+        ctx.capture_arity = 0;
 
-        return bvals;
+        return {bval};
     }
 
     throw std::runtime_error("unreachable");
@@ -1874,7 +1892,10 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
         if(has_delayed_values_push)
         {
-            full.push_all_values(ctx.capture_vals);
+            if(ctx.capture_arity)
+                full.push_values(ctx.capture_val);
+
+            ctx.capture_arity = 0;
 
             has_delayed_values_push = false;
         }
@@ -1897,7 +1918,10 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             {
                 if(ctx.continuation != 2)
                 {
-                    full.push_all_values(ctx.capture_vals);
+                    if(ctx.capture_arity)
+                        full.push_values(ctx.capture_val);
+
+                    ctx.capture_arity = 0;
                 }
                 else
                 {
@@ -2028,13 +2052,14 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
             full.pop_all_values_on_stack_unsafe();
             full.pop_back_activation();
 
-            auto bvals = ctx.capture_vals;
+            auto bval = ctx.capture_val;
 
-            full.push_all_values(ctx.capture_vals);
+            if(ctx.capture_arity)
+                full.push_values(ctx.capture_val);
 
-            ctx.capture_vals.clear();
+            ctx.capture_arity = 0;
 
-            return bvals;
+            return {bval};
         }
 
         //lg::log("pop");
