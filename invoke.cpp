@@ -1042,7 +1042,7 @@ types::vec<runtime::value> info_stack::end_function_final(context& ctx, full_sta
     throw std::runtime_error("unreachable");
 }
 
-void push_label(context& ctx, label& to_push, const types::vec<types::instr>& in, full_stack& full, types::vec<info_stack>& istack, int cpc, info_stack*& current_stack)
+void do_push_label(context& ctx, label& to_push, const types::vec<types::instr>& in, full_stack& full, types::vec<info_stack>& istack, int cpc, info_stack*& current_stack)
 {
     current_stack->pc = cpc + 1;
 
@@ -1052,7 +1052,7 @@ void push_label(context& ctx, label& to_push, const types::vec<types::instr>& in
     current_stack->should_loop = true;
 }
 
-void push_activation(context& ctx, runtime::store& s, runtime::moduleinst& minst, runtime::funcaddr& faddr_to_push, full_stack& full, types::vec<info_stack>& istack, int cpc, info_stack*& current_stack)
+void do_push_activation(context& ctx, runtime::store& s, runtime::moduleinst& minst, runtime::funcaddr& faddr_to_push, full_stack& full, types::vec<info_stack>& istack, int cpc, info_stack*& current_stack)
 {
     current_stack->pc = cpc + 1;
 
@@ -1095,18 +1095,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             int ilen = current_stack->pc;
             const types::vec<types::instr>& in = current_stack->in;
 
-            ///next project: instead of doing this here
-            ///do it directly in the instruction thing
-            label to_push;
-            bool push_label = false;
-            const types::vec<types::instr>* to_push_istream = &current_stack->in;
-
-            runtime::funcaddr faddr_to_push;
-            bool push_act = false;
-
             int len = in.size();
-
-            int s_ilen = -1;
 
             for(; ilen < len; ilen++)
             {
@@ -1145,11 +1134,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         l.btype = sbd.btype;
                         l.continuation = 1;
 
-                        to_push = l;
-                        push_label = true;
-                        to_push_istream = &std::get<types::single_branch_data>(is.dat).first;
+                        do_push_label(ctx, l, sbd.first, full, istack, ilen, current_stack);
 
-                        s_ilen = ilen;
                         ilen = len;
 
                         break;
@@ -1166,11 +1152,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         if(l.btype.arity() != 0)
                             throw std::runtime_error("Wrong arity?");
 
-                        to_push = l;
-                        push_label = true;
-                        to_push_istream = &sbd.first;
+                        do_push_label(ctx, l, sbd.first, full, istack, ilen, current_stack);
 
-                        s_ilen = ilen;
                         ilen = len;
 
                         break;
@@ -1193,19 +1176,15 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         uint32_t c = type.val;
 
-                        to_push = l;
-                        push_label = true;
-
                         if(c != 0)
                         {
-                            to_push_istream = &dbd.first;
+                            do_push_label(ctx, l, dbd.first, full, istack, ilen, current_stack);
                         }
                         else
                         {
-                            to_push_istream = &dbd.second;
+                            do_push_label(ctx, l, dbd.second, full, istack, ilen, current_stack);
                         }
 
-                        s_ilen = ilen;
                         ilen = len;
 
                         break;
@@ -1224,7 +1203,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         fjump(ctx, lidx, full);
 
-                        s_ilen = ilen;
+                        current_stack->pc = ilen + 1;
                         ilen = len;
 
                         //lg::log("hit br ", std::to_string(idx));
@@ -1258,7 +1237,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                                 throw std::runtime_error("not enough labels");
                             }
 
-                            s_ilen = ilen;
+                            current_stack->pc = ilen + 1;
                             ilen = len;
 
                             #ifdef DEBUGGING
@@ -1293,7 +1272,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                             fjump(ctx, br_td.fin, full);
                         }
 
-                        s_ilen = ilen;
+                        current_stack->pc = ilen + 1;
                         ilen = len;
 
                         break;
@@ -1308,7 +1287,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         fjump_up_frame(ctx, full);
 
-                        s_ilen = ilen;
+                        current_stack->pc = ilen + 1;
                         ilen = len;
 
                         break;
@@ -1328,10 +1307,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         lg::log("calling hi there, value stack size is ", full.value_stack_size());
                         #endif // DEBUGGING
 
-                        push_act = true;
-                        faddr_to_push = activate.f.inst->funcaddrs[idx];
+                        do_push_activation(ctx, s, minst, activate.f.inst->funcaddrs[idx], full, istack, ilen, current_stack);
 
-                        s_ilen = ilen;
                         ilen = len;
 
                         break;
@@ -1395,10 +1372,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         if(!types::funcs_equal(ft_actual, ft_expect))
                             throw std::runtime_error("Expected and actual types of funcs differ");
 
-                        push_act = true;
-                        faddr_to_push = runtime_addr;
+                        do_push_activation(ctx, s, minst, runtime_addr, full, istack, ilen, current_stack);
 
-                        s_ilen = ilen;
                         ilen = len;
 
                         break;
@@ -1757,71 +1732,6 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         throw std::runtime_error("bad instruction " + std::to_string(which));
                 }
             }
-
-
-            //int num = 0;
-
-            if(s_ilen != -1)
-                current_stack->pc = s_ilen + 1;
-            else
-                current_stack->pc = ilen;
-
-            ///branch outwards, hit a loop
-            ///this condition is prolly wrong
-            /*if(current_stack->should_loop && current_stack->type == 2)
-            {
-                label temp = full.get_current_label();
-
-                #ifdef DEBUGGING
-                std::cout << "popping " << istack.back().type << std::endl;
-                #endif // DEBUGGING
-
-                current_stack->destroy();
-                istack.pop_back();
-                istack.emplace_back(ctx, temp, *to_push_istream, full);
-
-                current_stack = &istack.back();
-                current_stack->should_loop = true;
-
-                #ifdef DEBUGGING
-                std::cout << "hit condition\n";
-                #endif // DEBUGGING
-
-                //num++;
-            }*/
-
-            ///enter block
-            if(push_label)
-            {
-                //std::cout << "to_push " << (*to_push_istream)[0].which << std::endl;
-
-
-                istack.emplace_back(ctx, to_push, *to_push_istream, full);
-                current_stack = &istack.back();
-                current_stack->should_loop = true;
-
-                //std::cout << "clabel\n";
-                //std::cout << "loop? " << current_stack->loop() << std::endl;
-
-                //num++;
-            }
-
-            ///call
-            if(push_act)
-            {
-                istack.emplace_back(ctx, s, full, faddr_to_push, minst);
-                current_stack = &istack.back();
-                current_stack->should_loop = true;
-
-                #ifdef DEBUGGING
-                std::cout << "hit condition 2\n";
-                #endif // DEBUGGING
-
-                //num++;
-            }
-
-            //if(num > 1)
-            //    throw std::runtime_error("serious logic error");
         }
 
         /*if(istack.size() == 1)
