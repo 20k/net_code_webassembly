@@ -64,6 +64,8 @@ struct context
     }
 };
 
+#define DEBUGGING
+
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full);
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
@@ -133,7 +135,7 @@ struct nest_counter
     }
 };
 
-struct stack_counte
+struct stack_counter
 {
     full_stack& stk;
 
@@ -851,6 +853,13 @@ const types::vec<types::instr>& info_stack::start_function(runtime::store& s, fu
 
         types::vec<runtime::value> popped = full.pop_num_vals(num_args);
 
+        /*std::cout <<" NUM ARGS " << num_args << std::endl;
+
+        for(auto& i : popped)
+        {
+            std::cout << i.friendly_val() << std::endl;
+        }*/
+
         types::vec<types::local> local_types = fnc.funct.fnc.locals;
         const types::expr& expression = fnc.funct.fnc.e;
 
@@ -999,8 +1008,6 @@ types::vec<runtime::value> info_stack::end_function(context& ctx, full_stack& fu
     throw std::runtime_error("unreachable");
 }
 
-//#define DEBUGGING
-
 types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst)
 {
     types::vec<info_stack>& istack = ctx.istack;
@@ -1020,8 +1027,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
         ///at the other end in evaluating an op, if we hit a condition we should add to the info stack, and then act depending on the result condition
 
         #ifdef DEBUGGING
-        std::cout <<"istack\n";
-        std::cout << "frame abort? " << ctx.frame_abort << " abort stack " << ctx.abort_stack << std::endl;
+        //std::cout <<"istack\n";
+        //std::cout << "frame abort? " << ctx.frame_abort << " abort stack " << ctx.abort_stack << std::endl;
         #endif // DEBUGGING
 
         //types::instr::assert_on_destruct = true;
@@ -1091,7 +1098,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         push_label = true;
                         to_push_istream = &(std::get_if<types::single_branch_data>(&is.dat)->first);
 
-                        const types::instr* cis = &is;
+                        //const types::instr* cis = &is;
 
                         //iptr_storage = &is;
                         //iptr_type = 0;
@@ -1101,7 +1108,6 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         std::cout << "push prep\n";
 
                         std::cout << (*to_push_istream)[0].which << std::endl;*/
-
 
                         //if(ctx.break_op_loop())
                             should_term = true;
@@ -1212,7 +1218,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 
                         //std::cout << "post good\n";
 
-                        //lg::log("hit br_if");
+                        lg::log("hit br_if");
 
                         if((uint32_t)type != 0)
                         {
@@ -1230,7 +1236,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                             //if(ctx.break_op_loop())
                                 should_term = true;
 
-                            //lg::log("took branch to ", std::to_string(idx));
+                            lg::log("took branch to ", std::to_string(idx));
 
                             //std::cout << "hit br_if\n";
                         }
@@ -1745,8 +1751,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 istack.emplace_back(ctx, temp, *to_push_istream, full);
 
                 current_stack = &istack.back();
+                current_stack->should_loop = true;
 
-                //std::cout << "hit condition\n";
+                std::cout << "hit condition\n";
 
                 num++;
             }
@@ -2029,6 +2036,44 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     return types::vec<runtime::value>();
 }
 
+/*0x41 1
+0x21 1
+0x2 1
+0x2 2
+0x20 3
+0x41 3
+0x49 3
+0xd 3
+0x41 3
+0x21 3
+0x3 3
+0x20 4
+0x20 4
+0x70 4
+0x45 4
+0xd 4
+0x41 4
+0x21 4
+0x20 4
+0x41 4
+0x6a 4
+0x22 4
+0x20 4
+0x49 4
+0xd 4
+Left Expr
+0x20 4
+0x20 4
+0x70 4
+0x45 4
+0xd 4
+0x41 4
+0x21 4
+0x20 4
+0x41 4
+0x6a 4
+0x22 4
+0x20 4*/
 
 types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
 {
@@ -2056,7 +2101,7 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
 
     types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
 
-    //return_value = invoke_intl(ctx, *this, full, address, minst);
+    //types::vec<runtime::value> return_value = invoke_intl(ctx, *this, full, address, minst);
 
     #ifdef DEBUGGING
     lg::log("left on stack ", full.full.size());
