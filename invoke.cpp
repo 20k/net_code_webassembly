@@ -69,6 +69,7 @@ struct context
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full);
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
+inline
 void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 {
     label& l = full.get_current_label();
@@ -153,6 +154,7 @@ struct stack_counter
 
 ///so duktape takes about 330ms
 ///and we take about 2000ms
+///now we take about 1100
 
 ///dump value of globals and follow everything through to see
 ///if its the leadup to strlen which is incorrect
@@ -961,19 +963,17 @@ void info_stack::end_label(context& ctx, full_stack& full)
     }
 }
 
-types::vec<runtime::value> info_stack::destroy()
+void info_stack::destroy()
 {
     if(type == 1)
     {
-        return end_function(ctx, full);
+        end_function(ctx, full);
     }
 
     if(type == 2)
     {
         end_label(ctx, full);
     }
-
-    return types::vec<runtime::value>();
 }
 
 bool info_stack::loop()
@@ -981,7 +981,34 @@ bool info_stack::loop()
     return should_loop;
 }
 
-types::vec<runtime::value> info_stack::end_function(context& ctx, full_stack& full)
+void info_stack::end_function(context& ctx, full_stack& full)
+{
+    if(!ctx.frame_abort)
+    {
+        activation& current = full.get_current();
+
+        types::vec<runtime::value> found = full.pop_num_vals((int32_t)current.return_arity);
+
+        full.pop_back_activation();
+
+        full.push_all_values(found);
+    }
+    else if(ctx.frame_abort)
+    {
+        ctx.frame_abort = false;
+
+        full.pop_all_values_on_stack_unsafe();
+        full.pop_back_activation();
+
+        auto bvals = ctx.capture_vals;
+
+        full.push_all_values(ctx.capture_vals);
+
+        ctx.capture_vals.clear();
+    }
+}
+
+types::vec<runtime::value> info_stack::end_function_final(context& ctx, full_stack& full)
 {
     if(!ctx.frame_abort)
     {
@@ -1757,7 +1784,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             {
                 label temp = full.get_current_label();
 
+                #ifdef DEBUGGING
                 std::cout << "popping " << istack.back().type << std::endl;
+                #endif // DEBUGGING
 
                 current_stack->destroy();
                 istack.pop_back();
@@ -1766,7 +1795,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 current_stack = &istack.back();
                 current_stack->should_loop = true;
 
+                #ifdef DEBUGGING
                 std::cout << "hit condition\n";
+                #endif // DEBUGGING
 
                 num++;
             }
@@ -1794,7 +1825,9 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                 current_stack = &istack.back();
                 current_stack->should_loop = true;
 
+                #ifdef DEBUGGING
                 std::cout << "hit condition 2\n";
+                #endif // DEBUGGING
 
                 num++;
             }
@@ -1834,7 +1867,10 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
         }
         else if(istack.back().type == 1)
         {
-            return_vals = istack.back().destroy();
+            if(istack.size() > 1)
+                istack.back().end_function(ctx, full);
+            else
+                return_vals = istack.back().end_function_final(ctx, full);
         }
 
         /*if(istack.size() == 1)

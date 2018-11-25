@@ -260,7 +260,8 @@ struct info_stack
     bool loop();
 
     void end_label(context& ctx, full_stack& full);
-    types::vec<runtime::value> end_function(context& ctx, full_stack& full);
+    void end_function(context& ctx, full_stack& full);
+    types::vec<runtime::value> end_function_final(context& ctx, full_stack& full);
 
-    types::vec<runtime::value> destroy();
+    void destroy();
 };
