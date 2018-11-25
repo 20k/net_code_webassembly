@@ -306,7 +306,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 //std::cout << "post good\n";
 
-                //lg::log("hit br_if");
+                #ifdef DEBUGGING
+                lg::log("hit br_if");
+                #endif // DEBUGGING
 
                 if((uint32_t)type != 0)
                 {
@@ -324,7 +326,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                     if(ctx.break_op_loop())
                         ilen = len;
 
-                    //lg::log("took branch to ", std::to_string(idx));
+                    #ifdef DEBUGGING
+                    lg::log("took branch to ", std::to_string(idx));
+                    #endif // DEBUGGING
 
                     //std::cout << "hit br_if\n";
                 }
@@ -2044,6 +2048,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 0x41 3
 0x49 3
 0xd 3
+hit br_if
 0x41 3
 0x21 3
 0x3 3
@@ -2052,6 +2057,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 0x70 4
 0x45 4
 0xd 4
+hit br_if
 0x41 4
 0x21 4
 0x20 4
@@ -2061,19 +2067,14 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 0x20 4
 0x49 4
 0xd 4
+hit br_if
+took branch to 0
 Left Expr
 0x20 4
 0x20 4
 0x70 4
 0x45 4
-0xd 4
-0x41 4
-0x21 4
-0x20 4
-0x41 4
-0x6a 4
-0x22 4
-0x20 4*/
+0xd 4*/
 
 types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& address, runtime::moduleinst& minst, const types::vec<runtime::value>& vals)
 {
