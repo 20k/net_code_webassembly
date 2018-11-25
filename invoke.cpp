@@ -15,7 +15,9 @@ void push(const T& t, full_stack& full)
 #define POP() full.pop_back()
 
 #define POPA(x) {auto a1 = full.pop_back(); push(runtime::apply(x, a1), full); break;}
-#define POPB(x) {auto a2 = full.pop_back(); auto a1 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break;}
+
+//#define POPB(x) {auto a2 = full.pop_back(); auto a1 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break;}
+#define POPB(x) {runtime::value a2; runtime::value a1; full.pop_2(a1, a2); push(runtime::apply(x, a1, a2), full); break;}
 
 #define PUSH_CONSTANT(xtype)\
         { \
@@ -81,7 +83,12 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
     //lg::log("ctype ", std::to_string(olab.continuation));
 
     ctx.continuation = olab.continuation;
-    ctx.capture_vals = full.pop_num_vals(arity);
+
+    if(arity == 1)
+        ctx.capture_vals = {full.pop_back()};
+
+    //ctx.capture_vals = full.pop_num_vals(arity);
+
     ctx.abort_stack = (uint32_t)lidx + 1;
     //ctx.needs_cont_jump = true;
 }
@@ -92,7 +99,10 @@ void fjump_up_frame(context& ctx, full_stack& full)
 
     int arity = (int32_t)activate.return_arity;
 
-    ctx.capture_vals = full.pop_num_vals(arity);
+    if(arity == 1)
+        ctx.capture_vals = {full.pop_back()};
+
+    //ctx.capture_vals = full.pop_num_vals(arity);
     ctx.frame_abort = true;
 }
 
@@ -920,19 +930,22 @@ const types::vec<types::instr>& info_stack::start_label(context& ctx, const labe
 
 void info_stack::end_label(context& ctx, full_stack& full)
 {
-    auto all_vals = full.pop_all_values_on_stack_unsafe();
-
-    full.ensure_label();
-    full.pop_back_label();
-
     if(ctx.frame_abort)
     {
+        full.pop_all_values_on_stack_unsafe();
+        full.pop_back_label();
+
         should_loop = false;
         return;
     }
 
+    ///we SHOULD do pop all values on stack, but instead we cheat with backup vals
+    ///to exploit the fact that they're not shared stacks
     if(ctx.abort_stack > 0)
     {
+        full.pop_all_values_on_stack_unsafe();
+        full.pop_back_label();
+
         ctx.abort_stack--;
 
         if(ctx.abort_stack == 0)
@@ -960,7 +973,18 @@ void info_stack::end_label(context& ctx, full_stack& full)
     }
     else
     {
-        full.push_all_values(all_vals);
+        //int backup_vals = full.current_stack_size();
+
+        //full.pop_back_label();
+
+        full.label_stack.pop_back();
+
+        int last = full.stack_start_sizes.back();
+        full.stack_start_sizes.pop_back();
+
+        full.stack_start_sizes.back() += last;
+
+        //full.stack_start_sizes.push_back(backup_vals);
     }
 }
 
@@ -2051,9 +2075,9 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
 
     context ctx(istack);
 
-    types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
+    //types::vec<runtime::value> return_value = entry_func(ctx, *this, full, address, minst);
 
-    //types::vec<runtime::value> return_value = invoke_intl(ctx, *this, full, address, minst);
+    types::vec<runtime::value> return_value = invoke_intl(ctx, *this, full, address, minst);
 
     #ifdef DEBUGGING
     lg::log("left on stack ", full.full.size());

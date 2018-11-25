@@ -201,6 +201,14 @@ struct full_stack
         return last;
     }
 
+    void pop_2(runtime::value& v1, runtime::value& v2)
+    {
+        v2 = full.back();
+        full.pop_back();
+        v1 = full.back();
+        full.pop_back();
+    }
+
     void pop_back_label()
     {
         if(label_stack.size() == 0)
@@ -226,6 +234,11 @@ struct full_stack
     int value_stack_size()
     {
         return full.size();
+    }
+
+    int current_stack_size()
+    {
+        return stack_start_sizes.back();
     }
 };
 

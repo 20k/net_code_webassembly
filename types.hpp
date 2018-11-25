@@ -141,6 +141,16 @@ namespace types
             v.insert(v1, v2, v3);
         }
 
+        const T& front() const
+        {
+            return v.front();
+        }
+
+        T& front()
+        {
+            return v.front();
+        }
+
         const T& back() const
         {
             return v.back();
