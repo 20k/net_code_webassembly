@@ -1075,6 +1075,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             int ilen = current_stack->pc;
             const types::vec<types::instr>& in = current_stack->in;
 
+            ///next project: instead of doing this here
+            ///do it directly in the instruction thing
             label to_push;
             bool push_label = false;
             const types::vec<types::instr>* to_push_istream = &current_stack->in;
@@ -1807,7 +1809,8 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
             return_vals = full.pop_all_values_on_stack_unsafe();
         }*/
 
-        istack.back().should_loop = false;
+        ///? I think this is impossible to hit
+        //istack.back().should_loop = false;
 
         if(istack.back().type == 2)
         {
