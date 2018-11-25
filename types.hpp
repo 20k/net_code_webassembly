@@ -123,10 +123,10 @@ namespace types
             v.push_back(t);
         }
 
-        template<typename U>
-        void emplace_back(const U& t)
+        template<typename... U>
+        void emplace_back(U&&... t)
         {
-            v.emplace_back(t);
+            v.emplace_back(std::forward<U>(t)...);
         }
 
         auto pop_back()
