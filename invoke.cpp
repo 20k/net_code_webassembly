@@ -163,9 +163,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     nest_counter nest(ctx);
     #endif // DEBUGGING
 
-    int len = exp.size();
+    size_t len = exp.size();
 
-    for(int ilen=0; ilen < len; ilen++)
+    for(size_t ilen=0; ilen < len; ilen++)
     {
         #ifdef DEBUGGING
         //stack_counter stk(full);
