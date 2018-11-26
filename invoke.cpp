@@ -14,10 +14,13 @@ void push(const T& t, full_stack& full)
 //#define PUSH(x) return push(x, full); break;
 #define POP() full.pop_back()
 
+///all the popa functions know what types they're dealing with, could be a perf boost to avoid apply
 #define POPA(x) {auto a1 = full.pop_back(); push(runtime::apply(x, a1), full); break;}
 
 //#define POPB(x) {auto a2 = full.pop_back(); auto a1 = full.pop_back(); push(runtime::apply(x, a1, a2), full); break;}
 #define POPB(x) {runtime::value a2; runtime::value a1; full.pop_2(a1, a2); push(runtime::apply(x, a1, a2), full); break;}
+
+#define POPAT(x, y) {auto a1 = full.pop_back(); push(x(std::get<y>(a1.v).val), full); break;}
 
 #define PUSH_CONSTANT(xtype)\
         { \
