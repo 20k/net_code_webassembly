@@ -867,7 +867,15 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     {
         should_loop = false;
 
-        ///kill this, now that there's only one stack and no label push/pop this is a formality
+        ///ok so
+        ///i think a loop always has an arity of 0
+
+        /*loop [t?] instr end
+        Let L be the label whose arity is 0 and whose continuation is the start of the loop.
+        Enter the block instr with label L.
+        */
+
+        ///that would mean that this statement is unnecessary
         if(has_delayed_values_push)
         {
             if(ctx.capture_arity)
