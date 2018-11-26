@@ -183,38 +183,3 @@ struct full_stack
 };
 
 types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp);
-
-struct context;
-struct label;
-struct full_stack;
-
-struct info_stack
-{
-    int pc = 0;
-
-    ///type 1 = label
-    ///type 2 = activation
-    int type = 0;
-    int offset = 0;
-    bool should_loop = false;
-    bool has_delayed_values_push = false;
-
-    context& ctx;
-    full_stack& full;
-
-    const types::vec<types::instr>& in;
-
-    info_stack(context& _ctx, runtime::store& s, full_stack& _full, const runtime::funcaddr& address, runtime::moduleinst& minst);
-    info_stack(context& _ctx, const label& l, const types::vec<types::instr>& exp, full_stack& _full);
-
-    const types::vec<types::instr>& start_label(context& ctx, const label& l, const types::vec<types::instr>& exp, full_stack& full);
-    const types::vec<types::instr>& start_function(runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
-
-    bool loop();
-
-    void end_label(context& ctx, full_stack& full);
-    void end_function(context& ctx, full_stack& full);
-    types::vec<runtime::value> end_function_final(context& ctx, full_stack& full);
-
-    void destroy();
-};
