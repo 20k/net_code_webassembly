@@ -1120,13 +1120,6 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
     #endif // DEBUGGING
 
     return return_value;
-
-    ///pop val from stack
-
-    /*if(ftype.results.size() > 0)
-    {
-        auto res = full.pop_num_vals(1);
-    }*/
 }
 
 types::vec<runtime::value> runtime::store::invoke_by_name(const std::string& imported, moduleinst& minst, const types::vec<value>& vals)
