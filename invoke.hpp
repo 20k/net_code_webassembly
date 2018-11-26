@@ -34,9 +34,6 @@ struct full_stack
     ///experiment with making these actual indexed stacks
     ///with a fixed max size and stuff
     types::vec<runtime::value> full;
-    //types::vec<int32_t> activation_offsets;
-    //types::vec<activation> activation_stack;
-    //types::vec<label> label_stack;
 
     types::vec<uint32_t> stack_start_sizes{{0}};
 
@@ -58,6 +55,7 @@ struct full_stack
         full.insert(full.end(), val.begin(), val.end());
     }
 
+    #if 0
     void push_activation()
     {
         stack_start_sizes.push_back(full.size());
@@ -69,6 +67,17 @@ struct full_stack
     void push_label()
     {
         stack_start_sizes.push_back(full.size());
+    }
+    #endif // 0
+
+    void push_stack()
+    {
+        stack_start_sizes.push_back(full.size());
+    }
+
+    void pop_stack()
+    {
+        stack_start_sizes.pop_back();
     }
 
     ///this is unsafe because it doesn't set
@@ -130,10 +139,10 @@ struct full_stack
         return ret;
     }
 
-    void pop_back_activation()
+    /*void pop_back_activation()
     {
         stack_start_sizes.pop_back();
-    }
+    }*/
 
     runtime::value pop_back()
     {
@@ -158,10 +167,10 @@ struct full_stack
         full.pop_back();
     }
 
-    void pop_back_label()
+    /*void pop_back_label()
     {
         stack_start_sizes.pop_back();
-    }
+    }*/
 
     std::optional<runtime::value> peek_back()
     {

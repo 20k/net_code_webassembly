@@ -817,7 +817,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     activate.return_arity = {0};
     activate.f = fr;
 
-    full.push_activation();
+    full.push_stack();
 
     ctx.current_arity = 0;
 
@@ -827,7 +827,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     {
         types::vec<runtime::value> found = full.pop_all_values_on_stack_unsafe();
 
-        full.pop_back_activation();
+        full.pop_stack();
 
         full.push_all_values(found);
 
@@ -838,7 +838,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
         ctx.frame_abort = false;
 
         full.pop_all_values_on_stack_unsafe_nocatch();
-        full.pop_back_activation();
+        full.pop_stack();
 
         auto bval = ctx.capture_val;
 
@@ -861,7 +861,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     ///ok
     ///so basically I really want to avoid this push here in this loop
     ///as the loop gets called rather a lot
-    full.push_label();
+    full.push_stack();
 
     while(should_loop)
     {
@@ -886,7 +886,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         {
             full.pop_all_values_on_stack_unsafe_nocatch();
 
-            full.pop_back_label();
+            full.pop_stack();
             return;
         }
 
@@ -913,7 +913,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                 }
                 else
                 {
-                    full.pop_back_label();
+                    full.pop_stack();
 
                     if(ctx.capture_arity)
                         full.push_values(ctx.capture_val);
@@ -933,7 +933,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         {
             auto all_vals = full.pop_all_values_on_stack_unsafe();
 
-            full.pop_back_label();
+            full.pop_stack();
 
             full.push_all_values(all_vals);
 
@@ -941,7 +941,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         }
     }
 
-    full.pop_back_label();
+    full.pop_stack();
 
     //throw std::runtime_error("Unreachable");
 
@@ -1029,7 +1029,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
 
         //lg::log("push");
-        full.push_activation();
+        full.push_stack();
 
         ctx.current_arity = 0;
 
@@ -1039,7 +1039,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         {
             types::vec<runtime::value> found = full.pop_num_vals((int32_t)activate.return_arity);
 
-            full.pop_back_activation();
+            full.pop_stack();
 
             full.push_all_values(found);
 
@@ -1052,7 +1052,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
             ctx.frame_abort = false;
 
             full.pop_all_values_on_stack_unsafe_nocatch();
-            full.pop_back_activation();
+            full.pop_stack();
 
             auto bval = ctx.capture_val;
 
