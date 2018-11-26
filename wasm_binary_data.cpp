@@ -734,7 +734,12 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     {
         types::global& glob = m.section_global.globals[i];
 
-        types::vec<runtime::value> val = eval_with_frame(inst, s, glob.e.i);
+        ///fake
+        label clabel;
+        clabel.btype.which = 0;
+        clabel.continuation = 0;
+
+        types::vec<runtime::value> val = eval_with_frame(inst, s, glob.e.i, clabel);
 
         if(val.size() == 1)
         {
@@ -809,7 +814,11 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     {
         sections::elem& e = m.section_elem.elems[i];
 
-        types::vec<runtime::value> vals = eval_with_frame(inst, s, e.e.i);
+        label clabel;
+        clabel.btype.which = 0;
+        clabel.continuation = 0;
+
+        types::vec<runtime::value> vals = eval_with_frame(inst, s, e.e.i, clabel);
 
         if(vals.size() != 1)
             throw std::runtime_error("Bad section element size");
@@ -858,7 +867,11 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
     {
         types::dataseg& data_seg = m.section_data.dats[i];
 
-        types::vec<runtime::value> vals = eval_with_frame(inst, s, data_seg.e.i);
+        label clabel;
+        clabel.btype.which = 0;
+        clabel.continuation = 0;
+
+        types::vec<runtime::value> vals = eval_with_frame(inst, s, data_seg.e.i, clabel);
 
         if(vals.size() != 1 || !vals[0].is_i32())
             throw std::runtime_error("Bad data eval");

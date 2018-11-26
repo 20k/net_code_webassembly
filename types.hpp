@@ -284,7 +284,7 @@ namespace types
             }
         }
 
-        int arity()
+        int arity() const
         {
             return which != 0x40;
         }

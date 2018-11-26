@@ -67,9 +67,9 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
 inline
-void fjump(context& ctx, types::labelidx lidx, full_stack& full)
+void fjump(context& ctx, types::labelidx lidx, full_stack& full, const label& l)
 {
-    label& l = full.get_current_label();
+    //label& l = full.get_current_label();
 
     int arity = l.btype.arity();
 
@@ -182,7 +182,7 @@ struct stack_counter
 ///dump value of globals and follow everything through to see
 ///if its the leadup to strlen which is incorrect
 //__attribute__((optimize("unroll-loops")))
-void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
+void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full, activation& activate, const label& clabel)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
@@ -303,12 +303,12 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 uint32_t idx = (uint32_t)lidx;
 
-                if((uint32_t)full.num_labels() < idx + 1)
+                /*if((uint32_t)full.num_labels() < idx + 1)
                 {
                     throw std::runtime_error("not enough labels");
-                }
+                }*/
 
-                fjump(ctx, lidx, full);
+                fjump(ctx, lidx, full, clabel);
 
                 if(ctx.break_op_loop())
                     ilen = len;
@@ -339,14 +339,14 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 {
                     types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-                    fjump(ctx, lidx, full);
+                    fjump(ctx, lidx, full, clabel);
 
                     uint32_t idx = (uint32_t)lidx;
 
-                    if((uint32_t)full.num_labels() < idx + 1)
+                    /*if((uint32_t)full.num_labels() < idx + 1)
                     {
                         throw std::runtime_error("not enough labels");
-                    }
+                    }*/
 
                     if(ctx.break_op_loop())
                         ilen = len;
@@ -378,11 +378,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 {
                     types::labelidx lidx = br_td.labels[idx];
 
-                    fjump(ctx, lidx, full);
+                    fjump(ctx, lidx, full, clabel);
                 }
                 else
                 {
-                    fjump(ctx, br_td.fin, full);
+                    fjump(ctx, br_td.fin, full, clabel);
                 }
 
                 if(ctx.break_op_loop())
@@ -1835,7 +1835,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
 }
 #endif // 0
 
-types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
+types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp, const label& l)
 {
     types::vec<info_stack> istack;
     full_stack full;
@@ -1851,7 +1851,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
 
     full.push_activation(activate);
 
-    eval_expr(ctx, s, exp, full, activate);
+    eval_expr(ctx, s, exp, full, activate, l);
 
     if(!ctx.frame_abort)
     {
@@ -1883,7 +1883,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     throw std::runtime_error("unreachable");
 }
 
-void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
+void eval_with_label(context& ctx, runtime::store& s, const label& clabel, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
 {
     bool should_loop = true;
     bool has_delayed_values_push = false;
@@ -1891,7 +1891,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     ///ok
     ///so basically I really want to avoid this push here in this loop
     ///as the loop gets called rather a lot
-    full.push_label(l);
+    full.push_label(clabel);
 
     while(should_loop)
     {
@@ -1907,7 +1907,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             has_delayed_values_push = false;
         }
 
-        eval_expr(ctx, s, exp, full, activate);
+        eval_expr(ctx, s, exp, full, activate, clabel);
 
         auto all_vals = full.pop_all_values_on_stack_unsafe();
 
@@ -1925,7 +1925,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
             if(ctx.abort_stack == 0)
             {
-                if(l.continuation == 2)
+                if(clabel.continuation == 2)
                 {
                     has_delayed_values_push = true;
                     ///loop and start again from beginning
@@ -1950,7 +1950,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                     return;
                 }
 
-                if(l.continuation == 0)
+                if(clabel.continuation == 0)
                 {
                     throw std::runtime_error("Bad continuation, 0");
                 }
@@ -2041,6 +2041,9 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         activate.return_arity = types::s32{ftype.results.size()};
         activate.f = fr;
 
+        label clabel;
+        clabel.btype.which = 0;
+        clabel.continuation = 0;
 
         #ifdef DEBUGGING
         lg::logn("Returns ", ftype.results.size(), " values, expects ", num_args, " args. Arg is ");
@@ -2057,7 +2060,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         //lg::log("push");
         full.push_activation(activate);
 
-        eval_expr(ctx, s, expression.i, full, activate);
+        eval_expr(ctx, s, expression.i, full, activate, clabel);
 
         if(!ctx.frame_abort)
         {
