@@ -1919,12 +1919,14 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
         eval_expr(ctx, s, exp, full, activate);
 
-        auto all_vals = full.pop_all_values_on_stack_unsafe();
+
 
         //full.ensure_label();
 
         if(ctx.frame_abort)
         {
+            full.pop_all_values_on_stack_unsafe_nocatch();
+
             full.pop_back_label();
             return;
         }
@@ -1932,6 +1934,8 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         if(ctx.abort_stack > 0)
         {
             ctx.abort_stack--;
+
+            full.pop_all_values_on_stack_unsafe_nocatch();
 
             if(ctx.abort_stack == 0)
             {
@@ -1968,6 +1972,8 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         }
         else
         {
+            auto all_vals = full.pop_all_values_on_stack_unsafe();
+
             full.pop_back_label();
 
             full.push_all_values(all_vals);
