@@ -37,7 +37,7 @@ struct info_stack;
 struct context
 {
     int abort_stack = 0;
-    int continuation = 0;
+    //int continuation = 0;
     int expression_counter = 0;
     //bool needs_cont_jump = false;
 
@@ -73,11 +73,11 @@ void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 
     int arity = l.btype.arity();
 
-    label& olab = full.get_label_of_offset((uint32_t)lidx);
+    /*label& olab = full.get_label_of_offset((uint32_t)lidx);
 
     //lg::log("ctype ", std::to_string(olab.continuation));
 
-    ctx.continuation = olab.continuation;
+    ctx.continuation = olab.continuation;*/
 
     if(arity == 1)
         ctx.capture_val = full.pop_back();
@@ -1925,7 +1925,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
             if(ctx.abort_stack == 0)
             {
-                if(ctx.continuation == 2)
+                if(l.continuation == 2)
                 {
                     has_delayed_values_push = true;
                     ///loop and start again from beginning
@@ -1950,7 +1950,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                     return;
                 }
 
-                if(ctx.continuation == 0)
+                if(l.continuation == 0)
                 {
                     throw std::runtime_error("Bad continuation, 0");
                 }
