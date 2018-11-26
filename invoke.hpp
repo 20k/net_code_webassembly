@@ -35,7 +35,7 @@ struct full_stack
     ///with a fixed max size and stuff
     types::vec<runtime::value> full;
     //types::vec<int32_t> activation_offsets;
-    types::vec<activation> activation_stack;
+    //types::vec<activation> activation_stack;
     types::vec<label> label_stack;
 
     types::vec<uint32_t> stack_start_sizes{{0}};
@@ -174,11 +174,11 @@ struct full_stack
         return label_stack[idx];
     }
 
-    void ensure_activation()
+    /*void ensure_activation()
     {
         if(activation_stack.size() == 0)
             throw std::runtime_error("No stack");
-    }
+    }*/
 
     void ensure_label()
     {
