@@ -917,6 +917,7 @@ void test_hi(int in)
 ///try converting to an explicit callstack
 
 ///in the latest test, duktape hits 350 but I hit 1800
+///currently duktape its 350, and I hit 820 on a good run
 void wasm_binary_data::init(data d)
 {
     parser p(d);
