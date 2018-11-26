@@ -87,24 +87,19 @@ struct full_stack
     {
         types::vec<runtime::value> ret;
 
-        int32_t to_pop = full.size() - stack_start_sizes.back();
+        size_t n = full.size();
 
-        int32_t n = full.size();
+        size_t start = stack_start_sizes.back();
 
-        int32_t start = full.size() - to_pop;
+        //if(start < 0)
+        //    throw std::runtime_error("weird num error, not sure this is possible");
 
-        if(start < 0)
-            throw std::runtime_error("weird num error, not sure this is possible");
-
-        for(int i=start; i < n; i++)
+        for(size_t i=start; i < n; i++)
         {
             ret.push_back(full[i]);
         }
 
-        /*if(ret.size() != to_pop)
-            throw std::runtime_error("weird num error, not sure this is possible");*/
-
-        full.resize(full.size() - to_pop);
+        full.resize(full.size() - (n - start));
 
         return ret;
     }
@@ -116,18 +111,18 @@ struct full_stack
         full.resize(stack_start_sizes.back());
     }
 
-    types::vec<runtime::value> pop_num_vals(int num)
+    types::vec<runtime::value> pop_num_vals(size_t num)
     {
         types::vec<runtime::value> ret;
 
-        int32_t n = full.size();
+        size_t n = full.size();
 
-        int32_t start = n - num;
+        size_t start = n - num;
 
         //if(start < 0)
         //    throw std::runtime_error("weird num error, not sure this is possible");
 
-        for(int i=start; i < n; i++)
+        for(size_t i=start; i < n; i++)
         {
             ret.push_back(full[i]);
         }
