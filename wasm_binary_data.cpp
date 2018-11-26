@@ -920,6 +920,7 @@ void test_hi(int in)
 ///currently duktape its 380 on a good run, and I hit 820 on a good run
 ///now its 700, woop woop
 ///now down to 675 with label fixes
+///660 with other stuff
 void wasm_binary_data::init(data d)
 {
     parser p(d);

@@ -69,7 +69,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 inline
 void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 {
-    label& l = full.get_current_label();
+    const label& l = full.get_current_label();
 
     int arity = l.btype.arity();
 

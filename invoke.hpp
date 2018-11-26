@@ -154,7 +154,7 @@ struct full_stack
         return activation_stack.back();
     }*/
 
-    label& get_current_label()
+    const label& get_current_label()
     {
         if(label_stack.size() == 0)
             throw std::runtime_error("No current label");
