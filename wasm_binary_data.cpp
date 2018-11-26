@@ -922,6 +922,9 @@ void test_hi(int in)
 ///now down to 675 with label fixes
 ///660 with other stuff
 ///650, time to stop probably sadly
+
+///duk = 635
+///us = 990
 void wasm_binary_data::init(data d)
 {
     parser p(d);
@@ -962,7 +965,7 @@ void wasm_binary_data::init(data d)
 
     runtime::value arg;
     //arg.set((uint32_t)(13*17));
-    arg.set((uint32_t)(10139737));
+    arg.set((uint32_t)(15485863));
     //arg.set((uint32_t)(1188179));
 
     //arg.set({13*17});
