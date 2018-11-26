@@ -363,7 +363,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x0E:
             {
-                types::br_table_data br_td = std::get<types::br_table_data>(is.dat);
+                const types::br_table_data& br_td = std::get<types::br_table_data>(is.dat);
 
                 runtime::value top_val = full.pop_back();
 
