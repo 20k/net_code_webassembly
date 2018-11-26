@@ -1967,6 +1967,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     if(adr >= (uint32_t)s.funcs.size())
         throw std::runtime_error("Adr out of bounds");
 
+    //types::instr::assert_on_destruct++;
+
     runtime::funcinst& finst = s.funcs[adr];
 
     types::functype ftype = finst.type;
@@ -2047,6 +2049,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
             full.push_all_values(found);
 
+            //types::instr::assert_on_destruct--;
+
             return found;
         }
         else if(ctx.frame_abort)
@@ -2063,6 +2067,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
             ctx.capture_arity = 0;
 
+            //types::instr::assert_on_destruct--;
+
             return {bval};
         }
 
@@ -2076,6 +2082,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     {
         throw std::runtime_error("Bad function invocation type");
     }
+
+    //types::instr::assert_on_destruct--;
 
     return types::vec<runtime::value>();
 }

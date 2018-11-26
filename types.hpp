@@ -463,7 +463,7 @@ namespace types
 
     struct instr
     {
-        static inline bool assert_on_destruct = false;
+        //static inline int assert_on_destruct = 0;
 
         uint8_t which = 0;
 
@@ -490,6 +490,7 @@ namespace types
 
         std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, labelidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
 
+        #if 0
         instr()
         {
 
@@ -499,9 +500,10 @@ namespace types
         {
             //printf("destruct\n");
 
-            if(assert_on_destruct)
-                assert(false);
+            /*if(assert_on_destruct)
+                assert(false);*/
         }
+        #endif // 0
     };
 
     struct expr
