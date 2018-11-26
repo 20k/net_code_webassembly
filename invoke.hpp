@@ -84,7 +84,7 @@ struct full_stack
             ret.push_back(full[i]);
         }
 
-        full.resize(full.size() - (n - start));
+        full.resize(start);
 
         return ret;
     }
