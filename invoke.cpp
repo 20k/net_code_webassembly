@@ -21,7 +21,7 @@ void push(const T& t, full_stack& full)
 #define POPB(x) {runtime::value a2; runtime::value a1; full.pop_2(a1, a2); push(runtime::apply(x, a1, a2), full); break;}
 
 #define POPAT(x, y) {auto a1 = full.pop_back(); push(x(std::get<y>(a1.v).val), full); break;}
-#define POPBT(x, y) {runtime::value a2; runtime::value a1; full.pop_2(a1, a2); push(x(std::get<y>(a1.v).val, std::get<y>(a2.v).val)), full); break;}
+#define POPBT(x, y) {runtime::value a2; runtime::value a1; full.pop_2(a1, a2); push(x(std::get<y>(a1.v).val, std::get<y>(a2.v).val), full); break;}
 
 #define PUSH_CONSTANT(xtype)\
         { \
@@ -585,74 +585,74 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x45:
                 POPAT(ieqz<uint32_t>, types::i32);
             case 0x46:
-                POPB(eq<uint32_t>);
+                POPBT(eq<uint32_t>, types::i32);
             case 0x47:
-                POPB(ne<uint32_t>);
+                POPBT(ne<uint32_t>, types::i32);
             case 0x48:
-                POPB(ilt_s<int32_t>);
+                POPBT(ilt_s<int32_t>, types::i32);
             case 0x49:
-                POPB(ilt_u<uint32_t>);
+                POPBT(ilt_u<uint32_t>, types::i32);
             case 0x4A:
-                POPB(igt_s<int32_t>);
+                POPBT(igt_s<int32_t>, types::i32);
             case 0x4B:
-                POPB(igt_u<uint32_t>);
+                POPBT(igt_u<uint32_t>, types::i32);
             case 0x4C:
-                POPB(ile_s<int32_t>);
+                POPBT(ile_s<int32_t>, types::i32);
             case 0x4D:
-                POPB(ile_u<uint32_t>);
+                POPBT(ile_u<uint32_t>, types::i32);
             case 0x4E:
-                POPB(ige_s<int32_t>);
+                POPBT(ige_s<int32_t>, types::i32);
             case 0x4F:
-                POPB(ige_u<uint32_t>);
+                POPBT(ige_u<uint32_t>, types::i32);
 
             case 0x50:
                 POPAT(ieqz<uint64_t>, types::i64);
             case 0x51:
-                POPB(eq<uint64_t>);
+                POPBT(eq<uint64_t>, types::i64);
             case 0x52:
-                POPB(ne<uint64_t>);
+                POPBT(ne<uint64_t>, types::i64);
             case 0x53:
-                POPB(ilt_s<int64_t>);
+                POPBT(ilt_s<int64_t>, types::i64);
             case 0x54:
-                POPB(ilt_u<uint64_t>);
+                POPBT(ilt_u<uint64_t>, types::i64);
             case 0x55:
-                POPB(igt_s<int64_t>);
+                POPBT(igt_s<int64_t>, types::i64);
             case 0x56:
-                POPB(igt_u<uint64_t>);
+                POPBT(igt_u<uint64_t>, types::i64);
             case 0x57:
-                POPB(ile_s<int64_t>);
+                POPBT(ile_s<int64_t>, types::i64);
             case 0x58:
-                POPB(ile_u<uint64_t>);
+                POPBT(ile_u<uint64_t>, types::i64);
             case 0x59:
-                POPB(ige_s<int64_t>);
+                POPBT(ige_s<int64_t>, types::i64);
             case 0x5A:
-                POPB(ige_u<uint64_t>);
+                POPBT(ige_u<uint64_t>, types::i64);
 
             case 0x5B:
-                POPB(eq<float>);
+                POPBT(eq<float>, types::f32);
             case 0x5C:
-                POPB(ne<float>);
+                POPBT(ne<float>, types::f32);
             case 0x5D:
-                POPB(flt<float>);
+                POPBT(flt<float>, types::f32);
             case 0x5E:
-                POPB(fgt<float>);
+                POPBT(fgt<float>, types::f32);
             case 0x5F:
-                POPB(fle<float>);
+                POPBT(fle<float>, types::f32);
             case 0x60:
-                POPB(fge<float>);
+                POPBT(fge<float>, types::f32);
 
             case 0x61:
-                POPB(eq<double>);
+                POPBT(eq<double>, types::f64);
             case 0x62:
-                POPB(ne<double>);
+                POPBT(ne<double>, types::f64);
             case 0x63:
-                POPB(flt<double>);
+                POPBT(flt<double>, types::f64);
             case 0x64:
-                POPB(fgt<double>);
+                POPBT(fgt<double>, types::f64);
             case 0x65:
-                POPB(fle<double>);
+                POPBT(fle<double>, types::f64);
             case 0x66:
-                POPB(fge<double>);
+                POPBT(fge<double>, types::f64);
 
             case 0x67:
                 POPAT(iclz<uint32_t>, types::i32);
@@ -661,35 +661,35 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x69:
                 POPAT(ipopcnt<uint32_t>, types::i32);
             case 0x6A:
-                POPB(add<uint32_t>);
+                POPBT(add<uint32_t>, types::i32);
             case 0x6B:
-                POPB(sub<uint32_t>);
+                POPBT(sub<uint32_t>, types::i32);
             case 0x6C:
-                POPB(mul<uint32_t>);
+                POPBT(mul<uint32_t>, types::i32);
             case 0x6D:
-                POPB(idiv<int32_t>);
+                POPBT(idiv<int32_t>, types::i32);
             case 0x6E:
-                POPB(idiv<uint32_t>);
+                POPBT(idiv<uint32_t>, types::i32);
             case 0x6F:
-                POPB(remi<int32_t>);
+                POPBT(remi<int32_t>, types::i32);
             case 0x70:
-                POPB(remi<uint32_t>);
+                POPBT(remi<uint32_t>, types::i32);
             case 0x71:
-                POPB(iand<uint32_t>);
+                POPBT(iand<uint32_t>, types::i32);
             case 0x72:
-                POPB(ior<uint32_t>);
+                POPBT(ior<uint32_t>, types::i32);
             case 0x73:
-                POPB(ixor<uint32_t>);
+                POPBT(ixor<uint32_t>, types::i32);
             case 0x74:
-                POPB(ishl<uint32_t>);
+                POPBT(ishl<uint32_t>, types::i32);
             case 0x75:
-                POPB(ishr_s<int32_t>);
+                POPBT(ishr_s<int32_t>, types::i32);
             case 0x76:
-                POPB(ishr_u<uint32_t>);
+                POPBT(ishr_u<uint32_t>, types::i32);
             case 0x77:
-                POPB(irotl<uint32_t>);
+                POPBT(irotl<uint32_t>, types::i32);
             case 0x78:
-                POPB(irotr<uint32_t>);
+                POPBT(irotr<uint32_t>, types::i32);
 
 
             case 0x79:
@@ -699,35 +699,35 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x7B:
                 POPAT(ipopcnt<uint64_t>, types::i64);
             case 0x7C:
-                POPB(add<uint64_t>);
+                POPBT(add<uint64_t>, types::i64);
             case 0x7D:
-                POPB(sub<uint64_t>);
+                POPBT(sub<uint64_t>, types::i64);
             case 0x7E:
-                POPB(mul<uint64_t>);
+                POPBT(mul<uint64_t>, types::i64);
             case 0x7F:
-                POPB(idiv<int64_t>);
+                POPBT(idiv<int64_t>, types::i64);
             case 0x80:
-                POPB(idiv<uint64_t>);
+                POPBT(idiv<uint64_t>, types::i64);
             case 0x81:
-                POPB(remi<int64_t>);
+                POPBT(remi<int64_t>, types::i64);
             case 0x82:
-                POPB(remi<uint64_t>);
+                POPBT(remi<uint64_t>, types::i64);
             case 0x83:
-                POPB(iand<uint64_t>);
+                POPBT(iand<uint64_t>, types::i64);
             case 0x84:
-                POPB(ior<uint64_t>);
+                POPBT(ior<uint64_t>, types::i64);
             case 0x85:
-                POPB(ixor<uint64_t>);
+                POPBT(ixor<uint64_t>, types::i64);
             case 0x86:
-                POPB(ishl<uint64_t>);
+                POPBT(ishl<uint64_t>, types::i64);
             case 0x87:
-                POPB(ishr_s<int64_t>);
+                POPBT(ishr_s<int64_t>, types::i64);
             case 0x88:
-                POPB(ishr_u<uint64_t>);
+                POPBT(ishr_u<uint64_t>, types::i64);
             case 0x89:
-                POPB(irotl<uint64_t>);
+                POPBT(irotl<uint64_t>, types::i64);
             case 0x8A:
-                POPB(irotr<uint64_t>);
+                POPBT(irotr<uint64_t>, types::i64);
 
             case 0x8B:
                 POPAT(absf<float>, types::f32);
@@ -744,19 +744,19 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x91:
                 POPAT(fsqrt<float>, types::f32);
             case 0x92:
-                POPB((add<float>));
+                POPBT(add<float>, types::f32);
             case 0x93:
-                POPB(sub<float>);
+                POPBT(sub<float>, types::f32);
             case 0x94:
-                POPB(mul<float>);
+                POPBT(mul<float>, types::f32);
             case 0x95:
-                POPB(fdiv<float>);
+                POPBT(fdiv<float>, types::f32);
             case 0x96:
-                POPB(fmin<float>);
+                POPBT(fmin<float>, types::f32);
             case 0x97:
-                POPB(fmax<float>);
+                POPBT(fmax<float>, types::f32);
             case 0x98:
-                POPB(fcopysign<float>);
+                POPBT(fcopysign<float>, types::f32);
 
             case 0x99:
                 POPAT(absf<double>, types::f64);
@@ -773,74 +773,74 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x9F:
                 POPAT(fsqrt<double>, types::f64);
             case 0xA0:
-                POPB((add<double>));
+                POPBT(add<double>, types::f64);
             case 0xA1:
-                POPB(sub<double>);
+                POPBT(sub<double>, types::f64);
             case 0xA2:
-                POPB(mul<double>);
+                POPBT(mul<double>, types::f64);
             case 0xA3:
-                POPB(fdiv<double>);
+                POPBT(fdiv<double>, types::f64);
             case 0xA4:
-                POPB(fmin<double>);
+                POPBT(fmin<double>, types::f64);
             case 0xA5:
-                POPB(fmax<double>);
+                POPBT(fmax<double>, types::f64);
             case 0xA6:
-                POPB(fcopysign<double>);
+                POPBT(fcopysign<double>, types::f64);
 
             ///these functions are all template parameter format
             ///<dest, src>
             ///so trunc_s takes the argument as a float
             ///and then converts it to an in32_t
             case 0xA7:
-                POPA((wrap<uint32_t, 64>));
+                POPAT((wrap<uint32_t, 64>), types::i32);
             case 0xA8:
-                POPA((trunc_s<int32_t, float>));
+                POPAT((trunc_s<int32_t, float>), types::f32);
             case 0xA9:
-                POPA((trunc_u<uint32_t, float>));
+                POPAT((trunc_u<uint32_t, float>), types::f32);
             case 0xAA:
-                POPA((trunc_s<int32_t, double>));
+                POPAT((trunc_s<int32_t, double>), types::f64);
             case 0xAB:
-                POPA((trunc_u<uint32_t, double>));
+                POPAT((trunc_u<uint32_t, double>), types::f64);
             case 0xAC:
-                POPA((extend_s<int64_t, int32_t>));
+                POPAT((extend_s<int64_t, int32_t>), types::i32);
             case 0xAD:
-                POPA((extend_u<uint64_t, int32_t>));
+                POPAT((extend_u<uint64_t, int32_t>), types::i32);
             case 0xAE:
-                POPA((trunc_s<int64_t, float>));
+                POPAT((trunc_s<int64_t, float>), types::f32);
             case 0xAF:
-                POPA((trunc_u<uint64_t, float>));
+                POPAT((trunc_u<uint64_t, float>), types::f32);
             case 0xB0:
-                POPA((trunc_s<int64_t, double>));
+                POPAT((trunc_s<int64_t, double>), types::f64);
             case 0xB1:
-                POPA((trunc_u<uint64_t, double>));
+                POPAT((trunc_u<uint64_t, double>), types::f64);
             case 0xB2:
-                POPA((convert_s<float, int32_t>));
+                POPAT((convert_s<float, int32_t>), types::i32);
             case 0xB3:
-                POPA((convert_u<float, uint32_t>));
+                POPAT((convert_u<float, uint32_t>), types::i32);
             case 0xB4:
-                POPA((convert_s<float, int64_t>));
+                POPAT((convert_s<float, int64_t>), types::i64);
             case 0xB5:
-                POPA((convert_u<float, uint64_t>));
+                POPAT((convert_u<float, uint64_t>), types::i64);
             case 0xB6:
-                POPA((demote<float, double>));
+                POPAT((demote<float, double>), types::f64);
             case 0xB7:
-                POPA((convert_s<double, int32_t>));
+                POPAT((convert_s<double, int32_t>), types::i32);
             case 0xB8:
-                POPA((convert_u<double, uint32_t>));
+                POPAT((convert_u<double, uint32_t>), types::i32);
             case 0xB9:
-                POPA((convert_s<double, int64_t>));
+                POPAT((convert_s<double, int64_t>), types::i64);
             case 0xBA:
-                POPA((convert_u<double, uint64_t>));
+                POPAT((convert_u<double, uint64_t>), types::i64);
             case 0xBB:
-                POPA((promote<double, float>));
+                POPAT((promote<double, float>), types::f32);
             case 0xBC:
-                POPA((reinterpret<uint32_t, float>));
+                POPAT((reinterpret<uint32_t, float>), types::f32);
             case 0xBD:
-                POPA((reinterpret<uint64_t, double>));
+                POPAT((reinterpret<uint64_t, double>), types::f64);
             case 0xBE:
-                POPA((reinterpret<float, uint32_t>));
+                POPAT((reinterpret<float, uint32_t>), types::i32);
             case 0xBF:
-                POPA((reinterpret<double, uint64_t>));
+                POPAT((reinterpret<double, uint64_t>), types::i64);
 
             default:
                 throw std::runtime_error("bad instruction " + std::to_string(which));
