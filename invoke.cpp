@@ -1905,6 +1905,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     {
         should_loop = false;
 
+        ///kill this, now that there's only one stack and no label push/pop this is a formality
         if(has_delayed_values_push)
         {
             if(ctx.capture_arity)
