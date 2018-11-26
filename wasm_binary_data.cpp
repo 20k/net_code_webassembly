@@ -607,11 +607,11 @@ struct module
     }
 };
 
-runtime::funcaddr runtime::store::allocfunction(const module& m, int idx)
+runtime::funcaddr runtime::store::allocfunction(const module& m, size_t idx)
 {
     int a = funcs.size();
 
-    if(idx < 0 || idx >= m.section_func.types.size())
+    if(idx >= m.section_func.types.size())
         throw std::runtime_error("Bad function alloc");
 
     types::typeidx type_idx = m.section_func.types[idx];
@@ -768,7 +768,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
     types::vec<runtime::exportinst> my_exports;
 
-    for(int i=0; i < m.section_export.exports.size(); i++)
+    for(size_t i=0; i < m.section_export.exports.size(); i++)
     {
         sections::export_info& inf = m.section_export.exports[i];
 
@@ -805,7 +805,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
         my_exports.push_back(out);
     }
 
-    for(int i=0; i < m.section_elem.elems.size(); i++)
+    for(size_t i=0; i < m.section_elem.elems.size(); i++)
     {
         sections::elem& e = m.section_elem.elems[i];
 
@@ -840,7 +840,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
         if(eo + einit > (uint32_t)tinst.elem.size())
             throw std::runtime_error("Bad tinst");
 
-        for(int j=0; j < e.funcs.size(); j++)
+        for(uint32_t j=0; j < (uint32_t)e.funcs.size(); j++)
         {
             types::funcidx fidx = e.funcs[j];
 
@@ -854,7 +854,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
         }
     }
 
-    for(int i=0; i < m.section_data.dats.size(); i++)
+    for(size_t i=0; i < m.section_data.dats.size(); i++)
     {
         types::dataseg& data_seg = m.section_data.dats[i];
 
@@ -881,7 +881,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
         if(dend > (uint32_t)mem_inst.dat.size())
             throw std::runtime_error("Bad data segment end");
 
-        for(int j=0; j < data_seg.b.size(); j++)
+        for(uint32_t j=0; j < (uint32_t)data_seg.b.size(); j++)
         {
             uint8_t byte = data_seg.b[j];
 

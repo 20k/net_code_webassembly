@@ -114,7 +114,7 @@ namespace types
             return v.clear();
         }
 
-        int32_t size() const
+        auto size() const
         {
             return v.size();
         }
@@ -192,7 +192,7 @@ namespace types
             vec<T> ret;
             ret.v = v;
 
-            for(int i=0; i < dat.size(); i++)
+            for(size_t i=0; i < dat.size(); i++)
             {
                 ret.push_back(dat[i]);
             }
@@ -298,13 +298,13 @@ namespace types
         if(t1.results.size() != t2.results.size())
             return false;
 
-        for(int i=0; i < t1.params.size(); i++)
+        for(size_t i=0; i < t1.params.size(); i++)
         {
             if(t1.params[i].which != t2.params[i].which)
                 return false;
         }
 
-        for(int i=0; i < t1.results.size(); i++)
+        for(size_t i=0; i < t1.results.size(); i++)
         {
             if(t1.results[i].which != t2.results[i].which)
                 return false;

@@ -254,7 +254,7 @@ namespace runtime
         types::vec<meminst> mems;
         types::vec<globalinst> globals;
 
-        funcaddr allocfunction(const module& m, int idx);
+        funcaddr allocfunction(const module& m, size_t idx);
         funcaddr allochostfunction(const types::functype& type, void(*ptr)());
 
         tableaddr alloctable(const types::tabletype& type);
