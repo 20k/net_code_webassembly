@@ -921,6 +921,7 @@ void test_hi(int in)
 ///now its 700, woop woop
 ///now down to 675 with label fixes
 ///660 with other stuff
+///650, time to stop probably sadly
 void wasm_binary_data::init(data d)
 {
     parser p(d);
