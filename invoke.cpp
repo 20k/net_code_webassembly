@@ -855,7 +855,6 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
 {
-    bool should_loop = true;
     bool has_delayed_values_push = false;
 
     ///ok
@@ -863,10 +862,8 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     ///as the loop gets called rather a lot
     full.push_stack();
 
-    while(should_loop)
+    while(true)
     {
-        should_loop = false;
-
         ///ok so
         ///i think a loop always has an arity of 0
 
@@ -894,8 +891,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         {
             full.pop_all_values_on_stack_unsafe_nocatch();
 
-            full.pop_stack();
-            return;
+            break;
         }
 
         if(ctx.abort_stack > 0)
@@ -909,8 +905,6 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                 if(l.continuation == 2)
                 {
                     has_delayed_values_push = true;
-                    ///loop and start again from beginning
-                    should_loop = true;
 
                     ///this is equivalent to popping the values off the stack, then them being pushed next time round the loop again
                     full.stack_start_sizes.back() = 0;
@@ -918,6 +912,8 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                     #ifdef DEBUGGING
                     lg::log("continuation pt 2 loop\n");
                     #endif // DEBUGGING
+
+                    continue;
                 }
                 else
                 {
@@ -930,12 +926,9 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
                     return;
                 }
-
-                if(l.continuation == 0)
-                {
-                    throw std::runtime_error("Bad continuation, 0");
-                }
             }
+
+            break;
         }
         else
         {
