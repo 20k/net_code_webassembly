@@ -20,6 +20,8 @@ namespace types
     {
         T val = 0;
 
+        using type = T;
+
         integral(const T& t) : val(t){}
         integral() = default;
 
