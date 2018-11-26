@@ -1888,14 +1888,14 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     bool should_loop = true;
     bool has_delayed_values_push = false;
 
+    ///ok
+    ///so basically I really want to avoid this push here in this loop
+    ///as the loop gets called rather a lot
+    full.push_label(l);
+
     while(should_loop)
     {
         should_loop = false;
-
-        ///ok
-        ///so basically I really want to avoid this push here in this loop
-        ///as the loop gets called rather a lot
-        full.push_label(l);
 
         if(has_delayed_values_push)
         {
@@ -1912,10 +1912,12 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         auto all_vals = full.pop_all_values_on_stack_unsafe();
 
         //full.ensure_label();
-        full.pop_back_label();
 
         if(ctx.frame_abort)
+        {
+            full.pop_back_label();
             return;
+        }
 
         if(ctx.abort_stack > 0)
         {
@@ -1929,16 +1931,23 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                     ///loop and start again from beginning
                     should_loop = true;
 
+                    ///this is equivalent to popping the values off the stack, then them being pushed next time round the loop again
+                    full.stack_start_sizes.back() = 0;
+
                     #ifdef DEBUGGING
                     lg::log("continuation pt 2 loop\n");
                     #endif // DEBUGGING
                 }
                 else
                 {
+                    full.pop_back_label();
+
                     if(ctx.capture_arity)
                         full.push_values(ctx.capture_val);
 
                     ctx.capture_arity = 0;
+
+                    return;
                 }
 
                 if(ctx.continuation == 0)
@@ -1949,9 +1958,21 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         }
         else
         {
+            full.pop_back_label();
+
             full.push_all_values(all_vals);
+
+            return;
         }
     }
+
+    full.pop_back_label();
+
+    //throw std::runtime_error("Unreachable");
+
+    ///ok so
+    ///we only want to pop the label if we're guaranteed to terminate the loop right?
+    //full.pop_back_label();
 }
 
 ///alright: transforming from recursive to linear plan
