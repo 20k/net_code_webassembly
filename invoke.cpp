@@ -21,6 +21,7 @@ void push(const T& t, full_stack& full)
 #define POPB(x) {runtime::value a2; runtime::value a1; full.pop_2(a1, a2); push(runtime::apply(x, a1, a2), full); break;}
 
 #define POPAT(x, y) {auto a1 = full.pop_back(); push(x(std::get<y>(a1.v).val), full); break;}
+#define POPBT(x, y) {runtime::value a2; runtime::value a1; full.pop_2(a1, a2); push(x(std::get<y>(a1.v).val, std::get<y>(a2.v).val)), full); break;}
 
 #define PUSH_CONSTANT(xtype)\
         { \
@@ -582,7 +583,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 PUSH_CONSTANT(types::f64);
 
             case 0x45:
-                POPA(ieqz<uint32_t>);
+                POPAT(ieqz<uint32_t>, types::i32);
             case 0x46:
                 POPB(eq<uint32_t>);
             case 0x47:
@@ -605,7 +606,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 POPB(ige_u<uint32_t>);
 
             case 0x50:
-                POPA(ieqz<uint64_t>);
+                POPAT(ieqz<uint64_t>, types::i64);
             case 0x51:
                 POPB(eq<uint64_t>);
             case 0x52:
@@ -654,11 +655,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 POPB(fge<double>);
 
             case 0x67:
-                POPA(iclz<uint32_t>);
+                POPAT(iclz<uint32_t>, types::i32);
             case 0x68:
-                POPA(ictz<uint32_t>);
+                POPAT(ictz<uint32_t>, types::i32);
             case 0x69:
-                POPA(ipopcnt<uint32_t>);
+                POPAT(ipopcnt<uint32_t>, types::i32);
             case 0x6A:
                 POPB(add<uint32_t>);
             case 0x6B:
@@ -692,11 +693,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
 
             case 0x79:
-                POPA(iclz<uint64_t>);
+                POPAT(iclz<uint64_t>, types::i64);
             case 0x7A:
-                POPA(ictz<uint64_t>);
+                POPAT(ictz<uint64_t>, types::i64);
             case 0x7B:
-                POPA(ipopcnt<uint64_t>);
+                POPAT(ipopcnt<uint64_t>, types::i64);
             case 0x7C:
                 POPB(add<uint64_t>);
             case 0x7D:
@@ -729,19 +730,19 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 POPB(irotr<uint64_t>);
 
             case 0x8B:
-                POPA(absf<float>);
+                POPAT(absf<float>, types::f32);
             case 0x8C:
-                POPA(fneg<float>);
+                POPAT(fneg<float>, types::f32);
             case 0x8D:
-                POPA(fceil<float>);
+                POPAT(fceil<float>, types::f32);
             case 0x8E:
-                POPA(ffloor<float>);
+                POPAT(ffloor<float>, types::f32);
             case 0x8F:
-                POPA(ftrunc<float>);
+                POPAT(ftrunc<float>, types::f32);
             case 0x90:
-                POPA(fnearest<float>);
+                POPAT(fnearest<float>, types::f32);
             case 0x91:
-                POPA(fsqrt<float>);
+                POPAT(fsqrt<float>, types::f32);
             case 0x92:
                 POPB((add<float>));
             case 0x93:
@@ -758,19 +759,19 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 POPB(fcopysign<float>);
 
             case 0x99:
-                POPA(absf<double>);
+                POPAT(absf<double>, types::f64);
             case 0x9A:
-                POPA(fneg<double>);
+                POPAT(fneg<double>, types::f64);
             case 0x9B:
-                POPA(fceil<double>);
+                POPAT(fceil<double>, types::f64);
             case 0x9C:
-                POPA(ffloor<double>);
+                POPAT(ffloor<double>, types::f64);
             case 0x9D:
-                POPA(ftrunc<double>);
+                POPAT(ftrunc<double>, types::f64);
             case 0x9E:
-                POPA(fnearest<double>);
+                POPAT(fnearest<double>, types::f64);
             case 0x9F:
-                POPA(fsqrt<double>);
+                POPAT(fsqrt<double>, types::f64);
             case 0xA0:
                 POPB((add<double>));
             case 0xA1:
@@ -1513,7 +1514,7 @@ types::vec<runtime::value> entry_func(context& ctx, runtime::store& s, full_stac
                         PUSH_CONSTANT(types::f64);
 
                     case 0x45:
-                        POPA(ieqz<uint32_t>);
+                        POPAT(ieqz<uint32_t>, types::i32);
                     case 0x46:
                         POPB(eq<uint32_t>);
                     case 0x47:
