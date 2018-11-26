@@ -426,12 +426,10 @@ T get_const(const T& t)
 
 template<typename T, typename U>
 inline
-void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
+void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full, activation& activate)
 {
     if(s.mems.size() < 1)
         throw std::runtime_error("No such mem idx 0");
-
-    activation& activate = full.get_current();
 
     runtime::moduleinst* inst = activate.f.inst;
 
@@ -476,14 +474,12 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full)
 
 template<typename T, int bytes>
 inline
-void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full)
+void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, activation& activate)
 {
     static_assert(bytes <= sizeof(T));
 
     if(s.mems.size() < 1)
         throw std::runtime_error("No such mem idx 0");
-
-    activation& activate = full.get_current();
 
     runtime::moduleinst* inst = activate.f.inst;
 
@@ -541,10 +537,8 @@ void tmalloc(runtime::store& s, const types::memarg& arg, full_stack& full)
 }*/
 
 inline
-void memory_size(full_stack& full, runtime::store& s)
+void memory_size(full_stack& full, runtime::store& s, activation& activate)
 {
-    activation& activate = full.get_current();
-
     activate.f.inst->memaddrs.check(0);
     runtime::memaddr maddr = activate.f.inst->memaddrs[0];
 
@@ -560,10 +554,8 @@ void memory_size(full_stack& full, runtime::store& s)
 }
 
 inline
-void memory_grow(full_stack& full, runtime::store& s)
+void memory_grow(full_stack& full, runtime::store& s, activation& activate)
 {
-    activation& activate = full.get_current();
-
     activate.f.inst->memaddrs.check(0);
     runtime::memaddr maddr = activate.f.inst->memaddrs[0];
 
@@ -611,10 +603,8 @@ void memory_grow(full_stack& full, runtime::store& s)
 }
 
 inline
-void get_local(full_stack& full, const types::localidx& lidx)
+void get_local(full_stack& full, const types::localidx& lidx, activation& activate)
 {
-    activation& activate = full.get_current();
-
     uint32_t idx = (uint32_t)lidx;
 
     if(idx >= (uint32_t)activate.f.locals.size())
@@ -630,10 +620,9 @@ void get_local(full_stack& full, const types::localidx& lidx)
 }
 
 inline
-void set_local(full_stack& full, const types::localidx& lidx)
+void set_local(full_stack& full, const types::localidx& lidx, activation& activate)
 {
     runtime::value top = full.pop_back();
-    activation& activate = full.get_current();
 
     uint32_t idx = (uint32_t)lidx;
 
@@ -648,10 +637,9 @@ void set_local(full_stack& full, const types::localidx& lidx)
 }
 
 inline
-void tee_local(full_stack& full, const types::localidx& lidx)
+void tee_local(full_stack& full, const types::localidx& lidx, activation& activate)
 {
     runtime::value top = full.pop_back();
-    activation& activate = full.get_current();
 
     //lg::log("activate locals ", activate.f.locals.size());
 
@@ -672,10 +660,8 @@ void tee_local(full_stack& full, const types::localidx& lidx)
 }
 
 inline
-void get_global(runtime::store& s, full_stack& full, const types::globalidx& gidx)
+void get_global(runtime::store& s, full_stack& full, const types::globalidx& gidx, activation& activate)
 {
-    activation& activate = full.get_current();
-
     runtime::moduleinst* minst = activate.f.inst;
 
     uint32_t idx = (uint32_t)gidx;
@@ -696,10 +682,8 @@ void get_global(runtime::store& s, full_stack& full, const types::globalidx& gid
 }
 
 inline
-void set_global(runtime::store& s, full_stack& full, const types::globalidx& gidx)
+void set_global(runtime::store& s, full_stack& full, const types::globalidx& gidx, activation& activate)
 {
-    activation& activate = full.get_current();
-
     runtime::moduleinst* minst = activate.f.inst;
 
     uint32_t idx = (uint32_t)gidx;

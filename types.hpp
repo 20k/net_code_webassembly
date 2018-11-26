@@ -208,6 +208,11 @@ namespace types
             if(u >= (U)v.size() || u < 0)
                 throw std::runtime_error("Not in bounds");
         }
+
+        auto reserve(int in)
+        {
+            return v.reserve(in);
+        }
     };
 
     /**0x7F -> i32

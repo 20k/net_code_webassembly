@@ -62,7 +62,7 @@ struct full_stack
 
     void push_activation(const activation& a)
     {
-        activation_stack.push_back(a);
+        //activation_stack.push_back(a);
 
         stack_start_sizes.push_back(full.size());
 
@@ -138,21 +138,21 @@ struct full_stack
 
     void pop_back_activation()
     {
-        if(activation_stack.size() == 0)
+        /*if(activation_stack.size() == 0)
             throw std::runtime_error("No elements on stack (pop_back_frame)");
 
-        activation_stack.pop_back();
+        activation_stack.pop_back();*/
 
         stack_start_sizes.pop_back();
     }
 
-    activation& get_current()
+    /*activation& get_current()
     {
         if(activation_stack.size() == 0)
             throw std::runtime_error("rip activation stack");
 
         return activation_stack.back();
-    }
+    }*/
 
     label& get_current_label()
     {
