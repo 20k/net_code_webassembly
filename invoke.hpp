@@ -42,8 +42,6 @@ struct full_stack
 
     void push_values(const runtime::value& val)
     {
-        //full.emplace_back(val);
-
         full.push_back(val);
     }
 
@@ -60,20 +58,16 @@ struct full_stack
         full.insert(full.end(), val.begin(), val.end());
     }
 
-    void push_activation(const activation& a)
+    void push_activation()
     {
-        //activation_stack.push_back(a);
-
         stack_start_sizes.push_back(full.size());
 
         /*std::cout <<" in a " << a.f.locals.size() << std::endl;
         std::cout << "dbga " << get_current().f.locals.size() << std::endl;*/
     }
 
-    void push_label(const label& l)
+    void push_label()
     {
-        //label_stack.push_back(l);
-
         stack_start_sizes.push_back(full.size());
     }
 
@@ -138,53 +132,8 @@ struct full_stack
 
     void pop_back_activation()
     {
-        /*if(activation_stack.size() == 0)
-            throw std::runtime_error("No elements on stack (pop_back_frame)");
-
-        activation_stack.pop_back();*/
-
         stack_start_sizes.pop_back();
     }
-
-    /*activation& get_current()
-    {
-        if(activation_stack.size() == 0)
-            throw std::runtime_error("rip activation stack");
-
-        return activation_stack.back();
-    }*/
-
-    /*const label& get_current_label()
-    {
-        if(label_stack.size() == 0)
-            throw std::runtime_error("No current label");
-
-        return label_stack.back();
-    }*/
-
-    /*label& get_label_of_offset(int offset)
-    {
-        int n = label_stack.size();
-
-        int idx = n - offset - 1;
-
-        //if(idx < 0)
-        //    throw std::runtime_error("Could not get label of offset " + std::to_string(offset));
-
-        return label_stack[idx];
-    }*/
-
-    /*void ensure_activation()
-    {
-        if(activation_stack.size() == 0)
-            throw std::runtime_error("No stack");
-    }*/
-
-    /*void ensure_label()
-    {
-        if(label_stack.size() == 0)
-            throw std::runtime_error("No label in eval with label");
-    }*/
 
     runtime::value pop_back()
     {
@@ -211,10 +160,6 @@ struct full_stack
 
     void pop_back_label()
     {
-        /*if(label_stack.size() == 0)
-            throw std::runtime_error("0 label stack");
-
-        label_stack.pop_back();*/
         stack_start_sizes.pop_back();
     }
 
@@ -225,11 +170,6 @@ struct full_stack
 
         return full.back();
     }
-
-    /*int num_labels()
-    {
-        return label_stack.size();
-    }*/
 
     int value_stack_size()
     {

@@ -307,13 +307,6 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             {
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-                uint32_t idx = (uint32_t)lidx;
-
-                /*if((uint32_t)full.num_labels() < idx + 1)
-                {
-                    throw std::runtime_error("not enough labels");
-                }*/
-
                 fjump(ctx, lidx, full);
 
                 if(ctx.break_op_loop())
@@ -346,13 +339,6 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                     types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
                     fjump(ctx, lidx, full);
-
-                    uint32_t idx = (uint32_t)lidx;
-
-                    /*if((uint32_t)full.num_labels() < idx + 1)
-                    {
-                        throw std::runtime_error("not enough labels");
-                    }*/
 
                     if(ctx.break_op_loop())
                         ilen = len;
@@ -1855,7 +1841,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     activate.return_arity = {0};
     activate.f = fr;
 
-    full.push_activation(activate);
+    full.push_activation();
 
     ctx.current_arity = 0;
 
@@ -1899,7 +1885,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
     ///ok
     ///so basically I really want to avoid this push here in this loop
     ///as the loop gets called rather a lot
-    full.push_label(l);
+    full.push_label();
 
     while(should_loop)
     {
@@ -2072,7 +2058,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
 
         //lg::log("push");
-        full.push_activation(activate);
+        full.push_activation();
 
         ctx.current_arity = 0;
 
