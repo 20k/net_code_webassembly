@@ -45,8 +45,6 @@ struct full_stack
         //full.emplace_back(val);
 
         full.push_back(val);
-
-        //stack_values.back() += 1;
     }
 
     /*template<typename T>

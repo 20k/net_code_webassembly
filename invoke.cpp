@@ -942,7 +942,7 @@ void info_stack::end_label(context& ctx, full_stack& full)
 {
     if(ctx.frame_abort)
     {
-        full.pop_all_values_on_stack_unsafe();
+        full.pop_all_values_on_stack_unsafe_nocatch();
         full.pop_back_label();
 
         should_loop = false;
@@ -953,7 +953,7 @@ void info_stack::end_label(context& ctx, full_stack& full)
     ///to exploit the fact that they're not shared stacks
     if(ctx.abort_stack > 0)
     {
-        full.pop_all_values_on_stack_unsafe();
+        full.pop_all_values_on_stack_unsafe_nocatch();
         full.pop_back_label();
 
         ctx.abort_stack--;
@@ -1035,7 +1035,7 @@ void info_stack::end_function(context& ctx, full_stack& full)
     {
         ctx.frame_abort = false;
 
-        full.pop_all_values_on_stack_unsafe();
+        full.pop_all_values_on_stack_unsafe_nocatch();
         full.pop_back_activation();
 
         if(ctx.capture_arity)
@@ -1063,7 +1063,7 @@ types::vec<runtime::value> info_stack::end_function_final(context& ctx, full_sta
     {
         ctx.frame_abort = false;
 
-        full.pop_all_values_on_stack_unsafe();
+        full.pop_all_values_on_stack_unsafe_nocatch();
         full.pop_back_activation();
 
         auto bval = ctx.capture_val;
@@ -1863,7 +1863,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     {
         ctx.frame_abort = false;
 
-        full.pop_all_values_on_stack_unsafe();
+        full.pop_all_values_on_stack_unsafe_nocatch();
         full.pop_back_activation();
 
         auto bval = ctx.capture_val;
@@ -2049,7 +2049,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         {
             ctx.frame_abort = false;
 
-            full.pop_all_values_on_stack_unsafe();
+            full.pop_all_values_on_stack_unsafe_nocatch();
             full.pop_back_activation();
 
             auto bval = ctx.capture_val;
