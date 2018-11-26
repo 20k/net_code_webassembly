@@ -40,6 +40,7 @@ struct context
     //int continuation = 0;
     int expression_counter = 0;
     //bool needs_cont_jump = false;
+    int current_arity = 0;
 
     bool frame_abort = false;
 
@@ -69,9 +70,14 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 inline
 void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 {
-    const label& l = full.get_current_label();
+    //const label& l = full.get_current_label();
 
-    int arity = l.btype.arity();
+    //int arity = l.btype.arity();
+
+    int arity = ctx.current_arity;
+
+    ///I think the below statement is correct, and if it is it has better performance
+    //int arity = full.current_stack_size()
 
     /*label& olab = full.get_label_of_offset((uint32_t)lidx);
 
@@ -303,10 +309,10 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 uint32_t idx = (uint32_t)lidx;
 
-                if((uint32_t)full.num_labels() < idx + 1)
+                /*if((uint32_t)full.num_labels() < idx + 1)
                 {
                     throw std::runtime_error("not enough labels");
-                }
+                }*/
 
                 fjump(ctx, lidx, full);
 
@@ -343,10 +349,10 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                     uint32_t idx = (uint32_t)lidx;
 
-                    if((uint32_t)full.num_labels() < idx + 1)
+                    /*if((uint32_t)full.num_labels() < idx + 1)
                     {
                         throw std::runtime_error("not enough labels");
-                    }
+                    }*/
 
                     if(ctx.break_op_loop())
                         ilen = len;
@@ -1851,6 +1857,8 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
 
     full.push_activation(activate);
 
+    ctx.current_arity = 0;
+
     eval_expr(ctx, s, exp, full, activate);
 
     if(!ctx.frame_abort)
@@ -1906,6 +1914,8 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
             has_delayed_values_push = false;
         }
+
+        ctx.current_arity = l.btype.arity();
 
         eval_expr(ctx, s, exp, full, activate);
 
@@ -2056,6 +2066,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
         //lg::log("push");
         full.push_activation(activate);
+
+        ctx.current_arity = 0;
 
         eval_expr(ctx, s, expression.i, full, activate);
 
