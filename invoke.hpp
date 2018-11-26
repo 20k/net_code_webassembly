@@ -36,7 +36,7 @@ struct full_stack
     types::vec<runtime::value> full;
     //types::vec<int32_t> activation_offsets;
     //types::vec<activation> activation_stack;
-    //types::vec<label> label_stack;
+    types::vec<label> label_stack;
 
     types::vec<uint32_t> stack_start_sizes{{0}};
 
@@ -72,7 +72,7 @@ struct full_stack
 
     void push_label(const label& l)
     {
-        //label_stack.push_back(l);
+        label_stack.push_back(l);
 
         stack_start_sizes.push_back(full.size());
     }
@@ -154,15 +154,15 @@ struct full_stack
         return activation_stack.back();
     }*/
 
-    /*label& get_current_label()
+    label& get_current_label()
     {
         if(label_stack.size() == 0)
             throw std::runtime_error("No current label");
 
         return label_stack.back();
-    }*/
+    }
 
-    /*label& get_label_of_offset(int offset)
+    label& get_label_of_offset(int offset)
     {
         int n = label_stack.size();
 
@@ -172,7 +172,7 @@ struct full_stack
         //    throw std::runtime_error("Could not get label of offset " + std::to_string(offset));
 
         return label_stack[idx];
-    }*/
+    }
 
     /*void ensure_activation()
     {
@@ -180,11 +180,11 @@ struct full_stack
             throw std::runtime_error("No stack");
     }*/
 
-    /*void ensure_label()
+    void ensure_label()
     {
         if(label_stack.size() == 0)
             throw std::runtime_error("No label in eval with label");
-    }*/
+    }
 
     runtime::value pop_back()
     {
@@ -211,10 +211,10 @@ struct full_stack
 
     void pop_back_label()
     {
-        /*if(label_stack.size() == 0)
-            throw std::runtime_error("0 label stack");*/
+        if(label_stack.size() == 0)
+            throw std::runtime_error("0 label stack");
 
-        //label_stack.pop_back();
+        label_stack.pop_back();
         stack_start_sizes.pop_back();
     }
 
@@ -226,10 +226,10 @@ struct full_stack
         return full.back();
     }
 
-    /*int num_labels()
+    int num_labels()
     {
         return label_stack.size();
-    }*/
+    }
 
     int value_stack_size()
     {
@@ -242,7 +242,7 @@ struct full_stack
     }
 };
 
-types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp, const label& l);
+types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp);
 
 struct context;
 struct label;
