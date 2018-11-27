@@ -37,7 +37,7 @@ namespace runtime
     struct host_func
     {
         //void(*ptr)(void);
-        std::function<std::optional<runtime::value>()> ptr;
+        std::function<std::optional<runtime::value>(const types::vec<runtime::value>&)> ptr;
     };
 
     ///uuh
@@ -156,7 +156,7 @@ namespace runtime
         }
 
         template<typename T>
-        auto apply(const T& t)
+        auto apply(const T& t) const
         {
             if(std::holds_alternative<types::i32>(v))
                 return t(std::get<types::i32>(v).val);
@@ -170,7 +170,7 @@ namespace runtime
             throw std::runtime_error("nope");
         }
 
-        std::string friendly_val()
+        std::string friendly_val() const
         {
             return apply([](auto concrete){return std::to_string(concrete);});
         }
@@ -259,7 +259,7 @@ namespace runtime
         types::vec<globalinst> globals;
 
         funcaddr allocfunction(const module& m, size_t idx);
-        funcaddr allochostfunction(const types::functype& type, const std::function<std::optional<runtime::value>()>& ptr);
+        funcaddr allochostfunction(const types::functype& type, const std::function<std::optional<runtime::value>(const types::vec<runtime::value>&)>& ptr);
         ///create a wrapper for allochostfunction which deduces type and automatically creates a shim
 
         tableaddr alloctable(const types::tabletype& type);

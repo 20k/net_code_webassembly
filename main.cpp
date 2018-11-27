@@ -2,9 +2,16 @@
 #include "LEB.hpp"
 #include "wasm_binary_data.hpp"
 
-std::optional<runtime::value> test_host_func()
+std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& vals)
 {
     printf("host func!\n");
+
+    std::cout << "num args " << vals.size() << std::endl;
+
+    for(auto& i : vals)
+    {
+        std::cout << i.friendly_val() << std::endl;
+    }
 
     return runtime::value((uint32_t)12);
 }
@@ -26,6 +33,7 @@ int main()
 
     types::functype ftype;
     ftype.results.push_back(rtype);
+    ftype.params.push_back(rtype);
 
     runtime::externval tv;
     tv.val = test.s.allochostfunction(ftype, test_host_func);

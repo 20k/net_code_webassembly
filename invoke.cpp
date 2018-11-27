@@ -1084,9 +1084,11 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     {
         const runtime::host_func& fnc = std::get<runtime::host_func>(finst.funct);
 
-        auto rval = fnc.ptr();
+        types::vec<runtime::value> args = full.pop_num_vals(num_args);
 
-        if(!rval.has_value() && num_rets == 1 || rval.has_value() && num_rets == 0)
+        auto rval = fnc.ptr(args);
+
+        if((!rval.has_value() && num_rets == 1) || (rval.has_value() && num_rets == 0))
             throw std::runtime_error("Bad return number of values");
 
         if(num_rets > 0)
