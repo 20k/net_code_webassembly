@@ -25,6 +25,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-Wl,--stack,4194304" />
 				</Linker>
 			</Target>
 			<Target title="Profile">
