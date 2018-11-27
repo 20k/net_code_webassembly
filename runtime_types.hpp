@@ -3,6 +3,7 @@
 
 #include "types.hpp"
 #include <optional>
+#include <functional>
 
 struct module;
 
@@ -31,9 +32,12 @@ namespace runtime
         types::code funct;
     };
 
+    struct value;
+
     struct host_func
     {
-        void(*ptr)(void);
+        //void(*ptr)(void);
+        std::function<std::optional<runtime::value>()> ptr;
     };
 
     ///uuh
@@ -255,7 +259,8 @@ namespace runtime
         types::vec<globalinst> globals;
 
         funcaddr allocfunction(const module& m, size_t idx);
-        funcaddr allochostfunction(const types::functype& type, void(*ptr)());
+        funcaddr allochostfunction(const types::functype& type, const decltype(runtime::host_func::ptr)& ptr);
+        ///create a wrapper for allochostfunction which deduces type and automatically creates a shim
 
         tableaddr alloctable(const types::tabletype& type);
         memaddr allocmem(const types::memtype& type);

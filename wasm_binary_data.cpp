@@ -633,7 +633,7 @@ runtime::funcaddr runtime::store::allocfunction(const module& m, size_t idx)
     return funcaddr{a};
 }
 
-runtime::funcaddr runtime::store::allochostfunction(const types::functype& type, void(*ptr)())
+runtime::funcaddr runtime::store::allochostfunction(const types::functype& type, const decltype(runtime::host_func::ptr)& ptr)
 {
     int a = funcs.size();
 
