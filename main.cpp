@@ -9,8 +9,11 @@ int main()
     data example;
     example.load_from_file("test_1.wasm");
 
+    runtime::externval tv;
+    tv.val = runtime::funcaddr{0};
+
     wasm_binary_data test;
-    test.init(example, {});
+    test.init(example, {tv});
 
     return 0;
 }
