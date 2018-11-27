@@ -6,7 +6,7 @@
 
 struct wasm_binary_data
 {
-    void init(data d);
+    void init(data d, const types::vec<runtime::externval>& eval);
 
     runtime::moduleinst* m_minst = nullptr;
     runtime::store s;

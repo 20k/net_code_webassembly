@@ -10,7 +10,7 @@ int main()
     example.load_from_file("test_1.wasm");
 
     wasm_binary_data test;
-    test.init(example);
+    test.init(example, {});
 
     return 0;
 }

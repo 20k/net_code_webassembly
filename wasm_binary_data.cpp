@@ -776,22 +776,22 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
         if(std::holds_alternative<types::funcidx>(inf.desc.vals))
         {
-            out.value.val = faddr[(uint32_t)std::get<types::funcidx>(inf.desc.vals)];
+            out.value.val = efaddr[(uint32_t)std::get<types::funcidx>(inf.desc.vals)];
         }
 
         else if(std::holds_alternative<types::tableidx>(inf.desc.vals))
         {
-            out.value.val = taddr[(uint32_t)std::get<types::tableidx>(inf.desc.vals)];
+            out.value.val = etaddr[(uint32_t)std::get<types::tableidx>(inf.desc.vals)];
         }
 
         else if(std::holds_alternative<types::memidx>(inf.desc.vals))
         {
-            out.value.val = maddr[(uint32_t)std::get<types::memidx>(inf.desc.vals)];
+            out.value.val = emaddr[(uint32_t)std::get<types::memidx>(inf.desc.vals)];
         }
 
         else if(std::holds_alternative<types::globalidx>(inf.desc.vals))
         {
-            out.value.val = gaddr[(uint32_t)std::get<types::globalidx>(inf.desc.vals)];
+            out.value.val = egaddr[(uint32_t)std::get<types::globalidx>(inf.desc.vals)];
         }
         else
         {
@@ -821,10 +821,10 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
         types::tableidx tidx = e.tidx;
 
-        if((uint32_t)tidx >= (uint32_t)taddr.size())
+        if((uint32_t)tidx >= (uint32_t)etaddr.size())
             throw std::runtime_error("Bad tidx in section element");
 
-        runtime::tableaddr tdr = taddr[(uint32_t)tidx];
+        runtime::tableaddr tdr = etaddr[(uint32_t)tidx];
 
         uint32_t t_addr_idx = (uint32_t)tdr;
 
@@ -847,10 +847,10 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
             uint32_t idx = (uint32_t)fidx;
 
             ///warning, import
-            if(idx >= (uint32_t)faddr.size())
-                throw std::runtime_error("bad faddr idx");
+            if(idx >= (uint32_t)efaddr.size())
+                throw std::runtime_error("bad efaddr idx");
 
-            tinst.elem[eo + j].addr = faddr[idx];
+            tinst.elem[eo + j].addr = efaddr[idx];
         }
     }
 
@@ -867,9 +867,9 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
 
         types::memidx midx = data_seg.x;
 
-        maddr.check((uint32_t)midx);
+        emaddr.check((uint32_t)midx);
 
-        runtime::memaddr mem_addr = maddr[(uint32_t)midx];
+        runtime::memaddr mem_addr = emaddr[(uint32_t)midx];
 
         s.mems.check((uint32_t)mem_addr);
 
@@ -925,7 +925,7 @@ void test_hi(int in)
 
 ///duk = 635
 ///us = 990
-void wasm_binary_data::init(data d)
+void wasm_binary_data::init(data d, const types::vec<runtime::externval>& eval)
 {
     parser p(d);
 
@@ -943,7 +943,7 @@ void wasm_binary_data::init(data d)
         global_init.push_back(val);
     }*/
 
-    runtime::moduleinst minst = build_from_module(mod, s, {});
+    runtime::moduleinst minst = build_from_module(mod, s, eval);
 
     m_minst = new runtime::moduleinst(minst);
 
