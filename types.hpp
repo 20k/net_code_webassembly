@@ -425,6 +425,27 @@ namespace types
         {
             which = 0x7E;
         }
+
+        template<typename T>
+        void set()
+        {
+            if constexpr(std::is_same<T, types::i32>::value)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same<T, types::i64>::value)
+            {
+                which = 0x7E;
+            }
+            else if constexpr(std::is_same<T, types::f32>::value)
+            {
+                which = 0x7D;
+            }
+            else if constexpr(std::is_same<T, types::f64>::value)
+            {
+                which = 0x7C;
+            }
+        }
     };
 
     struct blocktype

@@ -259,7 +259,7 @@ namespace runtime
         types::vec<globalinst> globals;
 
         funcaddr allocfunction(const module& m, size_t idx);
-        funcaddr allochostfunction(const types::functype& type, const decltype(runtime::host_func::ptr)& ptr);
+        funcaddr allochostfunction(const types::functype& type, const std::function<std::optional<runtime::value>()>& ptr);
         ///create a wrapper for allochostfunction which deduces type and automatically creates a shim
 
         tableaddr alloctable(const types::tabletype& type);
