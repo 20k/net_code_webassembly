@@ -383,7 +383,7 @@ void lowest_get(types::br_table_data& type, parser& p)
 }
 
 inline
-void lowest_get(types::instr&, types::instr_data&, parser& p);
+void lowest_get(types::instr&, parser& p);
 
 inline
 void lowest_get(types::double_branch_data& type, parser& p)
@@ -393,11 +393,9 @@ void lowest_get(types::double_branch_data& type, parser& p)
     while(p.peek() != 0x05 && p.peek() != 0x0B)
     {
         types::instr temp;
-        types::instr_data idata;
-        lowest_get(temp, idata, p);
+        lowest_get(temp, p);
 
         type.first.push_back(temp);
-        type.first_data.push_back(idata);
     }
 
     if(p.peek() == 0x05)
@@ -408,11 +406,9 @@ void lowest_get(types::double_branch_data& type, parser& p)
         while(p.peek() != 0x0B)
         {
             types::instr temp;
-            types::instr_data idata;
-            lowest_get(temp, idata, p);
+            lowest_get(temp, p);
 
             type.second.push_back(temp);
-            type.second_data.push_back(idata);
         }
     }
 
@@ -427,11 +423,9 @@ void lowest_get(types::single_branch_data& type, parser& p)
     while(p.peek() != 0x0B)
     {
         types::instr temp;
-        types::instr_data idata;
-        lowest_get(temp, idata, p);
+        lowest_get(temp, p);
 
         type.first.push_back(temp);
-        type.first_data.push_back(idata);
     }
 
     p.checked_fetch<1>({0x0B});
@@ -449,7 +443,7 @@ void lowest_get(std::variant<U...>& type, parser& p)
 
 ///https://webassembly.github.io/spec/core/binary/instructions.html#binary-expr
 inline
-void lowest_get(types::instr& type, types::instr_data& idata, parser& p)
+void lowest_get(types::instr& type, parser& p)
 {
     uint8_t next = p.next();
 
@@ -460,29 +454,29 @@ void lowest_get(types::instr& type, types::instr_data& idata, parser& p)
 
     if(next == 0x41)
     {
-        lowest_get<types::i32>(idata.dat, p);
+        lowest_get<types::i32>(type.dat, p);
 
         //std::cout << "fval " << std::get<types::i32>(type.dat).val << std::endl;
     }
 
     if(next == 0x42)
     {
-        lowest_get<types::i64>(idata.dat, p);
+        lowest_get<types::i64>(type.dat, p);
     }
 
     if(next == 0x43)
     {
-        lowest_get<types::f32>(idata.dat, p);
+        lowest_get<types::f32>(type.dat, p);
     }
 
     if(next == 0x44)
     {
-        lowest_get<types::f64>(idata.dat, p);
+        lowest_get<types::f64>(type.dat, p);
     }
 
     if(next >= 0x28 && next <= 0x3E)
     {
-        lowest_get<types::memarg>(idata.dat, p);
+        lowest_get<types::memarg>(type.dat, p);
     }
 
     if(next >= 0x3F && next <= 0x40)
@@ -494,42 +488,42 @@ void lowest_get(types::instr& type, types::instr_data& idata, parser& p)
 
     if(next >= 0x20 && next <= 0x22)
     {
-        lowest_get<types::localidx>(idata.dat, p);
+        lowest_get<types::localidx>(type.dat, p);
     }
 
     if(next >= 0x23 && next <= 0x24)
     {
-        lowest_get<types::globalidx>(idata.dat, p);
+        lowest_get<types::globalidx>(type.dat, p);
     }
 
     if(next == 0x03 || next == 0x02)
     {
-        lowest_get<types::single_branch_data>(idata.dat, p);
+        lowest_get<types::single_branch_data>(type.dat, p);
     }
 
     if(next == 0x04)
     {
-        lowest_get<types::double_branch_data>(idata.dat, p);
+        lowest_get<types::double_branch_data>(type.dat, p);
     }
 
     if(next == 0x0C || next == 0x0D)
     {
-        lowest_get<types::labelidx>(idata.dat, p);
+        lowest_get<types::labelidx>(type.dat, p);
     }
 
     if(next == 0x0E)
     {
-        lowest_get<types::br_table_data>(idata.dat, p);
+        lowest_get<types::br_table_data>(type.dat, p);
     }
 
     if(next == 0x10)
     {
-        lowest_get<types::funcidx>(idata.dat, p);
+        lowest_get<types::funcidx>(type.dat, p);
     }
 
     if(next == 0x11)
     {
-        lowest_get<types::typeidx>(idata.dat, p);
+        lowest_get<types::typeidx>(type.dat, p);
 
         p.checked_fetch<1>({0x00});
     }
@@ -541,11 +535,9 @@ void lowest_get(types::expr& type, parser& p)
     while(p.peek() != 0x0B)
     {
         types::instr temp;
-        types::instr_data idata;
-        lowest_get(temp, idata, p);
+        lowest_get(temp, p);
 
         type.i.push_back(temp);
-        type.d.push_back(idata);
     }
 
     p.checked_fetch<1>({0x0B});
