@@ -163,9 +163,9 @@ namespace types
             return v.back();
         }
 
-        template<typename U>
+        //template<typename U>
         inline
-        const T& operator [](const U& i) const
+        const T& operator [](size_t i) const
         {
             //if(i >= (U)v.size() || i < 0)
             //    throw std::runtime_error("invalid bounds access");
@@ -173,9 +173,9 @@ namespace types
             return v[i];
         }
 
-        template<typename U>
+        //template<typename U>
         inline
-        T& operator [](const U& i)
+        T& operator [](size_t i)
         {
             //if(i >= (U)v.size() || i < 0)
             //    throw std::runtime_error("invalid bounds access");
