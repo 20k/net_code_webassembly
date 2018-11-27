@@ -37,6 +37,11 @@ struct full_stack
 
     types::vec<uint32_t> stack_start_sizes{{0}};
 
+    full_stack()
+    {
+        full.reserve(1024);
+    }
+
     void push_values(const runtime::value& val)
     {
         full.push_back(val);
