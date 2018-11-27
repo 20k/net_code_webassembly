@@ -16,6 +16,20 @@ std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& v
     return runtime::value((uint32_t)12);
 }
 
+///alright its time for some c++ wizadry now
+///work with parameters first, then do return type
+
+void test_simple_params(int v1)
+{
+    printf("simple params %i\n", v1);
+}
+
+template<typename T, typename... U> inline void test_func(const T(*func)(U... args))
+{
+
+}
+
+
 int main()
 {
     leb_tests();
