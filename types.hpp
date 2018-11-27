@@ -215,6 +215,156 @@ namespace types
         }
     };
 
+    ///try a version where we just keep a ptr to start and end
+    template<typename T>
+    struct svec
+    {
+        T* v;
+        uint32_t idx = 0;
+
+        /*template<typename U>
+        svec(const U& v1, const U& v2) : v(v1, v2)
+        {
+
+        }*/
+
+        svec()
+        {
+            v = new T(1024);
+        }
+
+        ~svec()
+        {
+            delete v;
+        }
+
+        auto begin()
+        {
+            return &v[0];
+        }
+
+        auto end()
+        {
+            return &v[idx];
+        }
+
+        auto begin() const
+        {
+            return &v[0];
+        }
+
+        auto end() const
+        {
+            return &v[idx + 1];
+        }
+
+        void clear()
+        {
+            idx = 0;
+        }
+
+        auto size() const
+        {
+            return idx;
+        }
+
+        void push_back(const T& t)
+        {
+            v[idx++] = t;
+            //v.push_back(t);
+        }
+
+        /*template<typename... U>
+        void emplace_back(U&&... t)
+        {
+            v.emplace_back(std::forward<U>(t)...);
+        }*/
+
+        auto pop_back()
+        {
+            idx--;
+            //return v.pop_back();
+        }
+
+        template<typename U, typename V>
+        void insert(const U& v1, const V& v2, const V& v3)
+        {
+            v.insert(v1, v2, v3);
+        }
+
+        const T& front() const
+        {
+            return &v[0];
+        }
+
+        T& front()
+        {
+            return &v[0];
+        }
+
+        const T& back() const
+        {
+            return &v[idx];
+        }
+
+        T& back()
+        {
+            return &v[idx];
+        }
+
+        //template<typename U>
+        inline
+        const T& operator [](uint32_t i) const
+        {
+            //if(i >= (U)v.size() || i < 0)
+            //    throw std::runtime_error("invalid bounds access");
+
+            return v[i];
+        }
+
+        //template<typename U>
+        inline
+        T& operator [](uint32_t i)
+        {
+            //if(i >= (U)v.size() || i < 0)
+            //    throw std::runtime_error("invalid bounds access");
+
+            return v[i];
+        }
+
+        void resize(uint32_t n)
+        {
+            idx = n;
+            //v.resize(n);
+        }
+
+        /*[[nodiscard]]
+        vec<T> append(const vec<T>& dat) const
+        {
+            vec<T> ret;
+            ret.v = v;
+
+            for(size_t i=0; i < dat.size(); i++)
+            {
+                ret.push_back(dat[i]);
+            }
+
+            return ret;
+        }*/
+
+        template<typename U>
+        void check(const U& u)
+        {
+            if(u >= (U)v.size() || u < 0)
+                throw std::runtime_error("Not in bounds");
+        }
+
+        /*auto reserve(int in)
+        {
+            return v.reserve(in);
+        }*/
+    };
+
     /**0x7F -> i32
     0x7E -> i64
     0x7D -> f32
