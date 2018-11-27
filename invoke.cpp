@@ -16,18 +16,18 @@
 #define PUSH_CONSTANT(xtype)\
         { \
             /*lg::log("loaded constant ", cst.val);*/ \
-            full.push_values(std::get<xtype>(is.dat)); \
+            full.push_values(std::get<xtype>(idat[ilen].dat)); \
             break; \
         }
 
-#define MEM_LOAD(x, y) mem_load<x, y>(s, std::get<types::memarg>(is.dat), full, activate); break;
-#define MEM_STORE(x, y) mem_store<x, y>(s, std::get<types::memarg>(is.dat), full, activate); break;
+#define MEM_LOAD(x, y) mem_load<x, y>(s, std::get<types::memarg>(idat[ilen].dat), full, activate); break;
+#define MEM_STORE(x, y) mem_store<x, y>(s, std::get<types::memarg>(idat[ilen].dat), full, activate); break;
 
 #define MEM_SIZE() memory_size(full, s, activate); break;
 #define MEM_GROW() memory_grow(full, s, activate); break;
 
-#define INVOKE_LOCAL(f) f(full, std::get<types::localidx>(is.dat), activate); break;
-#define INVOKE_GLOBAL(f) f(s, full, std::get<types::globalidx>(is.dat), activate); break;
+#define INVOKE_LOCAL(f) f(full, std::get<types::localidx>(idat[ilen].dat), activate); break;
+#define INVOKE_GLOBAL(f) f(s, full, std::get<types::globalidx>(idat[ilen].dat), activate); break;
 
 ///maybe the trick is that labels don't really exist
 ///and it just carries on from that one
@@ -53,7 +53,7 @@ struct context
 
 //#define DEBUGGING
 
-void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full, activation& activate);
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, const types::vec<types::instr_data>& idata, full_stack& full, activation& activate);
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
 inline
@@ -150,7 +150,7 @@ struct stack_counter
 ///dump value of globals and follow everything through to see
 ///if its the leadup to strlen which is incorrect
 //__attribute__((optimize("unroll-loops")))
-void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
+void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, const types::vec<types::instr_data>& idat, full_stack& full, activation& activate)
 {
     ///thisll break until at minimum we pop the values off the stack
     ///but obviously we actually wanna parse stuff
@@ -172,6 +172,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
         #endif // DEBUGGING
 
         const types::instr& is = exp[ilen];
+        //const types::instr_data& idata = idat[ilen];
 
         size_t which = is.which;
 
@@ -200,13 +201,13 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x02:
             {
-                const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
+                const types::single_branch_data& sbd = std::get<types::single_branch_data>(idat[ilen].dat);
 
                 label l;
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
-                eval_with_label(ctx, s, l, sbd.first, full, activate);
+                eval_with_label(ctx, s, l, sbd.first, sbd.first_data, full, activate);
 
                 if(ctx.break_op_loop())
                     ilen = len;
@@ -216,7 +217,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x03:
             {
-                const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
+                const types::single_branch_data& sbd = std::get<types::single_branch_data>(idat[ilen].dat);
 
                 label l;
                 l.btype = sbd.btype;
@@ -225,7 +226,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 if(l.btype.arity() != 0)
                     throw std::runtime_error("Wrong arity?");
 
-                eval_with_label(ctx, s, l, sbd.first, full, activate);
+                eval_with_label(ctx, s, l, sbd.first, sbd.first_data, full, activate);
 
                 if(ctx.break_op_loop())
                     ilen = len;
@@ -235,7 +236,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x04:
             {
-                const types::double_branch_data& dbd = std::get<types::double_branch_data>(is.dat);
+                const types::double_branch_data& dbd = std::get<types::double_branch_data>(idat[ilen].dat);
 
                 label l;
                 l.btype = dbd.btype;
@@ -252,11 +253,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 if(c != 0)
                 {
-                    eval_with_label(ctx, s, l, dbd.first, full, activate);
+                    eval_with_label(ctx, s, l, dbd.first, dbd.first_data, full, activate);
                 }
                 else
                 {
-                    eval_with_label(ctx, s, l, dbd.second, full, activate);
+                    eval_with_label(ctx, s, l, dbd.second, dbd.second_data, full, activate);
                 }
 
                 if(ctx.break_op_loop())
@@ -267,7 +268,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x0C:
             {
-                types::labelidx lidx = std::get<types::labelidx>(is.dat);
+                types::labelidx lidx = std::get<types::labelidx>(idat[ilen].dat);
 
                 fjump(ctx, lidx, full);
 
@@ -298,7 +299,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 if((uint32_t)type != 0)
                 {
-                    types::labelidx lidx = std::get<types::labelidx>(is.dat);
+                    types::labelidx lidx = std::get<types::labelidx>(idat[ilen].dat);
 
                     fjump(ctx, lidx, full);
 
@@ -317,7 +318,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x0E:
             {
-                const types::br_table_data& br_td = std::get<types::br_table_data>(is.dat);
+                const types::br_table_data& br_td = std::get<types::br_table_data>(idat[ilen].dat);
 
                 runtime::value top_val = full.pop_back();
 
@@ -362,7 +363,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x10:
             {
-                types::funcidx fidx = std::get<types::funcidx>(is.dat);
+                types::funcidx fidx = std::get<types::funcidx>(idat[ilen].dat);
 
                 uint32_t idx = (uint32_t)fidx;
 
@@ -384,7 +385,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x11:
             {
                 ///alright indirect calls
-                types::funcidx found_fidx = std::get<types::funcidx>(is.dat);
+                types::funcidx found_fidx = std::get<types::funcidx>(idat[ilen].dat);
 
                 runtime::moduleinst* inst = activate.f.inst;
 
@@ -804,7 +805,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
     #endif // DEBUGGING
 }
 
-types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
+types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp, const types::vec<types::instr_data>& idata)
 {
     full_stack full;
     context ctx;
@@ -821,7 +822,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
 
     ctx.current_arity = 0;
 
-    eval_expr(ctx, s, exp, full, activate);
+    eval_expr(ctx, s, exp, idata, full, activate);
 
     if(!ctx.frame_abort)
     {
@@ -853,7 +854,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     throw std::runtime_error("unreachable");
 }
 
-void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
+void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, const types::vec<types::instr_data>& idata, full_stack& full, activation& activate)
 {
     bool has_delayed_values_push = false;
 
@@ -885,7 +886,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
 
         ctx.current_arity = l.btype.arity();
 
-        eval_expr(ctx, s, exp, full, activate);
+        eval_expr(ctx, s, exp, idata, full, activate);
 
         if(ctx.frame_abort)
         {
@@ -1040,7 +1041,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
         ctx.current_arity = 0;
 
-        eval_expr(ctx, s, expression.i, full, activate);
+        eval_expr(ctx, s, expression.i, expression.d, full, activate);
 
         if(!ctx.frame_abort)
         {

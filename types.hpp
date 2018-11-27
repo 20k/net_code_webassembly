@@ -450,6 +450,7 @@ namespace types
     };
 
     struct instr;
+    struct instr_data;
 
     struct double_branch_data
     {
@@ -458,7 +459,9 @@ namespace types
         bool has_second_branch = false;
 
         vec<instr> first;
+        vec<instr_data> first_data;
         vec<instr> second;
+        vec<instr_data> second_data;
     };
 
     struct single_branch_data
@@ -466,6 +469,7 @@ namespace types
         blocktype btype;
 
         vec<instr> first;
+        vec<instr_data> first_data;
     };
 
     struct instr
@@ -495,7 +499,6 @@ namespace types
             single_branch_data sbd;
         } cst;*/
 
-        std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, labelidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
 
         #if 0
         instr()
@@ -513,9 +516,15 @@ namespace types
         #endif // 0
     };
 
+    struct instr_data
+    {
+        std::variant<i32, i64, f32, f64, memarg, globalidx, localidx, labelidx, typeidx, funcidx, br_table_data, double_branch_data, single_branch_data> dat;
+    };
+
     struct expr
     {
         vec<instr> i;
+        vec<instr_data> d;
     };
 
     struct global
