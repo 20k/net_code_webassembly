@@ -1011,8 +1011,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         ///SUPER BAD CODE ALERT
         fr.inst = &minst;
 
-        fr.locals = popped;
-        fr.locals = fr.locals.append(local_zeroes);
+        fr.locals = popped.append(local_zeroes);
+        //fr.locals = fr.locals.append(local_zeroes);
 
         /*lg::log("fr locals ", fr.locals.size());
         lg::log("ltypes ", local_types.size());

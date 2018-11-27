@@ -215,11 +215,12 @@ namespace types
         }
     };
 
-    ///try a version where we just keep a ptr to start and end
-    template<typename T>
+    template<typename T, int N>
     struct svec
     {
-        T* v;
+        //T* v = nullptr;
+
+        std::array<T, N> v;
         uint32_t idx = 0;
 
         /*template<typename U>
@@ -228,14 +229,24 @@ namespace types
 
         }*/
 
+        svec(const vec<T>& in)
+        {
+            //v = new T[1024];
+
+            for(size_t i = 0; i < in.size(); i++)
+            {
+                v[idx++] = in[i];
+            }
+        }
+
         svec()
         {
-            v = new T(1024);
+            //v = new T[1024];
         }
 
         ~svec()
         {
-            delete v;
+            //delete [] v;
         }
 
         auto begin()
@@ -286,30 +297,35 @@ namespace types
             //return v.pop_back();
         }
 
-        template<typename U, typename V>
+        /*template<typename U, typename V>
         void insert(const U& v1, const V& v2, const V& v3)
         {
-            v.insert(v1, v2, v3);
-        }
+            //v.insert(v1, v2, v3);
+
+            for(auto it = v2; it != v3; it++)
+            {
+                *v1 = *it;
+            }
+        }*/
 
         const T& front() const
         {
-            return &v[0];
+            return v[0];
         }
 
         T& front()
         {
-            return &v[0];
+            return v[0];
         }
 
         const T& back() const
         {
-            return &v[idx];
+            return v[idx-1];
         }
 
         T& back()
         {
-            return &v[idx];
+            return v[idx-1];
         }
 
         //template<typename U>

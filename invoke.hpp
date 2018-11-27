@@ -4,7 +4,8 @@
 
 struct frame
 {
-    types::vec<runtime::value> locals;
+    //types::vec<runtime::value> locals;
+    types::svec<runtime::value, 8192> locals;
     ///hoo boy ok we're cracking out the pointers i guess
     ///this must be resolved for serialisation
     ///maybe use a module_idx and keep the modules in the stores
@@ -39,7 +40,7 @@ struct full_stack
 
     full_stack()
     {
-        full.reserve(1024);
+        //full.reserve(1024);
     }
 
     void push_values(const runtime::value& val)
