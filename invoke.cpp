@@ -173,7 +173,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
         const types::instr& is = exp[ilen];
 
-        uint8_t which = is.which;
+        size_t which = is.which;
 
         #ifdef PERF
         prof.add(which);

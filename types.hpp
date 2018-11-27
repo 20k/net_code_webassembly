@@ -472,7 +472,7 @@ namespace types
     {
         //static inline int assert_on_destruct = 0;
 
-        uint8_t which = 0;
+        size_t which = 0;
 
         /*union constant
         {
