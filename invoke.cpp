@@ -978,6 +978,7 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         throw std::runtime_error("Argument mismatch");*/
 
     int num_args = ftype.params.size();
+    int num_rets = ftype.results.size();
 
     if(std::holds_alternative<runtime::webasm_func>(finst.funct))
     {
@@ -1081,7 +1082,21 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     }
     else
     {
-        throw std::runtime_error("Bad function invocation type");
+        const runtime::host_func& fnc = std::get<runtime::host_func>(finst.funct);
+
+        auto rval = fnc.ptr();
+
+        if(!rval.has_value() && num_rets == 1 || rval.has_value() && num_rets == 0)
+            throw std::runtime_error("Bad return number of values");
+
+        if(num_rets > 0)
+        {
+            full.push_values(rval.value());
+
+            return {rval.value()};
+        }
+
+        //throw std::runtime_error("Bad function invocation type");
     }
 
     //types::instr::assert_on_destruct--;

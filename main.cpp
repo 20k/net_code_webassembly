@@ -4,6 +4,8 @@
 
 std::optional<runtime::value> test_host_func()
 {
+    printf("host func!\n");
+
     return runtime::value((uint32_t)12);
 }
 
