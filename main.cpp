@@ -11,6 +11,9 @@ int main()
 
     runtime::externval tv;
     tv.val = runtime::funcaddr{0};
+    ///so it looks like allocfunc gets the typeidx
+    ///typeidx goes to functype
+    ///runtime::funcinst then has functype type, and then a custom ptr
 
     wasm_binary_data test;
     test.init(example, {tv});
