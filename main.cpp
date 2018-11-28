@@ -1,6 +1,7 @@
 #include <iostream>
 #include "LEB.hpp"
 #include "wasm_binary_data.hpp"
+#include <utility>
 
 std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& vals)
 {
@@ -19,134 +20,52 @@ std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& v
 ///alright its time for some c++ wizadry now
 ///work with parameters first, then do return type
 
-int test_simple_params(int v1)
+///ok so i need to find some way to invoke test_simple_params
+///maybe i could make a test_host_func which takes test simple params as an arg, which saves template parameters
+///then we pass a pointer to that new test host func into the thing, which gets invoked and then unpacks the vector arguments
+///and handles result type?
+
+/*template<int N=0, typename... T>
+void do_for(std::tuple<T...>& tup, const types::vec<runtime::value>& u)
+{
+    using ftype = std::tuple_element_t<N, std::tuple<T...>>;
+
+    if constexpr(N >= sizeof...(T))
+        return;
+
+    std::get<N>(tup) = (uint32_t)u[N];
+
+    if constexpr(N+1 >= sizeof...(T))
+        return;
+
+    do_for<N+1, T...>(tup, u);
+}*/
+
+template<typename tup, std::size_t... Is>
+void apply_tup(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>)
+{
+    ((std::get<Is>(t) = (std::tuple_element_t<Is, tup>)v.get<Is>()), ...);
+}
+
+template<typename return_type, typename... args_type> std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
+{
+    constexpr int num_ppack = sizeof...(args_type);
+
+    std::tuple<args_type...> args;
+
+    //do_for(args, vals);
+
+    std::index_sequence_for<args_type...> iseq;
+
+    apply_tup(args, vals, iseq);
+}
+
+int32_t test_simple_params(int32_t v1)
 {
     printf("simple params %i\n", v1);
 
     return 99;
 }
-
-template<typename check>
-void count_types(int& cnt)
-{
-
-}
-
-template<typename check, typename U, typename... T>
-void count_types(int& cnt)
-{
-    if constexpr(std::is_same<check, U>())
-    {
-        cnt++;
-
-        count_types<check, T...>(cnt);
-    }
-    else
-    {
-        return;
-    }
-}
-
-template<typename T, typename... U> inline types::functype get_params(T(*func)(U... args))
-{
-    types::functype ret;
-
-    types::valtype i32;
-    types::valtype i64;
-    types::valtype f32;
-    types::valtype f64;
-
-    i32.set<types::i32>();
-    i64.set<types::i64>();
-    f32.set<types::f32>();
-    f64.set<types::f64>();
-
-    int i32_c = 0;
-    int i64_c = 0;
-    int f32_c = 0;
-    int f64_c = 0;
-
-    int i32_r = 0;
-    int i64_r = 0;
-    int f32_r = 0;
-    int f64_r = 0;
-
-    count_types<bool, U...>(i32_c);
-    count_types<uint8_t, U...>(i32_c);
-    count_types<int8_t, U...>(i32_c);
-    count_types<uint16_t, U...>(i32_c);
-    count_types<int16_t, U...>(i32_c);
-    count_types<uint32_t, U...>(i32_c);
-    count_types<int32_t, U...>(i32_c);
-
-    count_types<uint64_t, U...>(i64_c);
-    count_types<int64_t, U...>(i64_c);
-
-    count_types<float, U...>(f32_c);
-
-    count_types<double, U...>(f64_c);
-
-
-    count_types<bool, T>(i32_r);
-    count_types<uint8_t, T>(i32_r);
-    count_types<int8_t, T>(i32_r);
-    count_types<uint16_t, T>(i32_r);
-    count_types<int16_t, T>(i32_r);
-    count_types<uint32_t, T>(i32_r);
-    count_types<int32_t, T>(i32_r);
-
-    count_types<uint64_t, T>(i64_r);
-    count_types<int64_t, T>(i64_r);
-
-    count_types<float, T>(f32_r);
-
-    count_types<double, T>(f64_r);
-
-
-    for(int i=0; i < i32_c; i++)
-    {
-        ret.params.push_back(i32);
-    }
-
-    for(int i=0; i < i64_c; i++)
-    {
-        ret.params.push_back(i64);
-    }
-
-    for(int i=0; i < f32_c; i++)
-    {
-        ret.params.push_back(f32);
-    }
-
-    for(int i=0; i < f64_c; i++)
-    {
-        ret.params.push_back(f64);
-    }
-
-
-    for(int i=0; i < i32_r; i++)
-    {
-        ret.results.push_back(i32);
-    }
-
-    for(int i=0; i < i64_r; i++)
-    {
-        ret.results.push_back(i64);
-    }
-
-    for(int i=0; i < f32_r; i++)
-    {
-        ret.results.push_back(f32);
-    }
-
-    for(int i=0; i < f64_r; i++)
-    {
-        ret.results.push_back(f64);
-    }
-
-    return ret;
-}
-
 
 int main()
 {
@@ -158,6 +77,8 @@ int main()
     //runtime::externval tv;
     //tv.val = runtime::funcaddr{0};
 
+    auto shim = &host_shim<int, uint32_t>;
+
     wasm_binary_data test;
 
     types::valtype rtype;
@@ -167,7 +88,7 @@ int main()
     ftype.results.push_back(rtype);
     ftype.params.push_back(rtype);*/
 
-    types::functype ftype = get_params(&test_simple_params);
+    types::functype ftype = get_functype(&test_simple_params);
 
     runtime::externval tv;
     tv.val = test.s.allochostfunction(ftype, test_host_func);

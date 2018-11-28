@@ -4,6 +4,7 @@
 #include "types.hpp"
 #include <optional>
 #include <functional>
+#include "template_args_helper.hpp"
 
 struct module;
 
@@ -155,6 +156,8 @@ namespace runtime
             v = in;
         }
 
+        explicit operator uint32_t() const noexcept {return std::get<types::i32>(v).val;}
+
         template<typename T>
         auto apply(const T& t) const
         {
@@ -260,7 +263,20 @@ namespace runtime
 
         funcaddr allocfunction(const module& m, size_t idx);
         funcaddr allochostfunction(const types::functype& type, const std::function<std::optional<runtime::value>(const types::vec<runtime::value>&)>& ptr);
+
         ///create a wrapper for allochostfunction which deduces type and automatically creates a shim
+
+        ///ok so we're up to simple arg values now
+        ///need to automatically shim the vectorof values we get to the input function when we call it
+        ///not 100% sure how to do that
+        template<typename T, typename... U>
+        funcaddr allochostsimplefunction(T(*func)(U... args))
+        {
+            types::functype type = get_functype(func);
+
+
+        }
+
 
         tableaddr alloctable(const types::tabletype& type);
         memaddr allocmem(const types::memtype& type);

@@ -91,6 +91,12 @@ namespace types
 
         }
 
+        template<int N>
+        auto get() const
+        {
+            return v[N];
+        }
+
         auto begin()
         {
             return v.begin();
