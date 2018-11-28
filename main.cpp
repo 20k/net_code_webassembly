@@ -3,7 +3,7 @@
 #include "wasm_binary_data.hpp"
 #include <utility>
 
-std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& vals)
+std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& vals, runtime::store& s)
 {
     printf("host func!\n");
 
@@ -17,11 +17,17 @@ std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& v
     return runtime::value((uint32_t)12);
 }
 
-uint32_t test_simple_params(uint32_t v1)
+/*uint32_t test_simple_params(uint32_t v1)
 {
     printf("simple params %i\n", v1);
 
     return 53;
+}*/
+
+uint32_t test_simple_params(char* val)
+{
+
+    return 64;
 }
 
 int main()
@@ -51,7 +57,7 @@ int main()
 
     runtime::externval tv;
     //tv.val = test.s.allochostfunction(ftype, test_host_func);
-    tv.val = test.s.allochostsimplefunction<test_simple_params>();
+    tv.val = runtime::allochostsimplefunction<test_simple_params>(test.s);
 
     ///so it looks like allocfunc gets the typeidx
     ///typeidx goes to functype

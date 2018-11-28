@@ -33,12 +33,13 @@ namespace runtime
         types::code funct;
     };
 
+    struct store;
     struct value;
 
     struct host_func
     {
         //void(*ptr)(void);
-        std::function<std::optional<runtime::value>(const types::vec<runtime::value>&)> ptr;
+        std::function<std::optional<runtime::value>(const types::vec<runtime::value>&, runtime::store*)> ptr;
     };
 
     ///uuh
@@ -68,6 +69,8 @@ namespace runtime
         types::vec<uint8_t> dat;
         std::optional<types::u32> max;
     };
+
+    struct store;
 
     ///hmm
     ///might be better to hold a uint64_t
@@ -156,7 +159,7 @@ namespace runtime
             v = in;
         }
 
-        explicit operator uint32_t() const noexcept {return std::get<types::i32>(v).val;}
+        /*explicit operator uint32_t() const noexcept {return std::get<types::i32>(v).val;}
         explicit operator int32_t() const noexcept {return std::get<types::i32>(v).val;}
         explicit operator uint16_t() const noexcept {return std::get<types::i32>(v).val;}
         explicit operator int16_t() const noexcept {return std::get<types::i32>(v).val;}
@@ -168,7 +171,7 @@ namespace runtime
         explicit operator int64_t() const noexcept {return std::get<types::i64>(v).val;}
 
         explicit operator float() const noexcept {return std::get<types::f32>(v).val;}
-        explicit operator double() const noexcept {return std::get<types::f64>(v).val;}
+        explicit operator double() const noexcept {return std::get<types::f64>(v).val;}*/
 
         template<typename T>
         auto apply(const T& t) const
@@ -195,6 +198,97 @@ namespace runtime
             return std::holds_alternative<types::i32>(v);
         }
     };
+
+    struct globalinst;
+    struct moduleinst;
+
+    struct store
+    {
+        types::vec<funcinst> funcs;
+        types::vec<tableinst> tables;
+        types::vec<meminst> mems;
+        types::vec<globalinst> globals;
+
+        funcaddr allocfunction(const module& m, size_t idx);
+        funcaddr allochostfunction(const types::functype& type, const std::function<std::optional<runtime::value>(const types::vec<runtime::value>&, runtime::store* s)>& ptr);
+
+        tableaddr alloctable(const types::tabletype& type);
+        memaddr allocmem(const types::memtype& type);
+        globaladdr allocglobal(const types::globaltype& type, const value& v);
+
+        types::vec<runtime::value> invoke(const funcaddr& address, moduleinst& minst, const types::vec<value>& vals);
+        types::vec<runtime::value> invoke_by_name(const std::string& imported, moduleinst& minst, const types::vec<value>& vals);
+    };
+
+    template<typename T>
+    T get(const runtime::value& v, runtime::meminst& minst, T dummy)
+    {
+        if constexpr(std::is_same_v<T, uint32_t>)
+        {
+            return std::get<types::i32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, int32_t>)
+        {
+            return std::get<types::i32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, uint16_t>)
+        {
+            return std::get<types::i32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, int16_t>)
+        {
+            return std::get<types::i32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, uint8_t>)
+        {
+            return std::get<types::i32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, int8_t>)
+        {
+            return std::get<types::i32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, bool>)
+        {
+            return std::get<types::i32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, uint64_t>)
+        {
+            return std::get<types::i64>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, int64_t>)
+        {
+            return std::get<types::i64>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, float>)
+        {
+            return std::get<types::f32>(v.v).val;
+        }
+
+        if constexpr(std::is_same_v<T, double>)
+        {
+            return std::get<types::f64>(v.v).val;
+        }
+    }
+
+    template<typename T>
+    T* get(const runtime::value& v, runtime::meminst& minst, T* dummy)
+    {
+        uint32_t ptr = get(v, minst, uint32_t());
+
+        if(ptr >= minst.dat.size())
+            throw std::runtime_error("Ptr out of bounds");
+
+        return (T*)&minst.dat[ptr];
+    }
 
     namespace detail
     {
@@ -337,19 +431,28 @@ namespace runtime
         }
 
         template<typename tup, std::size_t... Is>
-        void set_args(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>)
+        void set_args(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>, runtime::store* s)
         {
-            ((std::get<Is>(t) = (std::tuple_element_t<Is, tup>)v.get<Is>()), ...);
+            //std::tuple_element_t<Is, tup>
+
+            //.get(s, std::tuple_element_t<Is, tup>())
+
+            ((std::get<Is>(t) = runtime::get(v.get<Is>(), s->mems[0], std::tuple_element_t<Is, tup>())), ...);
         }
 
         template<typename V, V& v, typename return_type, typename... args_type>
-        std::optional<runtime::value> host_shim_impl(const types::vec<runtime::value>& vals)
+        std::optional<runtime::value> host_shim_impl(const types::vec<runtime::value>& vals, runtime::store* s)
         {
+            //constexpr int num_args = sizeof...(args_type);
+
             std::tuple<args_type...> args;
 
             std::index_sequence_for<args_type...> iseq;
 
-            set_args(args, vals, iseq);
+            ///last arg
+            //std::get<num_args>(args) = s;
+
+            set_args(args, vals, iseq, s);
 
             if constexpr(std::is_same_v<return_type, void>)
             {
@@ -443,39 +546,20 @@ namespace runtime
 
     struct moduleinst;
 
-    struct store
+    ///create a wrapper for allochostfunction which deduces type and automatically creates a shim
+
+    ///ok so we're up to simple arg values now
+    ///need to automatically shim the vectorof values we get to the input function when we call it
+    ///not 100% sure how to do that
+    template<auto& t>
+    funcaddr allochostsimplefunction(runtime::store& s)
     {
-        types::vec<funcinst> funcs;
-        types::vec<tableinst> tables;
-        types::vec<meminst> mems;
-        types::vec<globalinst> globals;
+        types::functype type = detail::get_functype(t);
 
-        funcaddr allocfunction(const module& m, size_t idx);
-        funcaddr allochostfunction(const types::functype& type, const std::function<std::optional<runtime::value>(const types::vec<runtime::value>&)>& ptr);
+        auto shim = detail::base_shim<t>();
 
-        ///create a wrapper for allochostfunction which deduces type and automatically creates a shim
-
-        ///ok so we're up to simple arg values now
-        ///need to automatically shim the vectorof values we get to the input function when we call it
-        ///not 100% sure how to do that
-        template<auto& t>
-        funcaddr allochostsimplefunction()
-        {
-            types::functype type = detail::get_functype(t);
-
-            auto shim = detail::base_shim<t>();
-
-            return allochostfunction(type, shim);
-        }
-
-
-        tableaddr alloctable(const types::tabletype& type);
-        memaddr allocmem(const types::memtype& type);
-        globaladdr allocglobal(const types::globaltype& type, const value& v);
-
-        types::vec<runtime::value> invoke(const funcaddr& address, moduleinst& minst, const types::vec<value>& vals);
-        types::vec<runtime::value> invoke_by_name(const std::string& imported, moduleinst& minst, const types::vec<value>& vals);
-    };
+        return s.allochostfunction(type, shim);
+    }
 
     template<typename T>
     inline
@@ -536,5 +620,25 @@ namespace runtime
     ///128 MB
     constexpr size_t sandbox_mem_cap = 128 * 1024 * 1024;
 }
+
+/*explicit operator uint32_t() const noexcept {return std::get<types::i32>(v).val;}
+explicit operator int32_t() const noexcept {return std::get<types::i32>(v).val;}
+explicit operator uint16_t() const noexcept {return std::get<types::i32>(v).val;}
+explicit operator int16_t() const noexcept {return std::get<types::i32>(v).val;}
+explicit operator uint8_t() const noexcept {return std::get<types::i32>(v).val;}
+explicit operator int8_t() const noexcept {return std::get<types::i32>(v).val;}
+explicit operator bool() const noexcept {return std::get<types::i32>(v).val;}
+
+explicit operator uint64_t() const noexcept {return std::get<types::i64>(v).val;}
+explicit operator int64_t() const noexcept {return std::get<types::i64>(v).val;}
+
+explicit operator float() const noexcept {return std::get<types::f32>(v).val;}
+explicit operator double() const noexcept {return std::get<types::f64>(v).val;}*/
+
+/*template<>
+uint32_t runtime::value::get<uint32_t>(runtime::store* s)
+{
+    return std::get<types::i32>(v).val;
+}*/
 
 #endif // RUNTIME_TYPES_HPP_INCLUDED
