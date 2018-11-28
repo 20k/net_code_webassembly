@@ -58,13 +58,14 @@ decltype(auto) apply_from_tuple(F&& fn, Tuple&& t)
 }
 
 template<typename tup, std::size_t... Is>
-void fix_tup(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>)
+void set_args(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>)
 {
     ((std::get<Is>(t) = (std::tuple_element_t<Is, tup>)v.get<Is>()), ...);
 }
 
-template<typename V, const V& v, typename return_type, typename... args_type>
-std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
+//template<typename V, const V& v, typename return_type, typename... args_type>
+template<typename V, V& v, typename return_type, typename... args_type>
+std::optional<runtime::value> host_shim_impl(const types::vec<runtime::value>& vals)
 {
     constexpr int num_ppack = sizeof...(args_type);
 
@@ -72,7 +73,7 @@ std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
 
     std::index_sequence_for<args_type...> iseq;
 
-    fix_tup(args, vals, iseq);
+    set_args(args, vals, iseq);
 
     if constexpr(std::is_same_v<return_type, void>)
     {
@@ -83,7 +84,16 @@ std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
     return apply_from_tuple(v, args);
 }
 
-int32_t test_simple_params(int32_t v1)
+template<typename V, V& v, typename T, typename... U>
+auto host_shim(T(*func)(U... args))
+{
+    return &host_shim_impl<V, v, T, U...>;
+}
+
+//template<typename T, typename... U> inline types::functype get_functype(T(*func)(U... args))
+
+
+uint32_t test_simple_params(uint32_t v1)
 {
     printf("simple params %i\n", v1);
 
@@ -100,7 +110,7 @@ int main()
     //runtime::externval tv;
     //tv.val = runtime::funcaddr{0};
 
-    auto shim = &host_shim<decltype(test_simple_params), test_simple_params, int, uint32_t>;
+    auto shim = &host_shim<decltype(test_simple_params), test_simple_params, uint32_t, uint32_t>;
 
     wasm_binary_data test;
 

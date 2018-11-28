@@ -157,6 +157,18 @@ namespace runtime
         }
 
         explicit operator uint32_t() const noexcept {return std::get<types::i32>(v).val;}
+        explicit operator int32_t() const noexcept {return std::get<types::i32>(v).val;}
+        explicit operator uint16_t() const noexcept {return std::get<types::i32>(v).val;}
+        explicit operator int16_t() const noexcept {return std::get<types::i32>(v).val;}
+        explicit operator uint8_t() const noexcept {return std::get<types::i32>(v).val;}
+        explicit operator int8_t() const noexcept {return std::get<types::i32>(v).val;}
+        explicit operator bool() const noexcept {return std::get<types::i32>(v).val;}
+
+        explicit operator uint64_t() const noexcept {return std::get<types::i64>(v).val;}
+        explicit operator int64_t() const noexcept {return std::get<types::i64>(v).val;}
+
+        explicit operator float() const noexcept {return std::get<types::f32>(v).val;}
+        explicit operator double() const noexcept {return std::get<types::f64>(v).val;}
 
         template<typename T>
         auto apply(const T& t) const
