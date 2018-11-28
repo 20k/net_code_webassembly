@@ -41,13 +41,30 @@ void do_for(std::tuple<T...>& tup, const types::vec<runtime::value>& u)
     do_for<N+1, T...>(tup, u);
 }*/
 
+template<typename F, typename Tuple, size_t ...S >
+decltype(auto) apply_tuple_impl(F&& fn, Tuple&& t, std::index_sequence<S...>)
+{
+    return std::forward<F>(fn)(std::get<S>(std::forward<Tuple>(t))...);
+}
+
+template<typename F, typename Tuple>
+decltype(auto) apply_from_tuple(F&& fn, Tuple&& t)
+{
+    std::size_t constexpr tSize
+        = std::tuple_size<typename std::remove_reference<Tuple>::type>::value;
+    return apply_tuple_impl(std::forward<F>(fn),
+                            std::forward<Tuple>(t),
+                            std::make_index_sequence<tSize>());
+}
+
 template<typename tup, std::size_t... Is>
-void apply_tup(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>)
+void fix_tup(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>)
 {
     ((std::get<Is>(t) = (std::tuple_element_t<Is, tup>)v.get<Is>()), ...);
 }
 
-template<typename V, const V& v, typename return_type, typename... args_type> std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
+template<typename V, const V& v, typename return_type, typename... args_type>
+std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
 {
     constexpr int num_ppack = sizeof...(args_type);
 
@@ -55,7 +72,15 @@ template<typename V, const V& v, typename return_type, typename... args_type> st
 
     std::index_sequence_for<args_type...> iseq;
 
-    apply_tup(args, vals, iseq);
+    fix_tup(args, vals, iseq);
+
+    if constexpr(std::is_same_v<return_type, void>)
+    {
+        apply_from_tuple(v, args);
+        return std::nullopt;
+    }
+
+    return apply_from_tuple(v, args);
 }
 
 int32_t test_simple_params(int32_t v1)
