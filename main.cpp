@@ -47,13 +47,11 @@ void apply_tup(tup& t, const types::vec<runtime::value>& v, std::index_sequence<
     ((std::get<Is>(t) = (std::tuple_element_t<Is, tup>)v.get<Is>()), ...);
 }
 
-template<typename return_type, typename... args_type> std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
+template<typename V, const V& v, typename return_type, typename... args_type> std::optional<runtime::value> host_shim(const types::vec<runtime::value>& vals)
 {
     constexpr int num_ppack = sizeof...(args_type);
 
     std::tuple<args_type...> args;
-
-    //do_for(args, vals);
 
     std::index_sequence_for<args_type...> iseq;
 
@@ -77,7 +75,7 @@ int main()
     //runtime::externval tv;
     //tv.val = runtime::funcaddr{0};
 
-    auto shim = &host_shim<int, uint32_t>;
+    auto shim = &host_shim<decltype(test_simple_params), test_simple_params, int, uint32_t>;
 
     wasm_binary_data test;
 
