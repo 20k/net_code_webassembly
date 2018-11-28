@@ -196,6 +196,183 @@ namespace runtime
         }
     };
 
+    namespace detail
+    {
+        template<typename check>
+        void count_types(int& cnt)
+        {
+
+        }
+
+        template<typename check, typename U, typename... T>
+        void count_types(int& cnt)
+        {
+            if constexpr(std::is_same<check, U>())
+            {
+                cnt++;
+
+                count_types<check, T...>(cnt);
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        template<typename T, typename... U> inline types::functype get_functype(T(*func)(U... args))
+        {
+            types::functype ret;
+
+            types::valtype i32;
+            types::valtype i64;
+            types::valtype f32;
+            types::valtype f64;
+
+            i32.set<types::i32>();
+            i64.set<types::i64>();
+            f32.set<types::f32>();
+            f64.set<types::f64>();
+
+            int i32_c = 0;
+            int i64_c = 0;
+            int f32_c = 0;
+            int f64_c = 0;
+
+            int i32_r = 0;
+            int i64_r = 0;
+            int f32_r = 0;
+            int f64_r = 0;
+
+            count_types<bool, U...>(i32_c);
+            count_types<uint8_t, U...>(i32_c);
+            count_types<int8_t, U...>(i32_c);
+            count_types<uint16_t, U...>(i32_c);
+            count_types<int16_t, U...>(i32_c);
+            count_types<uint32_t, U...>(i32_c);
+            count_types<int32_t, U...>(i32_c);
+
+            count_types<uint64_t, U...>(i64_c);
+            count_types<int64_t, U...>(i64_c);
+
+            count_types<float, U...>(f32_c);
+
+            count_types<double, U...>(f64_c);
+
+
+            count_types<bool, T>(i32_r);
+            count_types<uint8_t, T>(i32_r);
+            count_types<int8_t, T>(i32_r);
+            count_types<uint16_t, T>(i32_r);
+            count_types<int16_t, T>(i32_r);
+            count_types<uint32_t, T>(i32_r);
+            count_types<int32_t, T>(i32_r);
+
+            count_types<uint64_t, T>(i64_r);
+            count_types<int64_t, T>(i64_r);
+
+            count_types<float, T>(f32_r);
+
+            count_types<double, T>(f64_r);
+
+
+            for(int i=0; i < i32_c; i++)
+            {
+                ret.params.push_back(i32);
+            }
+
+            for(int i=0; i < i64_c; i++)
+            {
+                ret.params.push_back(i64);
+            }
+
+            for(int i=0; i < f32_c; i++)
+            {
+                ret.params.push_back(f32);
+            }
+
+            for(int i=0; i < f64_c; i++)
+            {
+                ret.params.push_back(f64);
+            }
+
+
+            for(int i=0; i < i32_r; i++)
+            {
+                ret.results.push_back(i32);
+            }
+
+            for(int i=0; i < i64_r; i++)
+            {
+                ret.results.push_back(i64);
+            }
+
+            for(int i=0; i < f32_r; i++)
+            {
+                ret.results.push_back(f32);
+            }
+
+            for(int i=0; i < f64_r; i++)
+            {
+                ret.results.push_back(f64);
+            }
+
+            return ret;
+        }
+
+
+        template<typename F, typename Tuple, size_t ...S >
+        decltype(auto) apply_tuple_impl(F&& fn, Tuple&& t, std::index_sequence<S...>)
+        {
+            return std::forward<F>(fn)(std::get<S>(std::forward<Tuple>(t))...);
+        }
+
+        template<typename F, typename Tuple>
+        decltype(auto) apply_from_tuple(F&& fn, Tuple&& t)
+        {
+            std::size_t constexpr tSize
+                = std::tuple_size<typename std::remove_reference<Tuple>::type>::value;
+            return apply_tuple_impl(std::forward<F>(fn),
+                                    std::forward<Tuple>(t),
+                                    std::make_index_sequence<tSize>());
+        }
+
+        template<typename tup, std::size_t... Is>
+        void set_args(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>)
+        {
+            ((std::get<Is>(t) = (std::tuple_element_t<Is, tup>)v.get<Is>()), ...);
+        }
+
+        template<typename V, V& v, typename return_type, typename... args_type>
+        std::optional<runtime::value> host_shim_impl(const types::vec<runtime::value>& vals)
+        {
+            std::tuple<args_type...> args;
+
+            std::index_sequence_for<args_type...> iseq;
+
+            set_args(args, vals, iseq);
+
+            if constexpr(std::is_same_v<return_type, void>)
+            {
+                apply_from_tuple(v, args);
+                return std::nullopt;
+            }
+
+            return apply_from_tuple(v, args);
+        }
+
+        template<auto& v, typename T, typename... U>
+        auto host_shim(T(*func)(U... args))
+        {
+            return &host_shim_impl<decltype(v), v, T, U...>;
+        }
+
+        template<auto& t>
+        constexpr auto base_shim()
+        {
+            return host_shim<t>(t);
+        }
+    }
+
     inline
     bool same_type(const value& v1, const value& v2)
     {
@@ -281,12 +458,14 @@ namespace runtime
         ///ok so we're up to simple arg values now
         ///need to automatically shim the vectorof values we get to the input function when we call it
         ///not 100% sure how to do that
-        template<typename T, typename... U>
-        funcaddr allochostsimplefunction(T(*func)(U... args))
+        template<auto& t>
+        funcaddr allochostsimplefunction()
         {
-            types::functype type = get_functype(func);
+            types::functype type = detail::get_functype(t);
 
+            auto shim = detail::base_shim<t>();
 
+            return allochostfunction(type, shim);
         }
 
 
