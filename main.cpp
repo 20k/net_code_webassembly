@@ -26,6 +26,7 @@ std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& v
 
 uint32_t test_simple_params(char* val)
 {
+    printf("val %s\n", val);
 
     return 64;
 }

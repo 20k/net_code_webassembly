@@ -301,7 +301,7 @@ namespace runtime
         template<typename check, typename U, typename... T>
         void count_types(int& cnt)
         {
-            if constexpr(std::is_same<check, U>())
+            if constexpr(std::is_same<check, U>() || (std::is_pointer_v<check> && std::is_pointer_v<U>))
             {
                 cnt++;
 
@@ -352,6 +352,8 @@ namespace runtime
 
             count_types<double, U...>(f64_c);
 
+            count_types<void*, U...>(i32_c);
+
 
             count_types<bool, T>(i32_r);
             count_types<uint8_t, T>(i32_r);
@@ -368,6 +370,9 @@ namespace runtime
 
             count_types<double, T>(f64_r);
 
+            ///returning pointers is uuh
+            ///yup
+            ///going to be an interesting one
 
             for(int i=0; i < i32_c; i++)
             {
