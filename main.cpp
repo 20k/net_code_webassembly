@@ -57,7 +57,11 @@ int main()
     ///typeidx goes to functype
     ///runtime::funcinst then has functype type, and then a custom ptr
 
-    test.init(example, {tv});
+    std::map<std::string, std::map<std::string, runtime::externval>> vals;
+
+    vals["env"]["needs_import"] = tv;
+
+    test.init(example, vals);
 
     return 0;
 }

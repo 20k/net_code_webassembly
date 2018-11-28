@@ -696,12 +696,19 @@ runtime::globaladdr runtime::store::allocglobal(const types::globaltype& type, c
 
 ///imports are temporarily disabled
 ///but looks like externvals are first then regulars
-runtime::moduleinst build_from_module(module& m, runtime::store& s, const types::vec<runtime::externval>& ext)
+runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::map<std::string, std::map<std::string, runtime::externval>>& evals)
 {
     runtime::moduleinst inst;
 
-    if(m.section_imports.imports.size() != ext.size())
-        throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(ext.size()));
+    uint32_t full_imports = 0;
+
+    for(auto& i : evals)
+    {
+        full_imports += i.second.size();
+    }
+
+    if(m.section_imports.imports.size() != full_imports)
+        throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(full_imports));
 
     types::vec<runtime::funcaddr> faddr;
 
@@ -748,21 +755,69 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const types:
         }
     }
 
+    types::vec<runtime::externval> linear_imports;
+
+    for(auto& i : evals)
+    {
+        for(auto& j : i.second)
+        {
+            linear_imports.push_back(j.second);
+        }
+    }
+
     std::cout << "faddr " << (uint32_t)faddr.size() << std::endl;
     std::cout << "taddr " << (uint32_t)taddr.size() << std::endl;
     std::cout << "maddr " << (uint32_t)maddr.size() << std::endl;
     std::cout << "gaddr " << (uint32_t)gaddr.size() << std::endl;
 
     ///NOT REALLY CLEAR WHICH WAY ROUND THESE BOYS GO
-    auto efaddr = runtime::filter_func(ext).append(faddr);
-    auto etaddr = runtime::filter_table(ext).append(taddr);
-    auto emaddr = runtime::filter_mem(ext).append(maddr);
-    auto egaddr = runtime::filter_global(ext).append(gaddr);
+    auto efaddr = runtime::filter_func(linear_imports).append(faddr);
+    auto etaddr = runtime::filter_table(linear_imports).append(taddr);
+    auto emaddr = runtime::filter_mem(linear_imports).append(maddr);
+    auto egaddr = runtime::filter_global(linear_imports).append(gaddr);
 
     std::cout << "efaddr " << (uint32_t)efaddr.size() << std::endl;
     std::cout << "etaddr " << (uint32_t)etaddr.size() << std::endl;
     std::cout << "emaddr " << (uint32_t)emaddr.size() << std::endl;
     std::cout << "egaddr " << (uint32_t)egaddr.size() << std::endl;
+
+    uint32_t satisfied_imports = 0;
+
+    for(const sections::import& imp : m.section_imports.imports)
+    {
+        types::name n1 = imp.mod;
+        types::name n2 = imp.nm; //name
+
+        const runtime::externval& val = evals.at(n1.friendly()).at(n2.friendly());
+
+        if(std::holds_alternative<runtime::funcaddr>(val.val))
+        {
+            runtime::funcaddr adr = std::get<runtime::funcaddr>(val.val);
+
+            if((uint32_t)adr >= efaddr.size())
+                throw std::runtime_error("Import addr out of bounds");
+
+            if(!std::holds_alternative<types::typeidx>(imp.desc.vals))
+                throw std::runtime_error("Provided function for import, import is not function");
+
+            runtime::funcinst& finst = s.funcs[(uint32_t)adr];
+
+            types::typeidx tidx = std::get<types::typeidx>(imp.desc.vals);
+
+            if((uint32_t)tidx >= m.section_type.types.size())
+                throw std::runtime_error("tidx > section_types.types");
+
+            types::functype fidx = m.section_type.types[(uint32_t)tidx];
+
+            if(!types::funcs_equal(finst.type, fidx))
+                throw std::runtime_error("import had wrong type");
+
+            satisfied_imports++;
+        }
+    }
+
+    if(satisfied_imports != m.section_imports.imports.size())
+        throw std::runtime_error("Could not satisfy all imports");
 
     inst.globaladdrs = egaddr;
 
@@ -925,7 +980,7 @@ void test_hi(int in)
 
 ///duk = 635
 ///us = 990
-void wasm_binary_data::init(data d, const types::vec<runtime::externval>& eval)
+void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::string, runtime::externval>>& evals)
 {
     parser p(d);
 
@@ -943,7 +998,7 @@ void wasm_binary_data::init(data d, const types::vec<runtime::externval>& eval)
         global_init.push_back(val);
     }*/
 
-    runtime::moduleinst minst = build_from_module(mod, s, eval);
+    runtime::moduleinst minst = build_from_module(mod, s, evals);
 
     m_minst = new runtime::moduleinst(minst);
 
