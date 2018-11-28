@@ -84,14 +84,17 @@ std::optional<runtime::value> host_shim_impl(const types::vec<runtime::value>& v
     return apply_from_tuple(v, args);
 }
 
-template<typename V, V& v, typename T, typename... U>
+template<auto& v, typename T, typename... U>
 auto host_shim(T(*func)(U... args))
 {
-    return &host_shim_impl<V, v, T, U...>;
+    return &host_shim_impl<decltype(v), v, T, U...>;
 }
 
-//template<typename T, typename... U> inline types::functype get_functype(T(*func)(U... args))
-
+template<auto& t>
+constexpr auto base_shim()
+{
+    return host_shim<t>(t);
+}
 
 uint32_t test_simple_params(uint32_t v1)
 {
@@ -110,7 +113,11 @@ int main()
     //runtime::externval tv;
     //tv.val = runtime::funcaddr{0};
 
-    auto shim = host_shim<decltype(test_simple_params), test_simple_params>(test_simple_params);
+    //auto shim = host_shim<test_simple_params>(test_simple_params);
+
+    auto shim = base_shim<test_simple_params>();
+
+    //auto shim = base_shim<test_simple_params>;
 
     wasm_binary_data test;
 
