@@ -110,7 +110,7 @@ int main()
     //runtime::externval tv;
     //tv.val = runtime::funcaddr{0};
 
-    auto shim = &host_shim<decltype(test_simple_params), test_simple_params, uint32_t, uint32_t>;
+    auto shim = host_shim<decltype(test_simple_params), test_simple_params>(test_simple_params);
 
     wasm_binary_data test;
 
