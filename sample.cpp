@@ -1,7 +1,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "gameapi.hpp"
+#include <vector>
+#include <string>
+#include <map>
+//#include "gameapi.hpp"
 
 #define WASM_EXPORT __attribute__ ((visibility ("default"), used)) extern "C"
 
@@ -10,7 +13,7 @@
 extern "C" int needs_import(const char* x);
 extern "C" void print(const char* x);
 
-struct test_serialisable : serialisable
+/*struct test_serialisable : serialisable
 {
     std::string val_1;
     std::string val_2;
@@ -20,19 +23,24 @@ struct test_serialisable : serialisable
         SER(val_1);
         SER(val_2);
     }
-};
+};*/
 
 WASM_EXPORT
 void test_serialise()
 {
     print("hi!\n");
 
-    object passthrough;
+    /*object passthrough;
 
     test_serialisable test;
     test.val_1 = "asdf";
 
-    serialise(passthrough, test, "", true);
+    serialise(passthrough, test, "", true);*/
+
+    std::vector<std::string> hello;
+    std::map<std::string, std::string> rmap;
+
+    rmap["test"] = "weow";
 }
 
 WASM_EXPORT

@@ -38,6 +38,35 @@ void print(const char* ptr)
     printf("%s\n", ptr);
 }
 
+/*import1 env
+import2 _ZSt15get_new_handlerv
+import1 env
+import2 __syscall1
+import1 env
+import2 __syscall3
+import1 env
+import2 __syscall5*/
+
+///just immediately aborts
+void _ZSt15get_new_handlerv()
+{
+    throw std::runtime_error("Attempt to get new handler!");
+}
+
+template<typename... T>
+uint64_t do_syscall(uint64_t val, T... vals)
+{
+    throw std::runtime_error("Syscalls not supported");
+}
+
+auto syscall0 = do_syscall<>;
+auto syscall1 = do_syscall<uint64_t>;
+auto syscall2 = do_syscall<uint64_t, uint64_t>;
+auto syscall3 = do_syscall<uint64_t, uint64_t, uint64_t>;
+auto syscall4 = do_syscall<uint64_t, uint64_t, uint64_t, uint64_t>;
+auto syscall5 = do_syscall<uint64_t, uint64_t, uint64_t, uint64_t, uint64_t>;
+auto syscall6 = do_syscall<uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t>;
+
 ///ok so
 ///js isn't actually js unfortunately, its typescript, and its forcibly typescript which isn't good enough
 ///so it looks like the 'wasm everything' plan is out of the window
@@ -86,6 +115,26 @@ int main()
     runtime::externval tprint;
     tprint.val = runtime::allochostsimplefunction<print>(test.s);
 
+    runtime::externval new_handle;
+    new_handle.val = runtime::allochostsimplefunction<_ZSt15get_new_handlerv>(test.s);
+
+    runtime::externval s0;
+    runtime::externval s1;
+    runtime::externval s2;
+    runtime::externval s3;
+    runtime::externval s4;
+    runtime::externval s5;
+    runtime::externval s6;
+
+    s0.val = runtime::allochostsimplefunction<syscall0>(test.s);
+    s1.val = runtime::allochostsimplefunction<syscall1>(test.s);
+    s2.val = runtime::allochostsimplefunction<syscall2>(test.s);
+    s3.val = runtime::allochostsimplefunction<syscall3>(test.s);
+    s4.val = runtime::allochostsimplefunction<syscall4>(test.s);
+    s5.val = runtime::allochostsimplefunction<syscall5>(test.s);
+    s6.val = runtime::allochostsimplefunction<syscall6>(test.s);
+
+
     ///so it looks like allocfunc gets the typeidx
     ///typeidx goes to functype
     ///runtime::funcinst then has functype type, and then a custom ptr
@@ -94,6 +143,15 @@ int main()
 
     vals["env"]["needs_import"] = tv;
     vals["env"]["print"] = tprint;
+    vals["env"]["_ZSt15get_new_handlerv"] = new_handle;
+
+    vals["env"]["__syscall0"] = s0;
+    vals["env"]["__syscall1"] = s1;
+    vals["env"]["__syscall2"] = s2;
+    vals["env"]["__syscall3"] = s3;
+    vals["env"]["__syscall4"] = s4;
+    vals["env"]["__syscall5"] = s5;
+    vals["env"]["__syscall6"] = s6;
 
     test.init(example, vals);
 
