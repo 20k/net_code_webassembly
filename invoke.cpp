@@ -149,6 +149,11 @@ struct stack_counter
 
 ///dump value of globals and follow everything through to see
 ///if its the leadup to strlen which is incorrect
+
+///so
+///0xd 2, 0x20 4, 0x21 1, 0x22 1, 0x41 2, 0x45 1, 0x49 1, 0x6a 1, 0x70 1,
+///thats the bottleneck atm
+
 //__attribute__((optimize("unroll-loops")))
 void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
 {
@@ -809,13 +814,13 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
     full_stack full;
     context ctx;
 
-    frame fr;
+    //frame fr;
     ///SUPER BAD CODE ALERT
-    fr.inst = &minst;
+    //fr.inst = &minst;
 
     activation activate;
     activate.return_arity = {0};
-    activate.f = fr;
+    activate.f.inst = &minst;
 
     full.push_stack();
 
@@ -1008,11 +1013,11 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
             }
         }
 
-        frame fr;
+        /*frame fr;
         ///SUPER BAD CODE ALERT
         fr.inst = &minst;
 
-        fr.locals = popped.append(local_zeroes);
+        fr.locals = popped.append(local_zeroes);*/
         //fr.locals = fr.locals.append(local_zeroes);
 
         /*lg::log("fr locals ", fr.locals.size());
@@ -1021,7 +1026,16 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
         activation activate;
         activate.return_arity = types::s32{ftype.results.size()};
-        activate.f = fr;
+        //activate.f = fr;
+
+        activate.f.inst = &minst;
+        //activate.f.locals = popped.append(local_zeroes);
+
+        for(auto& i : popped)
+            activate.f.locals.push_back(i);
+
+        for(auto& i : local_zeroes)
+            activate.f.locals.push_back(i);
 
 
         #ifdef DEBUGGING

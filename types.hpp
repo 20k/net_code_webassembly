@@ -224,7 +224,7 @@ namespace types
     template<typename T, int N>
     struct svec
     {
-        //T* v = nullptr;
+       // T* v = nullptr;
 
         std::array<T, N> v;
         uint32_t idx = 0;
@@ -247,13 +247,23 @@ namespace types
 
         svec()
         {
-            //v = new T[1024];
+
+        }
+
+        /*svec()
+        {
+            v = new T[1024];
         }
 
         ~svec()
         {
-            //delete [] v;
-        }
+            delete [] v;
+        }*/
+
+        /*svec<T, N>& operator=(const svec<T, N>& other)
+        {
+            assert(false);
+        }*/
 
         auto begin()
         {
