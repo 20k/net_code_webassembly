@@ -706,15 +706,15 @@ void set_global(runtime::store& s, full_stack& full, const types::globalidx& gid
 inline
 void select(full_stack& full)
 {
-    runtime::value val = full.pop_back();
+    runtime::value c = full.pop_back();
 
-    if(!val.is_i32())
+    if(!c.is_i32())
         throw std::runtime_error("Not i32 in select (3rd arg)");
 
     runtime::value v2 = full.pop_back();
 
     ///if this  is 1, leave val1 on the stack
-    if(std::get<types::i32>(val.v).val)
+    if(std::get<types::i32>(c.v).val != 0)
         return;
 
     ///is 0, therefore push val2 onto the stack
