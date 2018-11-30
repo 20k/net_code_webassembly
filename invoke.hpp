@@ -161,7 +161,7 @@ struct full_stack
         return full.size();
     }
 
-    int current_stack_size()
+    auto current_stack_size()
     {
         return stack_start_sizes.back();
     }
