@@ -1132,7 +1132,7 @@ types::vec<runtime::value> runtime::store::invoke(const runtime::funcaddr& addre
     types::functype ftype = finst.type;
 
     if(vals.size() != ftype.params.size())
-        throw std::runtime_error("Argument mismatch");
+        throw std::runtime_error("Argument mismatch received " + std::to_string(vals.size()) + " but expected " + std::to_string(ftype.params.size()));
 
     full_stack full;
 

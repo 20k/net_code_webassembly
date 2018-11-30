@@ -707,7 +707,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
         full_imports += i.second.size();
     }
 
-    if(m.section_imports.imports.size() != full_imports)
+    if(m.section_imports.imports.size() > full_imports)
         throw std::runtime_error("Looking for " + std::to_string(m.section_imports.imports.size()) + " but only received " + std::to_string(full_imports));
 
     types::vec<runtime::funcaddr> faddr;
@@ -757,12 +757,17 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
 
     types::vec<runtime::externval> linear_imports;
 
-    for(auto& i : evals)
+    /*for(auto& i : evals)
     {
         for(auto& j : i.second)
         {
             linear_imports.push_back(j.second);
         }
+    }*/
+
+    for(const sections::import& imp : m.section_imports.imports)
+    {
+        linear_imports.push_back(evals.at(imp.mod.friendly()).at(imp.nm.friendly()));
     }
 
     std::cout << "faddr " << (uint32_t)faddr.size() << std::endl;
@@ -1033,8 +1038,13 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
 
     sf::Clock clk;
 
-    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
+    runtime::value arg2;
+    arg2.set((uint32_t)1);
+
+    //types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
     //types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, {arg});
+
+    types::vec<runtime::value> vals = s.invoke_by_name("add", minst, {arg, arg2});
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 

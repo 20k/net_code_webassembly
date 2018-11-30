@@ -36,7 +36,7 @@ int main()
     leb_tests();
 
     data example;
-    example.load_from_file("test_1.wasm");
+    example.load_from_file("optimized.wasm");
 
     //runtime::externval tv;
     //tv.val = runtime::funcaddr{0};

@@ -237,7 +237,7 @@ namespace types
 
         svec(const vec<T>& in)
         {
-            //v = new T[1024];
+            v = new T[1024];
 
             for(size_t i = 0; i < in.size(); i++)
             {
@@ -527,7 +527,7 @@ namespace types
     {
         vec<uint8_t> dat;
 
-        std::string friendly()
+        std::string friendly() const
         {
             std::string ret(dat.v.begin(), dat.v.end());
 
