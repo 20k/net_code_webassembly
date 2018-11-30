@@ -771,7 +771,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             ///so trunc_s takes the argument as a float
             ///and then converts it to an in32_t
             case 0xA7:
-                POPAT((wrap<uint32_t, 64>), types::i32);
+                POPAT((wrap<uint32_t, 64>), types::i64);
             case 0xA8:
                 POPAT((trunc_s<int32_t, float>), types::f32);
             case 0xA9:
