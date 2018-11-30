@@ -9,6 +9,24 @@
 
 extern "C" int needs_import(const char* x);
 
+struct test_serialisable : serialisable
+{
+    std::string val_1;
+    std::string val_2;
+
+    SERIALISE_FUNC()
+    {
+        SER(val_1);
+        SER(val_2);
+    }
+};
+
+WASM_EXPORT
+void test_serialise()
+{
+
+}
+
 WASM_EXPORT
 int import_test(int x)
 {
