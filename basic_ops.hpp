@@ -351,7 +351,7 @@ template<typename T, typename U>
 inline
 T extend_u(const U& in)
 {
-    return (T)&in;
+    return (T)in;
 }
 
 template<typename T, typename U>

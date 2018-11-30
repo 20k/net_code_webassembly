@@ -28,30 +28,20 @@ extern "C" void print(const char* x);
 WASM_EXPORT
 void test_serialise()
 {
-    print("hi!\n");
-
     /*object passthrough;
 
     test_serialisable test;
     test.val_1 = "asdf";
 
     serialise(passthrough, test, "", true);*/
-
-    std::vector<std::string> hello;
     std::map<std::string, std::string> rmap;
 
-    rmap["test"] = "weow";
-
-    std::string mstr = "poop";
-
-    rmap["test"] = "asdfadsf";
+    rmap["test"] = std::string("weow");
 
     std::string tstr = rmap["test"];
 
     if(tstr == "")
         print(":(");
-
-    print(tstr.c_str());
 }
 
 WASM_EXPORT

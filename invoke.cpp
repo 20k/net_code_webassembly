@@ -77,6 +77,10 @@ void fjump_up_frame_with(context& ctx, full_stack& full, activation& activate)
 {
     int arity = (int32_t)activate.return_arity;
 
+    #ifdef DEBUGGING
+    lg::log("Returning with arity ", arity);
+    #endif // DEBUGGING
+
     if(arity == 1)
         ctx.capture_val = full.pop_back();
 
@@ -141,6 +145,8 @@ struct stack_counter
     }
 };
 #endif // DEBUGGING
+
+#define WARN(x) printf("Executed untested instruction %s\n", #x);
 
 ///so duktape takes about 330ms
 ///and we take about 2000ms
@@ -323,7 +329,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                         ilen = len;
 
                     #ifdef DEBUGGING
-                    lg::log("took branch to ", std::to_string(idx));
+                    lg::log("took branch to ", std::to_string((uint32_t)lidx));
                     #endif // DEBUGGING
 
                     //std::cout << "hit br_if\n";
@@ -405,6 +411,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x11:
             {
                 //throw std::runtime_error("nope");
+
+                WARN(0x11);
 
                 int la = ctx.current_arity;
 
@@ -529,11 +537,11 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x36:
                 MEM_STORE(uint32_t, 4);
             case 0x37:
-                MEM_STORE(uint64_t, 4);
+                MEM_STORE(uint64_t, 8);
             case 0x38:
                 MEM_STORE(float, 4);
             case 0x39:
-                MEM_STORE(double, 4);
+                MEM_STORE(double, 8);
             case 0x3A:
                 MEM_STORE(uint32_t, 1);
             case 0x3B:
@@ -771,7 +779,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             ///so trunc_s takes the argument as a float
             ///and then converts it to an in32_t
             case 0xA7:
-                POPAT((wrap<uint32_t, 64>), types::i64);
+                POPAT((wrap<uint32_t, 32>), types::i64);
             case 0xA8:
                 POPAT((trunc_s<int32_t, float>), types::f32);
             case 0xA9:
@@ -783,7 +791,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0xAC:
                 POPAT((extend_s<int64_t, int32_t>), types::i32);
             case 0xAD:
-                POPAT((extend_u<uint64_t, int32_t>), types::i32);
+                POPAT((extend_u<uint64_t, uint32_t>), types::i32);
             case 0xAE:
                 POPAT((trunc_s<int64_t, float>), types::f32);
             case 0xAF:
@@ -1080,6 +1088,10 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
         eval_expr(ctx, s, expression.i, full, activate);
 
+        #ifdef DEBUGGING
+        lg::log("Left Frame");
+        #endif // DEBUGGING
+
         if(!ctx.frame_abort)
         {
             types::vec<runtime::value> found = full.pop_num_vals((int32_t)activate.return_arity);
@@ -1119,11 +1131,19 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     }
     else
     {
+        #ifdef DEBUGGING
+        lg::log("Native function");
+        #endif // DEBUGGING
+
         const runtime::host_func& fnc = std::get<runtime::host_func>(finst.funct);
 
         types::vec<runtime::value> args = full.pop_num_vals(num_args);
 
         auto rval = fnc.ptr(args, &s);
+
+        #ifdef DEBUGGING
+        lg::log("FINISHED NATIVE FUNCTION");
+        #endif // DEBUGGING
 
         if((!rval.has_value() && num_rets == 1) || (rval.has_value() && num_rets == 0))
             throw std::runtime_error("Bad return number of values");
