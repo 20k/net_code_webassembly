@@ -1,4 +1,4 @@
-export function is_prime(x: i32) :i32
+export function is_prime(x : i32) : i32
 {
     var divisor = 1;
 
@@ -13,3 +13,4 @@ export function is_prime(x: i32) :i32
 
     return divisor;
 }
+

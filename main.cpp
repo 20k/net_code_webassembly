@@ -33,6 +33,13 @@ uint32_t test_simple_params(char* val)
     return 64;
 }
 
+///ok so
+///js isn't actually js unfortunately, its typescript, and its forcibly typescript which isn't good enough
+///so it looks like the 'wasm everything' plan is out of the window
+
+///so, currently i can get pointers to webassembly memory
+///and I can get C style structures in and out
+///so we need to be able to go js Object -> c structure, and back
 int main()
 {
     leb_tests();
@@ -40,9 +47,12 @@ int main()
     data example;
     //example.load_from_file("optimized.wasm");
 
-    compile_result res = compile("sample.js");
+    compile_result res = compile("sample.cpp");
 
     std::cout << "ferror " << res.err << std::endl;
+
+    if(res.data.size() == 0)
+        return 0;
 
     example.load_from_data(res.data);
 

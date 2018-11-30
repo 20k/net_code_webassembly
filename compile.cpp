@@ -13,6 +13,12 @@ std::string read_file_bin(const std::string& file)
     return str;
 }
 
+bool file_exists(const std::string& name)
+{
+    std::ifstream f(name.c_str());
+    return f.good();
+}
+
 compile_result compile(const std::string& file)
 {
     auto it = file.find_last_of('.');
@@ -28,8 +34,12 @@ compile_result compile(const std::string& file)
     system(("webassembly_frontend.exe " + file + " > " + file + ".txt 2>&1").c_str());
 
     compile_result cres;
-    cres.data = read_file_bin(stripped + ".wasm");
-    cres.err = read_file_bin(file + ".txt");
+
+    if(file_exists(stripped + ".wasm"))
+        cres.data = read_file_bin(stripped + ".wasm");
+
+    if(file_exists(file + ".txt"))
+        cres.err = read_file_bin(file + ".txt");
 
     remove((file + ".txt").c_str());
     remove((stripped + ".wasm").c_str());

@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "gameapi.hpp"
 
 #define WASM_EXPORT __attribute__ ((visibility ("default"), used)) extern "C"
 
