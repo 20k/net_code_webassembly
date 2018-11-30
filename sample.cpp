@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define WASM_EXPORT __attribute__ ((visibility ("default"), used))
+#define WASM_EXPORT __attribute__ ((visibility ("default"), used)) extern "C"
 
 //#define WASM_EXPORT __attribute__ ((used))
 
-extern int needs_import(const char* x);
+extern "C" int needs_import(const char* x);
 
 WASM_EXPORT
 int import_test(int x)
@@ -28,7 +28,7 @@ int capi_test()
 {
     char test[5] = {1,2,3,4,0};
 
-    char* str = malloc(12);
+    char* str = (char*)malloc(12);
 
     memset(str, 0, 12);
 

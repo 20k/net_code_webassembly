@@ -33,46 +33,6 @@ uint32_t test_simple_params(char* val)
     return 64;
 }
 
-std::string capture_exec(const std::string& cmd)
-{
-    std::array<char, 128> buffer;
-    std::string result;
-
-    std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-
-    if (!pipe)
-        throw std::runtime_error("popen() failed!");
-
-    while(!feof(pipe.get()))
-    {
-        if(fgets(buffer.data(), 128, pipe.get()) != nullptr)
-        {
-            result += buffer.data();
-        }
-    }
-
-    return result;
-}
-
-/*std::string compile(const std::string& file)
-{
-    auto it = file.find_last_of('.');
-
-    if(it == std::string::npos)
-    {
-        printf("No file extension?");
-        throw std::runtime_error("nope");
-    }
-
-    std::string stripped(file.begin(), file.begin() + it);
-
-    //system(("start ./frontend/webassembly_frontend.exe " + file).c_str());
-
-    std::cout << capture_exec("start ./frontend/webassembly_frontend.exe " + file) << std::endl;
-
-    return read_file_bin(stripped + ".wasm");
-}*/
-
 int main()
 {
     leb_tests();
@@ -80,7 +40,11 @@ int main()
     data example;
     //example.load_from_file("optimized.wasm");
 
-    example.load_from_data(compile("sample.cpp"));
+    compile_result res = compile("sample.js");
+
+    std::cout << "ferror " << res.err << std::endl;
+
+    example.load_from_data(res.data);
 
     //runtime::externval tv;
     //tv.val = runtime::funcaddr{0};

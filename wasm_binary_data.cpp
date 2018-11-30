@@ -1036,7 +1036,7 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
     //types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
     //types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, {arg});
 
-    types::vec<runtime::value> vals = s.invoke_by_name("add", minst, {arg, arg2});
+    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 
