@@ -25,7 +25,14 @@ struct test_serialisable : serialisable
 WASM_EXPORT
 void test_serialise()
 {
+    print("hi!\n");
 
+    object passthrough;
+
+    test_serialisable test;
+    test.val_1 = "asdf";
+
+    serialise(passthrough, test, "", true);
 }
 
 WASM_EXPORT

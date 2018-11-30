@@ -1018,7 +1018,9 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
 
     //types::vec<runtime::value> vals = s.invoke_by_name("_start", minst, {});
 
-    runtime::value arg;
+    sf::Clock clk;
+
+    /*runtime::value arg;
     //arg.set((uint32_t)(13*17));
     arg.set((uint32_t)(15485863));
     //arg.set((uint32_t)(1188179));
@@ -1028,7 +1030,6 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
     //types::vec<runtime::value> args;
     //args.push_back(arg);
 
-    sf::Clock clk;
 
     runtime::value arg2;
     arg2.set((uint32_t)1);
@@ -1036,7 +1037,9 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
     //types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
     //types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, {arg});
 
-    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
+    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});*/
+
+    types::vec<runtime::value> vals = s.invoke_by_name("test_serialise", minst, {});
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 
