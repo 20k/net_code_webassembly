@@ -150,77 +150,77 @@ T ipopcnt(const T& v1)
 
 template<typename T>
 inline
-T ieqz(const T& v1)
+uint32_t ieqz(const T& v1)
 {
     return v1 == 0;
 }
 
 template<typename T>
 inline
-T eq(const T& v1, const T& v2)
+uint32_t eq(const T& v1, const T& v2)
 {
     return v1 == v2;
 }
 
 template<typename T>
 inline
-T ne(const T& v1, const T& v2)
+uint32_t ne(const T& v1, const T& v2)
 {
     return v1 != v2;
 }
 
 template<typename T>
 inline
-T ilt_u(const T& v1, const T& v2)
+uint32_t ilt_u(const T& v1, const T& v2)
 {
     return v1 < v2;
 }
 
 template<typename T>
 inline
-T ilt_s(const T& v1, const T& v2)
+uint32_t ilt_s(const T& v1, const T& v2)
 {
     return v1 < v2;
 }
 
 template<typename T>
 inline
-T igt_u(const T& v1, const T& v2)
+uint32_t igt_u(const T& v1, const T& v2)
 {
     return v1 > v2;
 }
 
 template<typename T>
 inline
-T igt_s(const T& v1, const T& v2)
+uint32_t igt_s(const T& v1, const T& v2)
 {
     return v1 > v2;
 }
 
 template<typename T>
 inline
-T ile_u(const T& v1, const T& v2)
+uint32_t ile_u(const T& v1, const T& v2)
 {
     return v1 <= v2;
 }
 
 template<typename T>
 inline
-T ile_s(const T& v1, const T& v2)
+uint32_t ile_s(const T& v1, const T& v2)
 {
     return v1 <= v2;
 }
 
 template<typename T>
 inline
-T ige_u(const T& v1, const T& v2)
+uint32_t ige_u(const T& v1, const T& v2)
 {
     return v1 >= v2;
 }
 
 template<typename T>
 inline
-T ige_s(const T& v1, const T& v2)
+uint32_t ige_s(const T& v1, const T& v2)
 {
     return v1 >= v2;
 }
@@ -321,28 +321,28 @@ T fnearest(const T& t)
 
 template<typename T>
 inline
-T flt(const T& v1, const T& v2)
+uint32_t flt(const T& v1, const T& v2)
 {
     return v1 < v2;
 }
 
 template<typename T>
 inline
-T fgt(const T& v1, const T& v2)
+uint32_t fgt(const T& v1, const T& v2)
 {
     return v1 > v2;
 }
 
 template<typename T>
 inline
-T fle(const T& v1, const T& v2)
+uint32_t fle(const T& v1, const T& v2)
 {
     return v1 <= v2;
 }
 
 template<typename T>
 inline
-T fge(const T& v1, const T& v2)
+uint32_t fge(const T& v1, const T& v2)
 {
     return v1 >= v2;
 }
