@@ -757,14 +757,6 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
 
     types::vec<runtime::externval> linear_imports;
 
-    /*for(auto& i : evals)
-    {
-        for(auto& j : i.second)
-        {
-            linear_imports.push_back(j.second);
-        }
-    }*/
-
     for(const sections::import& imp : m.section_imports.imports)
     {
         linear_imports.push_back(evals.at(imp.mod.friendly()).at(imp.nm.friendly()));
