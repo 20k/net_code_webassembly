@@ -207,11 +207,15 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             {
                 const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
 
+                int la = ctx.current_arity;
+
                 label l;
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
                 eval_with_label(ctx, s, l, sbd.first, full, activate);
+
+                ctx.current_arity = la;
 
                 if(ctx.break_op_loop())
                     ilen = len;
@@ -223,6 +227,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             {
                 const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
 
+                int la = ctx.current_arity;
+
                 label l;
                 l.btype = sbd.btype;
                 l.continuation = 2;
@@ -231,6 +237,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                     throw std::runtime_error("Wrong arity?");
 
                 eval_with_label(ctx, s, l, sbd.first, full, activate);
+
+                ctx.current_arity = la;
 
                 if(ctx.break_op_loop())
                     ilen = len;
@@ -241,6 +249,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x04:
             {
                 const types::double_branch_data& dbd = std::get<types::double_branch_data>(is.dat);
+
+                int la = ctx.current_arity;
 
                 label l;
                 l.btype = dbd.btype;
@@ -263,6 +273,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 {
                     eval_with_label(ctx, s, l, dbd.second, full, activate);
                 }
+
+                ctx.current_arity = la;
 
                 if(ctx.break_op_loop())
                     ilen = len;
@@ -367,6 +379,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x10:
             {
+                int la = ctx.current_arity;
+
                 types::funcidx fidx = std::get<types::funcidx>(is.dat);
 
                 uint32_t idx = (uint32_t)fidx;
@@ -380,6 +394,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 invoke_intl(ctx, s, full, activate.f.inst->funcaddrs[idx], *activate.f.inst);
 
+                ctx.current_arity = la;
+
                 if(ctx.break_op_loop())
                     ilen = len;
 
@@ -388,6 +404,10 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
             case 0x11:
             {
+                //throw std::runtime_error("nope");
+
+                int la = ctx.current_arity;
+
                 ///alright indirect calls
                 types::funcidx found_fidx = std::get<types::funcidx>(is.dat);
 
@@ -443,6 +463,8 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                     throw std::runtime_error("Expected and actual types of funcs differ");
 
                 invoke_intl(ctx, s, full, runtime_addr, *inst);
+
+                ctx.current_arity = la;
 
                 if(ctx.break_op_loop())
                     ilen = len;
@@ -888,6 +910,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             has_delayed_values_push = false;
         }
 
+        ///i'm very much not convinced this is correct at all anymore
         ctx.current_arity = l.btype.arity();
 
         eval_expr(ctx, s, exp, full, activate);
