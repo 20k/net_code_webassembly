@@ -980,6 +980,9 @@ void test_hi(int in)
 
 ///duk = 635
 ///us = 990
+
+///duk = 560
+///us = 910
 void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::string, runtime::externval>>& evals)
 {
     parser p(d);
@@ -1030,7 +1033,7 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
 
     sf::Clock clk;
 
-    types::vec<runtime::value> vals = s.invoke_by_name("import_test", minst, {arg});
+    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
     //types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, {arg});
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
