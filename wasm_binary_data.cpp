@@ -807,7 +807,25 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
             types::functype fidx = m.section_type.types[(uint32_t)tidx];
 
             if(!types::funcs_equal(finst.type, fidx))
-                throw std::runtime_error("import had wrong type");
+            {
+                std::string error = "import " + n2.friendly() + " had wrong type\n";
+
+                error += "Expected: params: ";
+
+                for(auto& i : fidx.params)
+                {
+                    error += i.friendly() + " ";
+                }
+
+                error += "Expected: results: ";
+
+                for(auto& i : fidx.results)
+                {
+                    error += i.friendly() + " ";
+                }
+
+                throw std::runtime_error(error);
+            }
 
             satisfied_imports++;
         }

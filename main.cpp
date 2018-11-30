@@ -48,24 +48,26 @@ import1 env
 import2 __syscall5*/
 
 ///just immediately aborts
-void _ZSt15get_new_handlerv()
+uint32_t _ZSt15get_new_handlerv()
 {
     throw std::runtime_error("Attempt to get new handler!");
 }
 
+using stype = uint32_t;
+
 template<typename... T>
-uint64_t do_syscall(uint64_t val, T... vals)
+uint32_t do_syscall(stype val, T... vals)
 {
     throw std::runtime_error("Syscalls not supported");
 }
 
 auto syscall0 = do_syscall<>;
-auto syscall1 = do_syscall<uint64_t>;
-auto syscall2 = do_syscall<uint64_t, uint64_t>;
-auto syscall3 = do_syscall<uint64_t, uint64_t, uint64_t>;
-auto syscall4 = do_syscall<uint64_t, uint64_t, uint64_t, uint64_t>;
-auto syscall5 = do_syscall<uint64_t, uint64_t, uint64_t, uint64_t, uint64_t>;
-auto syscall6 = do_syscall<uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t>;
+auto syscall1 = do_syscall<stype>;
+auto syscall2 = do_syscall<stype, stype>;
+auto syscall3 = do_syscall<stype, stype, stype>;
+auto syscall4 = do_syscall<stype, stype, stype, stype>;
+auto syscall5 = do_syscall<stype, stype, stype, stype, stype>;
+auto syscall6 = do_syscall<stype, stype, stype, stype, stype, stype>;
 
 ///ok so
 ///js isn't actually js unfortunately, its typescript, and its forcibly typescript which isn't good enough
