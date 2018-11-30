@@ -55,6 +55,8 @@
 		<Unit filename="LEB.cpp" />
 		<Unit filename="LEB.hpp" />
 		<Unit filename="basic_ops.hpp" />
+		<Unit filename="compile.cpp" />
+		<Unit filename="compile.hpp" />
 		<Unit filename="invoke.cpp" />
 		<Unit filename="invoke.hpp" />
 		<Unit filename="logging.cpp" />
@@ -63,6 +65,12 @@
 		<Unit filename="print.hpp" />
 		<Unit filename="runtime_types.cpp" />
 		<Unit filename="runtime_types.hpp" />
+		<Unit filename="sample.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="sample.js">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="serialisable.hpp" />
 		<Unit filename="types.hpp" />
 		<Unit filename="wasm_binary_data.cpp" />

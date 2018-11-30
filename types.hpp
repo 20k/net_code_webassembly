@@ -780,6 +780,11 @@ struct data
         ptr.push_back(val);
     }
 
+    void load_from_data(const std::string& data)
+    {
+        ptr = std::vector<uint8_t>(data.begin(), data.end());
+    }
+
     void load_from_file(const std::string& wasm)
     {
         std::ifstream t(wasm, std::ios::binary);
