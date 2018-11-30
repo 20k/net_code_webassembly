@@ -759,8 +759,12 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
 
     for(const sections::import& imp : m.section_imports.imports)
     {
+        std::cout << "Imp " << imp.mod.friendly() << " name " << imp.nm.friendly() << std::endl;
+
         linear_imports.push_back(evals.at(imp.mod.friendly()).at(imp.nm.friendly()));
     }
+
+    std::cout << "Linear Imports\n";
 
     std::cout << "faddr " << (uint32_t)faddr.size() << std::endl;
     std::cout << "taddr " << (uint32_t)taddr.size() << std::endl;

@@ -41,6 +41,17 @@ void test_serialise()
     std::map<std::string, std::string> rmap;
 
     rmap["test"] = "weow";
+
+    std::string mstr = "poop";
+
+    rmap["test"] = "asdfadsf";
+
+    std::string tstr = rmap["test"];
+
+    if(tstr == "")
+        print(":(");
+
+    print(tstr.c_str());
 }
 
 WASM_EXPORT
