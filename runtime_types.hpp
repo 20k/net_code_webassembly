@@ -465,7 +465,10 @@ namespace runtime
                 return std::nullopt;
             }
 
-            return apply_from_tuple(v, args);
+            if constexpr(!std::is_same_v<return_type, void>)
+            {
+                return apply_from_tuple(v, args);
+            }
         }
 
         template<auto& v, typename T, typename... U>

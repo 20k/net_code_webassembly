@@ -8,6 +8,7 @@
 //#define WASM_EXPORT __attribute__ ((used))
 
 extern "C" int needs_import(const char* x);
+extern "C" void print(const char* x);
 
 struct test_serialisable : serialisable
 {

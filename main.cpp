@@ -33,6 +33,11 @@ uint32_t test_simple_params(char* val)
     return 64;
 }
 
+void print(const char* ptr)
+{
+    printf("%s\n", ptr);
+}
+
 ///ok so
 ///js isn't actually js unfortunately, its typescript, and its forcibly typescript which isn't good enough
 ///so it looks like the 'wasm everything' plan is out of the window
@@ -78,6 +83,9 @@ int main()
     //tv.val = test.s.allochostfunction(ftype, test_host_func);
     tv.val = runtime::allochostsimplefunction<test_simple_params>(test.s);
 
+    runtime::externval tprint;
+    tprint.val = runtime::allochostsimplefunction<print>(test.s);
+
     ///so it looks like allocfunc gets the typeidx
     ///typeidx goes to functype
     ///runtime::funcinst then has functype type, and then a custom ptr
@@ -85,6 +93,7 @@ int main()
     std::map<std::string, std::map<std::string, runtime::externval>> vals;
 
     vals["env"]["needs_import"] = tv;
+    vals["env"]["print"] = tprint;
 
     test.init(example, vals);
 
