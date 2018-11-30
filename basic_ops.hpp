@@ -452,7 +452,7 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full, act
 
     uint32_t ea = (uint32_t)arg.offset + (uint32_t)std::get<types::i32>(top_i32.v);
 
-    if(ea + sizeof(U) >= (uint32_t)minst.dat.size())
+    if(ea + sizeof(U) > (uint32_t)minst.dat.size())
         throw std::runtime_error("Out of memory (OOB in mem_load)");
 
     U str{0};
@@ -512,7 +512,7 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, ac
 
     //lg::log("moffset ", found_bytes);
 
-    if(ea + bytes >= (uint32_t)minst.dat.size())
+    if(ea + bytes > (uint32_t)minst.dat.size())
         throw std::runtime_error("Tried to hit OOB in mem_store");
 
     ///I believe the semantics for wrap are just integer truncation
