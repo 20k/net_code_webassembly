@@ -120,7 +120,7 @@ struct full_stack
 
         //types::vec<runtime::value> ret(full.begin() + start, full.begin() + n);
 
-        full.resize(n - num);
+        full.resize(start);
 
         return ret;
     }
