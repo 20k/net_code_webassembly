@@ -472,6 +472,7 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full, act
     //return ret;
 }
 
+#pragma GCC diagnostic ignored "-Warray-bounds"
 template<typename T, int bytes>
 inline
 void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, activation& activate)
@@ -517,13 +518,13 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, ac
 
     ///I believe the semantics for wrap are just integer truncation
 
-    val.apply([](auto concrete){if(sizeof(T) != sizeof(concrete)){throw std::runtime_error("BAD SIZE");}});
+    //val.apply([](auto concrete){if(sizeof(T) != sizeof(concrete)){throw std::runtime_error("BAD SIZE");}});
 
     val.apply([&minst, ea]
               (auto concrete)
               {
-                  if(bytes > sizeof(concrete))
-                      throw std::runtime_error("Bad size");
+                  //if(bytes > sizeof(concrete))
+                  //    throw std::runtime_error("Bad size");
 
                   memcpy(&minst.dat[ea], (char*)&concrete, bytes);
 
@@ -532,6 +533,8 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, ac
                   #endif // DEBUGGING
               });
 }
+
+#pragma GCC diagnostic warning "-Warray-bounds"
 
 /*inline
 void tmalloc(runtime::store& s, const types::memarg& arg, full_stack& full)
