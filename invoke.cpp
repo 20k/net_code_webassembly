@@ -189,6 +189,22 @@ std::string instr_to_str(uint8_t which)
     case 0x11:
         return "call_i";
 
+    case 0x1A:
+        return "drop";
+    case 0x1B:
+        return "select";
+
+    case 0x20:
+        return "get_local";
+    case 0x21:
+        return "set_local";
+    case 0x22:
+        return "tee_local";
+    case 0x23:
+        return "get_global";
+    case 0x24:
+        return "set_global";
+
     case 0x28:
         return "i32.load";
     case 0x29:
@@ -551,8 +567,12 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
 
         #ifdef DEBUGGING
-        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " " << ctx.expression_counter << std::endl;
+        //std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " " << ctx.expression_counter << std::endl;
+
+        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
         #endif // DEBUGGING
+
+        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
 
         /*lg::log("0x");
         lg::log_hex_noline(which);
