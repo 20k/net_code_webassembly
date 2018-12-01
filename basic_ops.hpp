@@ -6,6 +6,8 @@
 #include <iostream>
 #include "logging.hpp"
 
+#define DEBUGGING
+
 template<typename T>
 inline
 bool bool_op(const T& t)
@@ -721,5 +723,7 @@ void select(full_stack& full)
     full.pop_back();
     full.push_values(v2);
 }
+
+#undef DEBUGGING
 
 #endif // BASIC_OPS_HPP_INCLUDED

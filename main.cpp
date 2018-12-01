@@ -35,7 +35,7 @@ uint32_t test_simple_params(char* val)
 
 void print(const char* ptr)
 {
-    printf("%s\n", ptr);
+    printf("pre %s post\n", ptr);
 }
 
 /*import1 env

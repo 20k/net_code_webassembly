@@ -1325,8 +1325,15 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                 {
                     has_delayed_values_push = true;
 
+                    ///ok so logic is
+                    ///pop values off stack
+                    ///pop label
+                    ///push values to stack?
+
                     ///this is equivalent to popping the values off the stack, then them being pushed next time round the loop again
-                    full.stack_start_sizes.back() = 0;
+                    //full.stack_start_sizes.back() = 0;
+                    full.pop_stack();
+                    full.push_stack();
 
                     #ifdef DEBUGGING
                     lg::log("continuation pt 2 loop\n");
@@ -1514,13 +1521,20 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     }
     else
     {
-        #ifdef DEBUGGING
-        lg::log("Native function");
-        #endif // DEBUGGING
+        //#ifdef DEBUGGING
+        lg::log("Native function111");
+        ///#endif // DEBUGGING
 
         const runtime::host_func& fnc = std::get<runtime::host_func>(finst.funct);
 
         types::vec<runtime::value> args = full.pop_num_vals(num_args);
+
+        for(auto& i : args)
+        {
+            std::cout << "native arg " << i.friendly_val() << std::endl;
+        }
+
+        throw std::runtime_error("debugging");
 
         auto rval = fnc.ptr(args, &s);
 

@@ -41,7 +41,7 @@ void test_serialise()
     std::string tstr = rmap["test"];
 
     if(tstr == "")
-        print(":(");
+        print(tstr.c_str());
 }
 
 WASM_EXPORT
