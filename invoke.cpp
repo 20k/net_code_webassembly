@@ -1482,6 +1482,9 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         {
             types::vec<runtime::value> found = full.pop_num_vals((int32_t)activate.return_arity);
 
+            if(full.full.size() != full.stack_start_sizes.back())
+                throw std::runtime_error("Bad stack");
+
             full.pop_stack();
 
             full.push_all_values(found);
