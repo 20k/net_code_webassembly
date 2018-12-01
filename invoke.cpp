@@ -572,7 +572,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
         std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
         #endif // DEBUGGING
 
-        std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
+        //std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
+
+        std::cout << instr_to_str(which) << std::endl;
 
         /*lg::log("0x");
         lg::log_hex_noline(which);
@@ -1215,9 +1217,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
         }
     }
 
-    #ifdef DEBUGGING
+    //#ifdef DEBUGGING
     lg::log("Left Expr");
-    #endif // DEBUGGING
+    //#endif // DEBUGGING
 }
 
 types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
@@ -1469,9 +1471,9 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
         eval_expr(ctx, s, expression.i, full, activate);
 
-        #ifdef DEBUGGING
+        //#ifdef DEBUGGING
         lg::log("Left Frame");
-        #endif // DEBUGGING
+        //#endif // DEBUGGING
 
         if(!ctx.frame_abort)
         {
