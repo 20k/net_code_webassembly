@@ -1331,9 +1331,10 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
                     ///push values to stack?
 
                     ///this is equivalent to popping the values off the stack, then them being pushed next time round the loop again
-                    //full.stack_start_sizes.back() = 0;
                     full.pop_stack();
                     full.push_stack();
+
+                    //full.stack_start_sizes.back() = full.full.size();
 
                     #ifdef DEBUGGING
                     lg::log("continuation pt 2 loop\n");
@@ -1358,15 +1359,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         }
         else
         {
-            /*auto all_vals = full.pop_all_values_on_stack_unsafe();
-            full.pop_stack();
-            full.push_all_values(all_vals);*/
-
-            ///preserving the start stack size is incorrect
-            ///this is correct!
-            full.stack_start_sizes.pop_back();
-
-            return;
+            break;
         }
     }
 
