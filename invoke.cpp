@@ -173,9 +173,9 @@ std::string instr_to_str(uint8_t which)
     case 0x03:
         return "loop";
     case 0x04:
-        return "i/i/e";
+        return "if/i/e";
     case 0x05:
-        return "i/i/e";
+        return "if/i/e";
     case 0x0C:
         return "br";
     case 0x0D:
