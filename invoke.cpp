@@ -1362,13 +1362,9 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             full.pop_stack();
             full.push_all_values(all_vals);*/
 
-            ///ok so
-            ///pop all values on stack unsafe gets the number of values in full
-            ///pop stack removes the last element
-            ///push all values then sets the new last element to be the number of values
-            int last_num = full.current_stack_size();
+            ///preserving the start stack size is incorrect
+            ///this is correct!
             full.stack_start_sizes.pop_back();
-            full.stack_start_sizes.back() = last_num;
 
             return;
         }

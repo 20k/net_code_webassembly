@@ -1044,10 +1044,10 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
 
     /*runtime::value arg;
     //arg.set((uint32_t)(13*17));
-    arg.set((uint32_t)(15485863));
+    //arg.set((uint32_t)(15485863));
     //arg.set((uint32_t)(1188179));
 
-    //arg.set({13*17});
+    arg.set({13*17});
 
     //types::vec<runtime::value> args;
     //args.push_back(arg);
