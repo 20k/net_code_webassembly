@@ -6,8 +6,6 @@
 #include <iostream>
 #include "logging.hpp"
 
-#define DEBUGGING
-
 template<typename T>
 inline
 bool bool_op(const T& t)
@@ -524,7 +522,10 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, ac
     val.apply([&minst, ea]
               (auto concrete)
               {
-                  memcpy(&minst.dat[ea], (char*)&concrete, sizeof(concrete));
+                  if(bytes > sizeof(concrete))
+                      throw std::runtime_error("Bad size");
+
+                  memcpy(&minst.dat[ea], (char*)&concrete, bytes);
 
                   #ifdef DEBUGGING
                   lg::log("Stored ", (uint32_t)concrete, " to ", (uint32_t)ea);
@@ -723,7 +724,5 @@ void select(full_stack& full)
     full.pop_back();
     full.push_values(v2);
 }
-
-#undef DEBUGGING
 
 #endif // BASIC_OPS_HPP_INCLUDED

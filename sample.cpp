@@ -25,6 +25,10 @@ extern "C" void print(const char* x);
     }
 };*/
 
+///hmm so there's a suspicious constant
+///r2 loads 1868920584 where r1 loads 8
+///need to grab the binary payload
+
 WASM_EXPORT
 void test_serialise()
 {
@@ -34,14 +38,27 @@ void test_serialise()
     test.val_1 = "asdf";
 
     serialise(passthrough, test, "", true);*/
-    std::map<std::string, std::string> rmap;
+    /*std::map<std::string, std::string> rmap;
 
     rmap["test"] = std::string("weow");
 
-    std::string tstr = rmap["test"];
+    std::string fstr = rmap["test"];
 
-    if(tstr == "")
-        print(tstr.c_str());
+    if(fstr == "")
+        print(fstr.c_str());*/
+
+    //std::map<std::string, std::string> rmap{{"weow", std::string("test")}};
+
+    std::map<std::string, std::string> rmap;
+
+    rmap["weow"] = std::string("asdfdsf");
+
+    if(rmap["weow"] == "")
+        print(rmap["weow"].c_str());
+
+    /*std::string some_test = "asdf43212345";
+
+    print(&some_test[5]);*/
 }
 
 WASM_EXPORT

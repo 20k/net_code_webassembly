@@ -110,12 +110,18 @@ inline
 void lowest_get(types::i32& val, parser& p)
 {
     val = leb::signed_decode<types::i32>(p);
+
+    if(val.val == 1868920584)
+        throw std::runtime_error("hi");
 }
 
 inline
 void lowest_get(types::u32& val, parser& p)
 {
     val = leb::unsigned_decode<types::u32>(p);
+
+    if(val.val == 1868920584)
+        throw std::runtime_error("podfodsf");
 }
 
 inline
@@ -128,12 +134,18 @@ inline
 void lowest_get(types::i64& val, parser& p)
 {
     val = leb::signed_decode<types::i64>(p);
+
+    if(val.val == 1868920584)
+        throw std::runtime_error("hi");
 }
 
 inline
 void lowest_get(types::u64& val, parser& p)
 {
     val = leb::unsigned_decode<types::u64>(p);
+
+    if(val.val == 1868920584)
+        throw std::runtime_error("hi");
 }
 
 inline

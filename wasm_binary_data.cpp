@@ -604,6 +604,8 @@ struct module
         std::cout << "num exports " << section_export.exports.size() << std::endl;
 
         std::cout << "num code " << section_code.funcs.size() << std::endl;
+
+        std::cout << "num data " << section_data.dats.size() << std::endl;
     }
 };
 
@@ -951,6 +953,8 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
 
         uint32_t do_i = (uint32_t)std::get<types::i32>(val.v);
         uint32_t dend = do_i + data_seg.b.size();
+
+        std::cout << "dstart " << do_i << " dend " << dend << std::endl;
 
         if(dend > (uint32_t)mem_inst.dat.size())
             throw std::runtime_error("Bad data segment end");

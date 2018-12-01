@@ -574,7 +574,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
         //std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
 
-        std::cout << instr_to_str(which) << std::endl;
+        //std::cout << instr_to_str(which) << std::endl;
 
         /*lg::log("0x");
         lg::log_hex_noline(which);
@@ -1217,9 +1217,9 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
         }
     }
 
-    //#ifdef DEBUGGING
+    #ifdef DEBUGGING
     lg::log("Left Expr");
-    //#endif // DEBUGGING
+    #endif // DEBUGGING
 }
 
 types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::store& s, const types::vec<types::instr>& exp)
@@ -1404,6 +1404,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
     if(std::holds_alternative<runtime::webasm_func>(finst.funct))
     {
+        //lg::log("Begin wasm function");
+
         const runtime::webasm_func& fnc = std::get<runtime::webasm_func>(finst.funct);
 
         types::vec<runtime::value> popped = full.pop_num_vals(num_args);
@@ -1474,9 +1476,9 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
 
         eval_expr(ctx, s, expression.i, full, activate);
 
-        //#ifdef DEBUGGING
+        #ifdef DEBUGGING
         lg::log("Left Frame");
-        //#endif // DEBUGGING
+        #endif // DEBUGGING
 
         if(!ctx.frame_abort)
         {
@@ -1520,20 +1522,20 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
     }
     else
     {
-        //#ifdef DEBUGGING
+        #ifdef DEBUGGING
         lg::log("Native function111");
-        ///#endif // DEBUGGING
+        #endif // DEBUGGING
 
         const runtime::host_func& fnc = std::get<runtime::host_func>(finst.funct);
 
         types::vec<runtime::value> args = full.pop_num_vals(num_args);
 
-        for(auto& i : args)
+        /*for(auto& i : args)
         {
             std::cout << "native arg " << i.friendly_val() << std::endl;
-        }
+        }*/
 
-        throw std::runtime_error("debugging");
+        //throw std::runtime_error("debugging");
 
         auto rval = fnc.ptr(args, &s);
 
