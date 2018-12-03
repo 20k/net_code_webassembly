@@ -50,35 +50,35 @@ struct c_str
 ///now we need a context pointer in the webassembly instance that we can use to store intermediate data?
 void serialise_object_begin(runtime::store* s, uint32_t gapi, c_str* key)
 {
-    printf("test object begin\n\n\n\n\n\n\n\n\n");
+
 }
 
-void serialise_object_end(uint32_t gapi, c_str* key)
+void serialise_object_end(runtime::store* s, uint32_t gapi, c_str* key)
 {
 
 }
 
-void serialise_basic_u32(uint32_t gapi, uint32_t* u, c_str* key, bool ser)
+void serialise_basic_u32(runtime::store* s, uint32_t gapi, uint32_t* u, c_str* key, bool ser)
 {
 
 }
 
-void serialise_basic_u64(uint32_t gapi, uint64_t* u, c_str* key, bool ser)
+void serialise_basic_u64(runtime::store* s, uint32_t gapi, uint64_t* u, c_str* key, bool ser)
 {
 
 }
 
-void serialise_basic_float(uint32_t gapi, float* u, c_str* key, bool ser)
+void serialise_basic_float(runtime::store* s, uint32_t gapi, float* u, c_str* key, bool ser)
 {
 
 }
 
-void serialise_basic_double(uint32_t gapi, double* u, c_str* key, bool ser)
+void serialise_basic_double(runtime::store* s, uint32_t gapi, double* u, c_str* key, bool ser)
 {
 
 }
 
-void serialise_basic_string(uint32_t gapi, c_str* u, c_str* key, bool ser)
+void serialise_basic_string(runtime::store* s, uint32_t gapi, c_str* u, c_str* key, bool ser)
 {
 
 }
