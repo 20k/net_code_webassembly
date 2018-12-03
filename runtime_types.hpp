@@ -5,6 +5,7 @@
 #include <optional>
 #include <functional>
 #include "template_args_helper.hpp"
+#include "wasm_interop_context.hpp"
 
 struct module;
 
@@ -208,6 +209,8 @@ namespace runtime
         types::vec<tableinst> tables;
         types::vec<meminst> mems;
         types::vec<globalinst> globals;
+
+        wasm_interop_context interop_context;
 
         funcaddr allocfunction(const module& m, size_t idx);
         funcaddr allochostfunction(const types::functype& type, const std::function<std::optional<runtime::value>(const types::vec<runtime::value>&, runtime::store* s)>& ptr);

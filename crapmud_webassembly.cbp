@@ -77,6 +77,8 @@
 		<Unit filename="types.hpp" />
 		<Unit filename="wasm_binary_data.cpp" />
 		<Unit filename="wasm_binary_data.hpp" />
+		<Unit filename="wasm_interop_context.cpp" />
+		<Unit filename="wasm_interop_context.hpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
