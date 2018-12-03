@@ -98,7 +98,18 @@ void generic_serialise(runtime::store* s, uint32_t gapi, T* type, char* key_in, 
     {
         //try
         {
-            std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+            std::shared_ptr<interop_element> last = s->interop_context.get_back(s, gapi);
+
+            if(!std::holds_alternative<interop_element::object>(last->data))
+                throw std::runtime_error("Expected object in deserialise");
+
+            ///get element by key
+            auto elem_it = std::get<interop_element::object>(last->data).find(key.to_str());
+
+            if(elem_it == std::get<interop_element::object>(last->data).end())
+                throw std::runtime_error("Did not find object with key " + key.to_str());
+
+            std::shared_ptr<interop_element> ielem = elem_it->second;
 
             if(std::holds_alternative<nlohmann::json>(ielem->data))
             {
@@ -194,9 +205,11 @@ void serialise_object_begin_base(runtime::store* s, uint32_t gapi, bool ser)
     ///WARNING DO SAFETY CHECK
     ///assert that last_built is empty
     ///assert that gapi doesn't exist already?
-
     if(ser)
         s->interop_context.elems[gapi] = std::make_shared<interop_element>();
+
+    if(s->interop_context.elems.find(gapi) == s->interop_context.elems.end())
+        throw std::runtime_error("No such game_api_t");
 
     s->interop_context.last_built[gapi].push_back(s->interop_context.elems[gapi]);
 }

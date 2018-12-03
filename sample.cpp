@@ -46,6 +46,13 @@ void test_serialise()
     game_api_t gapi = 0;
     serialise_root(gapi, test, true);
 
+    test_serialisable test_de;
+    serialise_root(gapi, test_de, false);
+
+    std::string sdfdf = std::to_string(test_de.test_int);
+
+    print(sdfdf.c_str());
+
     /*serialise_object_begin_base(gapi);
     to_gameapi(gapi, test, "test", true);
     serialise_object_end_base(gapi);*/
