@@ -59,6 +59,24 @@ struct c_str
         storage = std::string((char*)iptr, slen);
     }
 
+    c_str(uint8_t* iptr, int64_t string_length, runtime::store* s)
+    {
+        int offset_from_start = iptr - s->get_memory_base_ptr();
+        int mem_size = s->get_memory_base_size();
+
+        int slen = 0;
+
+        for(int i=offset_from_start; i < mem_size && slen < string_length; i++)
+        {
+            slen++;
+        }
+
+        if(slen == 0)
+            return;
+
+        storage = std::string((char*)iptr, slen);
+    }
+
     std::string to_str()
     {
         return storage;
@@ -161,7 +179,7 @@ void serialise_basic_double(runtime::store* s, uint32_t gapi, double* u, char* k
 
 }
 
-void serialise_basic_string(runtime::store* s, uint32_t gapi, c_str* u, char* key_in, bool ser)
+void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t l, char* key_in, bool ser)
 {
 
 }
