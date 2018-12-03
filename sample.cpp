@@ -40,9 +40,11 @@ void test_serialise()
     //c_str nullkey("");
 
     game_api_t gapi = 0;
-    serialise_object_begin_base(gapi);
+    serialise_root(gapi, test, true);
+
+    /*serialise_object_begin_base(gapi);
     to_gameapi(gapi, test, "test", true);
-    serialise_object_end_base(gapi);
+    serialise_object_end_base(gapi);*/
 
     //serialise(passthrough, test, "", true);
 

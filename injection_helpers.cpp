@@ -80,7 +80,7 @@ void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in)
 
     c_str key((uint8_t*)key_in, s);
 
-    std::cout << "key: " << key.to_str() << std::endl;
+    //std::cout << "key: " << key.to_str() << std::endl;
 
     //last->data[key->to_str()] = next_ptr;
 
@@ -101,8 +101,6 @@ void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in)
             std::get<interop_element::object>(last->data)[key.to_str()] = next_ptr;
         }
     }
-
-    std::cout << "key " << key.to_str() << std::endl;
 
     it->second.push_back(next_ptr);
 }
