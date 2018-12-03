@@ -88,9 +88,41 @@ void generic_serialise(runtime::store* s, uint32_t gapi, T* type, char* key_in, 
 {
     c_str key((uint8_t*)key_in, s);
 
-    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+    if(ser)
+    {
+        std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
 
-    ielem->update_object_element(key.to_str(), *type);
+        ielem->update_object_element(key.to_str(), *type);
+    }
+    else
+    {
+        //try
+        {
+            std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+
+            if(std::holds_alternative<nlohmann::json>(ielem->data))
+            {
+                *type = (T)std::get<nlohmann::json>(ielem->data);
+            }
+            else if(std::holds_alternative<interop_element::func_ptr>(ielem->data))
+            {
+                throw std::runtime_error("func_ptr not implemented yet");
+            }
+            else if(std::holds_alternative<interop_element::object>(ielem->data))
+            {
+                ///???
+                throw std::runtime_error("Did not expect object");
+            }
+            else
+            {
+                *type = T();
+            }
+        }
+        /*catch(...)
+        {
+            *type = T();
+        }*/
+    }
 }
 
 ///so
@@ -104,31 +136,51 @@ void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in, bool
 
     std::shared_ptr<interop_element> last = it->second.back();
 
-    std::shared_ptr<interop_element> next_ptr = std::make_shared<interop_element>();
-
     c_str key((uint8_t*)key_in, s);
 
-    if(key.to_str() == "")
+    if(ser)
     {
-        throw std::runtime_error("No key object");
-    }
-    else
-    {
-        if(!std::holds_alternative<interop_element::object>(last->data))
+        std::shared_ptr<interop_element> next_ptr = std::make_shared<interop_element>();
+
+        if(key.to_str() == "")
         {
-            last->data = interop_element::object{{key.to_str(), next_ptr}};
+            throw std::runtime_error("No key object");
         }
         else
         {
-            std::get<interop_element::object>(last->data)[key.to_str()] = next_ptr;
+            if(!std::holds_alternative<interop_element::object>(last->data))
+            {
+                last->data = interop_element::object{{key.to_str(), next_ptr}};
+            }
+            else
+            {
+                std::get<interop_element::object>(last->data)[key.to_str()] = next_ptr;
+            }
         }
-    }
 
-    it->second.push_back(next_ptr);
+        it->second.push_back(next_ptr);
+    }
+    else
+    {
+        ///so the current object is last, and we're expecting another object at last.key
+        if(!std::holds_alternative<interop_element::object>(last->data))
+            throw std::runtime_error("Expected object in deserialisation");
+
+        auto elem_it = std::get<interop_element::object>(last->data).find(key.to_str());
+
+        if(elem_it == std::get<interop_element::object>(last->data).end())
+            throw std::runtime_error("Did not find object with key " + key.to_str());
+
+        std::shared_ptr<interop_element> next = elem_it->second;
+
+        it->second.push_back(next);
+    }
 }
 
 void serialise_object_end(runtime::store* s, uint32_t gapi, char* key_in, bool ser)
 {
+    ///works for true/false ser
+
     auto it = s->interop_context.last_built.find(gapi);
 
     if(it == s->interop_context.last_built.end() || it->second.size() == 0)
@@ -143,13 +195,16 @@ void serialise_object_begin_base(runtime::store* s, uint32_t gapi, bool ser)
     ///assert that last_built is empty
     ///assert that gapi doesn't exist already?
 
-    s->interop_context.elems[gapi] = std::make_shared<interop_element>();
+    if(ser)
+        s->interop_context.elems[gapi] = std::make_shared<interop_element>();
 
     s->interop_context.last_built[gapi].push_back(s->interop_context.elems[gapi]);
 }
 
 void serialise_object_end_base(runtime::store* s, uint32_t gapi, bool ser)
 {
+    ///handles true/false ser
+
     auto it = s->interop_context.last_built.find(gapi);
 
     if(it->second.size() != 1)

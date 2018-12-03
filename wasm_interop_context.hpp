@@ -9,9 +9,10 @@
 struct interop_element
 {
     using object = std::map<std::string, std::shared_ptr<interop_element>>;
+    using func_ptr = void(*)();
 
     ///either we contain data, a function pointer, or we're an object which is a map of elements
-    std::variant<nlohmann::json, void(*)(), object> data;
+    std::variant<nlohmann::json, func_ptr, object> data;
 
     void update_object_element(const std::string& key, std::shared_ptr<interop_element>& val)
     {
