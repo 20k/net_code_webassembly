@@ -830,6 +830,20 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
                     error += i.friendly() + " ";
                 }
 
+                error += "Found: params: ";
+
+                for(auto& i : finst.type.params)
+                {
+                    error += i.friendly() + " ";
+                }
+
+                error += "Found: results: ";
+
+                for(auto& i : finst.type.results)
+                {
+                    error += i.friendly() + " ";
+                }
+
                 throw std::runtime_error(error);
             }
 

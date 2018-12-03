@@ -32,6 +32,52 @@ auto syscall4 = do_syscall<stype, stype, stype, stype>;
 auto syscall5 = do_syscall<stype, stype, stype, stype, stype>;
 auto syscall6 = do_syscall<stype, stype, stype, stype, stype, stype>;
 
+using game_api_t = uint32_t;
+
+struct c_str
+{
+    c_str(const std::string& str)
+    {
+        len = str.size();
+        ptr = str.c_str();
+    }
+
+    uint32_t len;
+    const char* ptr;
+};
+
+void serialise_object_begin(uint32_t gapi, c_str* key)
+{
+
+}
+
+void serialise_object_end(uint32_t gapi, c_str* key)
+{
+
+}
+
+void serialise_basic_u32(uint32_t gapi, uint32_t* u, c_str* key, bool ser)
+{
+
+}
+void serialise_basic_u64(uint32_t gapi, uint64_t* u, c_str* key, bool ser)
+{
+
+}
+void serialise_basic_float(uint32_t gapi, float* u, c_str* key, bool ser)
+{
+
+}
+void serialise_basic_double(uint32_t gapi, double* u, c_str* key, bool ser)
+{
+
+}
+
+void serialise_basic_string(uint32_t gapi, c_str* u, c_str* key, bool ser)
+{
+
+}
+
 std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers(runtime::store& s)
 {
     runtime::externval new_handle;
@@ -53,6 +99,24 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     s5.val = runtime::allochostsimplefunction<syscall5>(s);
     s6.val = runtime::allochostsimplefunction<syscall6>(s);
 
+    runtime::externval serialise_begin;
+    runtime::externval serialise_end;
+
+    runtime::externval serialise_u32;
+    runtime::externval serialise_u64;
+    runtime::externval serialise_float;
+    runtime::externval serialise_double;
+    runtime::externval serialise_string;
+
+    serialise_begin.val = runtime::allochostsimplefunction<serialise_object_begin>(s);
+    serialise_end.val = runtime::allochostsimplefunction<serialise_object_end>(s);
+
+    serialise_u32.val = runtime::allochostsimplefunction<serialise_basic_u32>(s);
+    serialise_u64.val = runtime::allochostsimplefunction<serialise_basic_u64>(s);
+    serialise_float.val = runtime::allochostsimplefunction<serialise_basic_float>(s);
+    serialise_double.val = runtime::allochostsimplefunction<serialise_basic_double>(s);
+    serialise_string.val = runtime::allochostsimplefunction<serialise_basic_string>(s);
+
     std::map<std::string, std::map<std::string, runtime::externval>> vals;
 
     vals["env"]["_ZSt15get_new_handlerv"] = new_handle;
@@ -64,6 +128,15 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     vals["env"]["__syscall4"] = s4;
     vals["env"]["__syscall5"] = s5;
     vals["env"]["__syscall6"] = s6;
+
+    vals["env"]["serialise_object_begin"] = serialise_begin;
+    vals["env"]["serialise_object_end"] = serialise_end;
+
+    vals["env"]["serialise_basic_u32"] = serialise_u32;
+    vals["env"]["serialise_basic_u64"] = serialise_u64;
+    vals["env"]["serialise_basic_float"] = serialise_float;
+    vals["env"]["serialise_basic_double"] = serialise_double;
+    vals["env"]["serialise_basic_string"] = serialise_string;
 
     return vals;
 }
