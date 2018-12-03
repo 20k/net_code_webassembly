@@ -795,12 +795,10 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             {
                 //throw std::runtime_error("nope");
 
-                WARN(0x11);
-
                 int la = ctx.current_arity;
 
                 ///alright indirect calls
-                types::funcidx found_fidx = std::get<types::funcidx>(is.dat);
+                types::typeidx found_tidx = std::get<types::typeidx>(is.dat);
 
                 runtime::moduleinst* inst = activate.f.inst;
 
@@ -816,12 +814,12 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
                 runtime::tableinst& tinst = s.tables[tidx];
 
-                uint32_t fidx = (uint32_t)found_fidx;
+                uint32_t type_idx = (uint32_t)found_tidx;
 
-                if(fidx >= (uint32_t)inst->typel.size())
+                if(type_idx >= (uint32_t)inst->typel.size())
                     throw std::runtime_error("Bad fidx");
 
-                types::functype ft_expect = inst->typel[fidx];
+                types::functype ft_expect = inst->typel[type_idx];
 
 
                 runtime::value val = full.pop_back();
