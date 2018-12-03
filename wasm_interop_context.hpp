@@ -13,7 +13,7 @@ struct interop_element
 struct wasm_interop_context
 {
     std::map<uint32_t, std::shared_ptr<interop_element>> elems;
-    std::map<uint32_t, std::shared_ptr<interop_element>> last_built;
+    std::map<uint32_t, std::vector<std::shared_ptr<interop_element>>> last_built;
 };
 
 #endif // WASM_INTEROP_CONTEXT_HPP_INCLUDED

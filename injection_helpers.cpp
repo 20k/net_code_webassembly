@@ -44,28 +44,68 @@ struct c_str
 
     uint32_t len;
     const char* ptr;
+
+    std::string to_str()
+    {
+        if(ptr == nullptr)
+            return std::string();
+
+        return std::string(ptr, len);
+    }
 };
 
 ///so
 ///now we need a context pointer in the webassembly instance that we can use to store intermediate data?
 void serialise_object_begin(runtime::store* s, uint32_t gapi, c_str* key)
 {
+    auto it = s->interop_context.last_built.find(gapi);
 
+    if(it == s->interop_context.last_built.end() || it->second.size() == 0)
+        throw std::runtime_error("Bad object in subkey");
+
+    std::shared_ptr<interop_element> last = it->second.back();
+
+    std::shared_ptr<interop_element> next_ptr = std::make_shared<interop_element>();
+
+    last->data[key->to_str()] = next_ptr;
+
+    it->second.push_back(next_ptr);
 }
 
 void serialise_object_end(runtime::store* s, uint32_t gapi, c_str* key)
 {
+    auto it = s->interop_context.last_built.find(gapi);
 
+    if(it == s->interop_context.last_built.end() || it->second.size() == 0)
+        throw std::runtime_error("Bad object in subkey");
+
+    it->second.pop_back();
 }
 
 void serialise_object_begin_base(runtime::store* s, uint32_t gapi)
 {
+    ///WARNING DO SAFETY CHECK
+    ///assert that last_built is empty
+    ///assert that gapi doesn't exist already?
 
+    s->interop_context.elems[gapi] = std::make_shared<interop_element>();
+
+    s->interop_context.last_built[gapi].push_back(s->interop_context.elems[gapi]);
 }
 
 void serialise_object_end_base(runtime::store* s, uint32_t gapi)
 {
+    auto it = s->interop_context.last_built.find(gapi);
 
+    if(it->second.size() != 1)
+    {
+        throw std::runtime_error("Mismatch object build");
+    }
+
+    if(it != s->interop_context.last_built.end())
+    {
+        s->interop_context.last_built.erase(it);
+    }
 }
 
 void serialise_basic_u32(runtime::store* s, uint32_t gapi, uint32_t* u, c_str* key, bool ser)
