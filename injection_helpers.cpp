@@ -85,7 +85,7 @@ struct c_str
 
 ///so
 ///now we need a context pointer in the webassembly instance that we can use to store intermediate data?
-void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in)
+void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in, bool ser)
 {
     auto it = s->interop_context.last_built.find(gapi);
 
@@ -123,7 +123,7 @@ void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in)
     it->second.push_back(next_ptr);
 }
 
-void serialise_object_end(runtime::store* s, uint32_t gapi, char* key_in)
+void serialise_object_end(runtime::store* s, uint32_t gapi, char* key_in, bool ser)
 {
     auto it = s->interop_context.last_built.find(gapi);
 
@@ -133,7 +133,7 @@ void serialise_object_end(runtime::store* s, uint32_t gapi, char* key_in)
     it->second.pop_back();
 }
 
-void serialise_object_begin_base(runtime::store* s, uint32_t gapi)
+void serialise_object_begin_base(runtime::store* s, uint32_t gapi, bool ser)
 {
     ///WARNING DO SAFETY CHECK
     ///assert that last_built is empty
@@ -144,7 +144,7 @@ void serialise_object_begin_base(runtime::store* s, uint32_t gapi)
     s->interop_context.last_built[gapi].push_back(s->interop_context.elems[gapi]);
 }
 
-void serialise_object_end_base(runtime::store* s, uint32_t gapi)
+void serialise_object_end_base(runtime::store* s, uint32_t gapi, bool ser)
 {
     auto it = s->interop_context.last_built.find(gapi);
 
