@@ -108,15 +108,9 @@ void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in, bool
 
     c_str key((uint8_t*)key_in, s);
 
-    //std::cout << "key: " << key.to_str() << std::endl;
-
-    //last->data[key->to_str()] = next_ptr;
-
     if(key.to_str() == "")
     {
         throw std::runtime_error("No key object");
-
-        //last->data = std::map<std::string, std::shared_ptr<interop_element>>{{}
     }
     else
     {
