@@ -309,7 +309,7 @@ namespace runtime
             }
             else
             {
-                return;
+                count_types<check, T...>(cnt);
             }
         }
 
