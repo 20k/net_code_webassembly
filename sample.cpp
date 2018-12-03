@@ -50,7 +50,9 @@ void test_serialise()
     test_serialisable test_de;
     serialise_root(gapi, test_de, false);
 
-    std::string sdfdf = std::to_string(test_de.test_int);
+    //std::string sdfdf = std::to_string(test_de.test_int);
+
+    std::string sdfdf = test_de.val_1;
 
     print(sdfdf.c_str());
 

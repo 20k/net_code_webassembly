@@ -236,6 +236,32 @@ constexpr void (*serialise_basic_u64)(runtime::store* s, uint32_t gapi, uint64_t
 constexpr void (*serialise_basic_float)(runtime::store* s, uint32_t gapi, float* u, char* key_in, bool ser) = generic_serialise<float>;
 constexpr void (*serialise_basic_double)(runtime::store* s, uint32_t gapi, double* u, char* key_in, bool ser) = generic_serialise<double>;
 
+void serialise_basic_string_length(runtime::store* s, uint32_t gapi, uint32_t* len, char* key_in)
+{
+    std::shared_ptr<interop_element> last = s->interop_context.get_back(s, gapi);
+
+    if(!std::holds_alternative<interop_element::object>(last->data))
+        throw std::runtime_error("Not object");
+
+    c_str key((uint8_t*)key_in, s);
+
+    auto elem_it = std::get<interop_element::object>(last->data).find(key.to_str());
+
+    if(elem_it == std::get<interop_element::object>(last->data).end())
+        throw std::runtime_error("Did not find object with key " + key.to_str());
+
+    std::shared_ptr<interop_element> next = elem_it->second;
+
+    if(!std::holds_alternative<nlohmann::json>(next->data))
+    {
+        throw std::runtime_error("Expected data type in key");
+    }
+
+    std::string str = (std::string)std::get<nlohmann::json>(next->data);
+
+    *len = str.length();
+}
+
 void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t l, char* key_in, bool ser)
 {
     c_str key((uint8_t*)key_in, s);
@@ -243,7 +269,47 @@ void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t 
 
     std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
 
-    ielem->update_object_element(key.to_str(), val.to_str());
+    if(ser)
+    {
+        ielem->update_object_element(key.to_str(), val.to_str());
+    }
+    else
+    {
+        ///get key
+        ///assume that the char* pointer we're seeing is a pointer that is adequately resized
+        ///make sure we don't write out of bounds obviously
+
+        std::shared_ptr<interop_element> last = s->interop_context.get_back(s, gapi);
+
+        if(!std::holds_alternative<interop_element::object>(last->data))
+            throw std::runtime_error("Not object");
+
+        auto elem_it = std::get<interop_element::object>(last->data).find(key.to_str());
+
+        if(elem_it == std::get<interop_element::object>(last->data).end())
+            throw std::runtime_error("Did not find object with key " + key.to_str());
+
+        std::shared_ptr<interop_element> next = elem_it->second;
+
+        if(!std::holds_alternative<nlohmann::json>(next->data))
+        {
+            throw std::runtime_error("Expected data type in key");
+        }
+
+        std::string str = (std::string)std::get<nlohmann::json>(next->data);
+
+        int64_t offset_from_start = (uint8_t*)u - s->get_memory_base_ptr();
+        int64_t mem_size = s->get_memory_base_size();
+
+        int64_t slen = 0;
+
+        for(int64_t i=offset_from_start; i < mem_size && slen < l; i++)
+        {
+            u[i - offset_from_start] = str[i - offset_from_start];
+
+            slen++;
+        }
+    }
 }
 
 ///will need a serialise function function so we can pass functions across the boundary
@@ -282,6 +348,7 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     runtime::externval serialise_float;
     runtime::externval serialise_double;
     runtime::externval serialise_string;
+    runtime::externval serialise_length;
 
     serialise_begin.val = runtime::allochostsimplefunction<serialise_object_begin>(s);
     serialise_end.val = runtime::allochostsimplefunction<serialise_object_end>(s);
@@ -294,6 +361,7 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     serialise_float.val = runtime::allochostsimplefunction<serialise_basic_float>(s);
     serialise_double.val = runtime::allochostsimplefunction<serialise_basic_double>(s);
     serialise_string.val = runtime::allochostsimplefunction<serialise_basic_string>(s);
+    serialise_length.val = runtime::allochostsimplefunction<serialise_basic_string_length>(s);
 
     std::map<std::string, std::map<std::string, runtime::externval>> vals;
 
@@ -318,6 +386,7 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     vals["env"]["serialise_basic_float"] = serialise_float;
     vals["env"]["serialise_basic_double"] = serialise_double;
     vals["env"]["serialise_basic_string"] = serialise_string;
+    vals["env"]["serialise_basic_string_length"] = serialise_length;
 
     return vals;
 }
