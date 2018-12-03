@@ -58,6 +58,16 @@ void serialise_object_end(runtime::store* s, uint32_t gapi, c_str* key)
 
 }
 
+void serialise_object_begin_base(runtime::store* s, uint32_t gapi)
+{
+
+}
+
+void serialise_object_end_base(runtime::store* s, uint32_t gapi)
+{
+
+}
+
 void serialise_basic_u32(runtime::store* s, uint32_t gapi, uint32_t* u, c_str* key, bool ser)
 {
 
@@ -111,6 +121,9 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     runtime::externval serialise_begin;
     runtime::externval serialise_end;
 
+    runtime::externval serialise_begin_base;
+    runtime::externval serialise_end_base;
+
     runtime::externval serialise_u32;
     runtime::externval serialise_u64;
     runtime::externval serialise_float;
@@ -119,6 +132,9 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
 
     serialise_begin.val = runtime::allochostsimplefunction<serialise_object_begin>(s);
     serialise_end.val = runtime::allochostsimplefunction<serialise_object_end>(s);
+
+    serialise_begin_base.val = runtime::allochostsimplefunction<serialise_object_begin_base>(s);
+    serialise_end_base.val = runtime::allochostsimplefunction<serialise_object_end_base>(s);
 
     serialise_u32.val = runtime::allochostsimplefunction<serialise_basic_u32>(s);
     serialise_u64.val = runtime::allochostsimplefunction<serialise_basic_u64>(s);
@@ -140,6 +156,9 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
 
     vals["env"]["serialise_object_begin"] = serialise_begin;
     vals["env"]["serialise_object_end"] = serialise_end;
+
+    vals["env"]["serialise_object_begin_base"] = serialise_begin_base;
+    vals["env"]["serialise_object_end_base"] = serialise_end_base;
 
     vals["env"]["serialise_basic_u32"] = serialise_u32;
     vals["env"]["serialise_basic_u64"] = serialise_u64;
