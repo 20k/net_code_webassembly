@@ -13,17 +13,29 @@
 extern "C" int needs_import(const char* x);
 extern "C" void print(const char* x);
 
+struct test_subclass : serialisable
+{
+    std::string tval;
+
+    SERIALISE_FUNC()
+    {
+        SER(tval);
+    }
+};
+
 struct test_serialisable : serialisable
 {
     std::string val_1;
     std::string val_2;
     uint32_t test_int;
+    test_subclass tsub;
 
     SERIALISE_FUNC()
     {
         SER(val_1);
         SER(val_2);
         SER(test_int);
+        SER(tsub);
     }
 };
 
@@ -41,6 +53,7 @@ void test_serialise()
     test.val_1 = "asdf";
     test.val_2 = "second";
     test.test_int = 53;
+    test.tsub.tval = "some_tval";
 
     //c_str nullkey("");
 
@@ -54,7 +67,9 @@ void test_serialise()
 
     std::string sdfdf = test_de.val_1;
 
-    print(sdfdf.c_str());
+    //print(sdfdf.c_str());
+
+    print(test_de.tsub.tval.c_str());
 
     /*serialise_object_begin_base(gapi);
     to_gameapi(gapi, test, "test", true);
