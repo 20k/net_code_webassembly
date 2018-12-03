@@ -181,7 +181,20 @@ void serialise_basic_double(runtime::store* s, uint32_t gapi, double* u, char* k
 
 void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t l, char* key_in, bool ser)
 {
+    c_str key((uint8_t*)key_in, s);
+    c_str val((uint8_t*)u, l, s);
 
+    auto it = s->interop_context.last_built.find(gapi);
+
+    if(it == s->interop_context.last_built.end())
+        throw std::runtime_error("Bad object in basic string");
+
+    if(it->second.size() < 1)
+        throw std::runtime_error("No object to put on");
+
+    std::shared_ptr<interop_element> ielem = it->second.back();
+
+    ielem->update_object_element(key.to_str(), val.to_str());
 }
 
 ///will need a serialise function function so we can pass functions across the boundary

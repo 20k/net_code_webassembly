@@ -4,6 +4,7 @@
 #include <variant>
 #include <nlohmann/json.hpp>
 #include <map>
+#include <iostream>
 
 struct interop_element
 {
@@ -12,6 +13,35 @@ struct interop_element
     ///either we contain data, a function pointer, or we're an object which is a map of elements
     std::variant<nlohmann::json, void(*)(), object> data;
 
+    void update_object_element(const std::string& key, std::shared_ptr<interop_element>& val)
+    {
+        if(!std::holds_alternative<interop_element::object>(data))
+        {
+            data = interop_element::object{{key, val}};
+        }
+        else
+        {
+            std::get<interop_element::object>(data)[key] = val;
+        }
+    }
+
+    template<typename T>
+    void update_object_element(const std::string& key, const T& val)
+    {
+        std::shared_ptr<interop_element> interop;
+        interop = std::make_shared<interop_element>();
+
+        if(!std::holds_alternative<interop_element::object>(data))
+        {
+            data = object{{key, interop}};
+        }
+        else
+        {
+            std::get<interop_element::object>(data)[key] = interop;
+        }
+
+        interop->data = val;
+    }
 
     //std::map<std::string, std::variant<nlohmann::json, void(*)(), std::shared_ptr<interop_element>>> data;
 };

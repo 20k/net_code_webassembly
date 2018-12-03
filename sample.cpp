@@ -36,6 +36,7 @@ void test_serialise()
 
     test_serialisable test;
     test.val_1 = "asdf";
+    test.val_2 = "second";
 
     //c_str nullkey("");
 
