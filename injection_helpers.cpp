@@ -312,6 +312,11 @@ void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t 
     }
 }
 
+uint32_t gameapi_get_next_id(runtime::store* s)
+{
+    return s->interop_context.next_id++;
+}
+
 ///will need a serialise function function so we can pass functions across the boundary
 ///the c api for a function will take a vector of parameters and an optional return type
 ///then will have to template magic jazz hands back to c++
@@ -350,6 +355,8 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     runtime::externval serialise_string;
     runtime::externval serialise_length;
 
+    runtime::externval get_next;
+
     serialise_begin.val = runtime::allochostsimplefunction<serialise_object_begin>(s);
     serialise_end.val = runtime::allochostsimplefunction<serialise_object_end>(s);
 
@@ -362,6 +369,8 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     serialise_double.val = runtime::allochostsimplefunction<serialise_basic_double>(s);
     serialise_string.val = runtime::allochostsimplefunction<serialise_basic_string>(s);
     serialise_length.val = runtime::allochostsimplefunction<serialise_basic_string_length>(s);
+
+    get_next.val = runtime::allochostsimplefunction<gameapi_get_next_id>(s);
 
     std::map<std::string, std::map<std::string, runtime::externval>> vals;
 
@@ -387,6 +396,8 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     vals["env"]["serialise_basic_double"] = serialise_double;
     vals["env"]["serialise_basic_string"] = serialise_string;
     vals["env"]["serialise_basic_string_length"] = serialise_length;
+
+    vals["env"]["get_next_id"] = get_next;
 
     return vals;
 }

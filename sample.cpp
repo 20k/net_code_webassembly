@@ -57,7 +57,7 @@ void test_serialise()
 
     //c_str nullkey("");
 
-    game_api_t gapi = 0;
+    game_api_t gapi = get_next_id();
     serialise_root(gapi, test, true);
 
     test_serialisable test_de;

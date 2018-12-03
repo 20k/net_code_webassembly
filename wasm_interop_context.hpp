@@ -51,6 +51,8 @@ struct wasm_interop_context
     std::map<uint32_t, std::vector<std::shared_ptr<interop_element>>> last_built;
 
     std::shared_ptr<interop_element> get_back(runtime::store* s, uint32_t gapi);
+
+    uint32_t next_id = 0;
 };
 
 #endif // WASM_INTEROP_CONTEXT_HPP_INCLUDED
