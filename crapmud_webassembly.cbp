@@ -57,6 +57,8 @@
 		<Unit filename="basic_ops.hpp" />
 		<Unit filename="compile.cpp" />
 		<Unit filename="compile.hpp" />
+		<Unit filename="injection_helpers.cpp" />
+		<Unit filename="injection_helpers.hpp" />
 		<Unit filename="invoke.cpp" />
 		<Unit filename="invoke.hpp" />
 		<Unit filename="logging.cpp" />
