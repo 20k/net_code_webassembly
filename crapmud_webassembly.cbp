@@ -45,9 +45,10 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-fexceptions" />
 			<Add option="-std=c++17" />
+			<Add option="-fexceptions" />
 			<Add option="-march=nehalem" />
+			<Add directory="deps" />
 		</Compiler>
 		<Linker>
 			<Add option="-lsfml-system" />
