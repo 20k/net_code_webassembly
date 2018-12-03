@@ -31,6 +31,7 @@ struct test_serialisable : serialisable
 ///r2 loads 1868920584 where r1 loads 8
 ///need to grab the binary payload
 
+///TODO, strings across the boundary
 WASM_EXPORT
 void test_serialise()
 {
