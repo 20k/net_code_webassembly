@@ -37,11 +37,11 @@ void test_serialise()
     test_serialisable test;
     test.val_1 = "asdf";
 
-    c_str nullkey("");
+    //c_str nullkey("");
 
     game_api_t gapi = 0;
     serialise_object_begin_base(gapi);
-    to_gameapi(gapi, test, "", true);
+    to_gameapi(gapi, test, "test", true);
     serialise_object_end_base(gapi);
 
     //serialise(passthrough, test, "", true);

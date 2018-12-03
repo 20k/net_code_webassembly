@@ -1598,3 +1598,16 @@ types::vec<runtime::value> runtime::store::invoke_by_name(const std::string& imp
 
     throw std::runtime_error("No such function");
 }
+
+uint8_t* runtime::store::get_memory_base_ptr()
+{
+    if(mems[0].dat.size() == 0)
+        throw std::runtime_error("Error in get memory base ptr");
+
+    return &mems[0].dat[0];
+}
+
+uint32_t runtime::store::get_memory_base_size()
+{
+    return mems[0].dat.size();
+}

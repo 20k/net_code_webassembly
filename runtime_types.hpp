@@ -221,6 +221,9 @@ namespace runtime
 
         types::vec<runtime::value> invoke(const funcaddr& address, moduleinst& minst, const types::vec<value>& vals);
         types::vec<runtime::value> invoke_by_name(const std::string& imported, moduleinst& minst, const types::vec<value>& vals);
+
+        uint8_t* get_memory_base_ptr();
+        uint32_t get_memory_base_size();
     };
 
     template<typename T>

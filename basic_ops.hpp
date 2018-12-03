@@ -598,7 +598,7 @@ void memory_grow(full_stack& full, runtime::store& s, activation& activate)
     }
     else
     {
-        minst.dat.resize(total_pages * runtime::page_size);
+        minst.dat.resize(total_pages * runtime::page_size+1);
 
         #ifdef DEBUGGING
         std::cout << "new size " << minst.dat.size() << std::endl;

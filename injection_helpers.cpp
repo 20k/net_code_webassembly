@@ -1,5 +1,6 @@
 #include "injection_helpers.hpp"
 #include "runtime_types.hpp"
+#include <iostream>
 
 /*import1 env
 import2 _ZSt15get_new_handlerv
@@ -36,27 +37,37 @@ using game_api_t = uint32_t;
 
 struct c_str
 {
-    c_str(const std::string& str)
-    {
-        len = str.size();
-        ptr = str.c_str();
-    }
+    std::string storage;
 
-    uint32_t len;
-    const char* ptr;
+    c_str(uint8_t* iptr, runtime::store* s)
+    {
+        int offset_from_start = iptr - s->get_memory_base_ptr();
+        int mem_size = s->get_memory_base_size();
+
+        uint8_t* base_ptr = s->get_memory_base_ptr();
+
+        int slen = 0;
+
+        for(int i=offset_from_start; i < mem_size && base_ptr[i] != '\0'; i++)
+        {
+            slen++;
+        }
+
+        if(slen == 0)
+            return;
+
+        storage = std::string((char*)iptr, slen);
+    }
 
     std::string to_str()
     {
-        if(ptr == nullptr)
-            return std::string();
-
-        return std::string(ptr, len);
+        return storage;
     }
 };
 
 ///so
 ///now we need a context pointer in the webassembly instance that we can use to store intermediate data?
-void serialise_object_begin(runtime::store* s, uint32_t gapi, c_str* key)
+void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in)
 {
     auto it = s->interop_context.last_built.find(gapi);
 
@@ -67,12 +78,36 @@ void serialise_object_begin(runtime::store* s, uint32_t gapi, c_str* key)
 
     std::shared_ptr<interop_element> next_ptr = std::make_shared<interop_element>();
 
-    last->data[key->to_str()] = next_ptr;
+    c_str key((uint8_t*)key_in, s);
+
+    std::cout << "key: " << key.to_str() << std::endl;
+
+    //last->data[key->to_str()] = next_ptr;
+
+    if(key.to_str() == "")
+    {
+        throw std::runtime_error("No key object");
+
+        //last->data = std::map<std::string, std::shared_ptr<interop_element>>{{}
+    }
+    else
+    {
+        if(!std::holds_alternative<interop_element::object>(last->data))
+        {
+            last->data = interop_element::object{{key.to_str(), next_ptr}};
+        }
+        else
+        {
+            std::get<interop_element::object>(last->data)[key.to_str()] = next_ptr;
+        }
+    }
+
+    std::cout << "key " << key.to_str() << std::endl;
 
     it->second.push_back(next_ptr);
 }
 
-void serialise_object_end(runtime::store* s, uint32_t gapi, c_str* key)
+void serialise_object_end(runtime::store* s, uint32_t gapi, char* key_in)
 {
     auto it = s->interop_context.last_built.find(gapi);
 
@@ -108,27 +143,27 @@ void serialise_object_end_base(runtime::store* s, uint32_t gapi)
     }
 }
 
-void serialise_basic_u32(runtime::store* s, uint32_t gapi, uint32_t* u, c_str* key, bool ser)
+void serialise_basic_u32(runtime::store* s, uint32_t gapi, uint32_t* u, char* key_in, bool ser)
 {
 
 }
 
-void serialise_basic_u64(runtime::store* s, uint32_t gapi, uint64_t* u, c_str* key, bool ser)
+void serialise_basic_u64(runtime::store* s, uint32_t gapi, uint64_t* u, char* key_in, bool ser)
 {
 
 }
 
-void serialise_basic_float(runtime::store* s, uint32_t gapi, float* u, c_str* key, bool ser)
+void serialise_basic_float(runtime::store* s, uint32_t gapi, float* u, char* key_in, bool ser)
 {
 
 }
 
-void serialise_basic_double(runtime::store* s, uint32_t gapi, double* u, c_str* key, bool ser)
+void serialise_basic_double(runtime::store* s, uint32_t gapi, double* u, char* key_in, bool ser)
 {
 
 }
 
-void serialise_basic_string(runtime::store* s, uint32_t gapi, c_str* u, c_str* key, bool ser)
+void serialise_basic_string(runtime::store* s, uint32_t gapi, c_str* u, char* key_in, bool ser)
 {
 
 }
