@@ -31,14 +31,7 @@ struct interop_element
         std::shared_ptr<interop_element> interop;
         interop = std::make_shared<interop_element>();
 
-        if(!std::holds_alternative<interop_element::object>(data))
-        {
-            data = object{{key, interop}};
-        }
-        else
-        {
-            std::get<interop_element::object>(data)[key] = interop;
-        }
+        update_object_element(key, interop);
 
         interop->data = val;
     }
