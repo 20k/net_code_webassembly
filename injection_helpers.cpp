@@ -161,22 +161,38 @@ void serialise_object_end_base(runtime::store* s, uint32_t gapi)
 
 void serialise_basic_u32(runtime::store* s, uint32_t gapi, uint32_t* u, char* key_in, bool ser)
 {
+    c_str key((uint8_t*)key_in, s);
 
+    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+
+    ielem->update_object_element(key.to_str(), *u);
 }
 
 void serialise_basic_u64(runtime::store* s, uint32_t gapi, uint64_t* u, char* key_in, bool ser)
 {
+    c_str key((uint8_t*)key_in, s);
 
+    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+
+    ielem->update_object_element(key.to_str(), *u);
 }
 
 void serialise_basic_float(runtime::store* s, uint32_t gapi, float* u, char* key_in, bool ser)
 {
+    c_str key((uint8_t*)key_in, s);
 
+    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+
+    ielem->update_object_element(key.to_str(), *u);
 }
 
 void serialise_basic_double(runtime::store* s, uint32_t gapi, double* u, char* key_in, bool ser)
 {
+    c_str key((uint8_t*)key_in, s);
 
+    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+
+    ielem->update_object_element(key.to_str(), *u);
 }
 
 void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t l, char* key_in, bool ser)
@@ -184,15 +200,7 @@ void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t 
     c_str key((uint8_t*)key_in, s);
     c_str val((uint8_t*)u, l, s);
 
-    auto it = s->interop_context.last_built.find(gapi);
-
-    if(it == s->interop_context.last_built.end())
-        throw std::runtime_error("Bad object in basic string");
-
-    if(it->second.size() < 1)
-        throw std::runtime_error("No object to put on");
-
-    std::shared_ptr<interop_element> ielem = it->second.back();
+    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
 
     ielem->update_object_element(key.to_str(), val.to_str());
 }

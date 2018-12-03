@@ -39,10 +39,17 @@ struct interop_element
     //std::map<std::string, std::variant<nlohmann::json, void(*)(), std::shared_ptr<interop_element>>> data;
 };
 
+namespace runtime
+{
+    struct store;
+}
+
 struct wasm_interop_context
 {
     std::map<uint32_t, std::shared_ptr<interop_element>> elems;
     std::map<uint32_t, std::vector<std::shared_ptr<interop_element>>> last_built;
+
+    std::shared_ptr<interop_element> get_back(runtime::store* s, uint32_t gapi);
 };
 
 #endif // WASM_INTEROP_CONTEXT_HPP_INCLUDED
