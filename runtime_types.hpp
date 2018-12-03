@@ -458,23 +458,6 @@ namespace runtime
             return ret;
         }
 
-
-        template<typename F, typename Tuple, size_t ...S >
-        decltype(auto) apply_tuple_impl(F&& fn, Tuple&& t, std::index_sequence<S...>)
-        {
-            return std::forward<F>(fn)(std::get<S>(std::forward<Tuple>(t))...);
-        }
-
-        template<typename F, typename Tuple>
-        decltype(auto) apply_from_tuple(F&& fn, Tuple&& t)
-        {
-            std::size_t constexpr tSize
-                = std::tuple_size<typename std::remove_reference<Tuple>::type>::value;
-            return apply_tuple_impl(std::forward<F>(fn),
-                                    std::forward<Tuple>(t),
-                                    std::make_index_sequence<tSize>());
-        }
-
         template<typename tup, std::size_t... Is>
         void set_args(tup& t, const types::vec<runtime::value>& v, std::index_sequence<Is...>, runtime::store* s)
         {
@@ -496,13 +479,13 @@ namespace runtime
 
             if constexpr(std::is_same_v<return_type, void>)
             {
-                apply_from_tuple(v, args);
+                std::apply(v, args);
                 return std::nullopt;
             }
 
             if constexpr(!std::is_same_v<return_type, void>)
             {
-                return apply_from_tuple(v, args);
+                return std::apply(v, args);
             }
         }
 
@@ -518,7 +501,7 @@ namespace runtime
             return host_shim<t>(t);
         }
 
-        template<typename V, V& v, typename return_type, typename... args_type>
+        template<typename V, V& v, typename return_type, typename rstore, typename... args_type>
         std::optional<runtime::value> host_shim_impl_with_runtime(const types::vec<runtime::value>& vals, runtime::store* s)
         {
             std::tuple<args_type...> args;
@@ -527,19 +510,18 @@ namespace runtime
 
             set_args(args, vals, iseq, s);
 
-            constexpr int nargs = sizeof...(args_type);
-
-            std::get<nargs-1>(args) = s;
+            std::tuple<runtime::store*> first;
+            std::get<0>(first) = s;
 
             if constexpr(std::is_same_v<return_type, void>)
             {
-                apply_from_tuple(v, args);
+                std::apply(v, std::tuple_cat(first, args));
                 return std::nullopt;
             }
 
             if constexpr(!std::is_same_v<return_type, void>)
             {
-                return apply_from_tuple(v, args);
+                return std::apply(v, std::tuple_cat(first, args));
             }
         }
 
