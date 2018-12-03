@@ -24,13 +24,13 @@ uint32_t do_syscall(stype val, T... vals)
     throw std::runtime_error("Syscalls not supported");
 }
 
-auto syscall0 = do_syscall<>;
-auto syscall1 = do_syscall<stype>;
-auto syscall2 = do_syscall<stype, stype>;
-auto syscall3 = do_syscall<stype, stype, stype>;
-auto syscall4 = do_syscall<stype, stype, stype, stype>;
-auto syscall5 = do_syscall<stype, stype, stype, stype, stype>;
-auto syscall6 = do_syscall<stype, stype, stype, stype, stype, stype>;
+constexpr auto syscall0 = do_syscall<>;
+constexpr auto syscall1 = do_syscall<stype>;
+constexpr auto syscall2 = do_syscall<stype, stype>;
+constexpr auto syscall3 = do_syscall<stype, stype, stype>;
+constexpr auto syscall4 = do_syscall<stype, stype, stype, stype>;
+constexpr auto syscall5 = do_syscall<stype, stype, stype, stype, stype>;
+constexpr auto syscall6 = do_syscall<stype, stype, stype, stype, stype, stype>;
 
 using game_api_t = uint32_t;
 
@@ -46,9 +46,11 @@ struct c_str
     const char* ptr;
 };
 
+///so
+///now we need a context pointer in the webassembly instance that we can use to store intermediate data?
 void serialise_object_begin(uint32_t gapi, c_str* key)
 {
-
+    printf("test object begin\n");
 }
 
 void serialise_object_end(uint32_t gapi, c_str* key)
@@ -60,14 +62,17 @@ void serialise_basic_u32(uint32_t gapi, uint32_t* u, c_str* key, bool ser)
 {
 
 }
+
 void serialise_basic_u64(uint32_t gapi, uint64_t* u, c_str* key, bool ser)
 {
 
 }
+
 void serialise_basic_float(uint32_t gapi, float* u, c_str* key, bool ser)
 {
 
 }
+
 void serialise_basic_double(uint32_t gapi, double* u, c_str* key, bool ser)
 {
 
@@ -77,6 +82,10 @@ void serialise_basic_string(uint32_t gapi, c_str* u, c_str* key, bool ser)
 {
 
 }
+
+///will need a serialise function function so we can pass functions across the boundary
+///the c api for a function will take a vector of parameters and an optional return type
+///then will have to template magic jazz hands back to c++
 
 std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers(runtime::store& s)
 {

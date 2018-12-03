@@ -313,7 +313,42 @@ namespace runtime
             }
         }
 
-        template<typename T, typename... U> inline types::functype get_functype(T(*func)(U... args))
+        template<typename check>
+        constexpr void count_runtime(int& cnt)
+        {
+
+        }
+
+        template<typename check, typename U, typename... T>
+        inline
+        constexpr void count_runtime(int& cnt)
+        {
+            if constexpr(std::is_same<check, U>())
+            {
+                cnt++;
+
+                count_runtime<check, T...>(cnt);
+            }
+            else
+            {
+                count_runtime<check, T...>(cnt);
+            }
+        }
+
+        template<typename T, typename... U>
+        inline
+        constexpr bool has_runtime(T(*func)(U... args))
+        {
+            int iruntime_c = 0;
+
+            count_runtime<runtime::store*, U...>(iruntime_c);
+
+            return iruntime_c > 0;
+        }
+
+        template<typename T, typename... U>
+        inline
+        constexpr types::functype get_functype(T(*func)(U... args))
         {
             types::functype ret;
 
@@ -353,6 +388,11 @@ namespace runtime
             count_types<double, U...>(f64_c);
 
             count_types<void*, U...>(i32_c);
+
+            int iruntime_c = 0;
+            count_runtime<runtime::store*, U...>(iruntime_c);
+
+            i32_c -= iruntime_c;
 
 
             count_types<bool, T>(i32_r);
@@ -448,14 +488,9 @@ namespace runtime
         template<typename V, V& v, typename return_type, typename... args_type>
         std::optional<runtime::value> host_shim_impl(const types::vec<runtime::value>& vals, runtime::store* s)
         {
-            //constexpr int num_args = sizeof...(args_type);
-
             std::tuple<args_type...> args;
 
             std::index_sequence_for<args_type...> iseq;
-
-            ///last arg
-            //std::get<num_args>(args) = s;
 
             set_args(args, vals, iseq, s);
 
@@ -481,6 +516,43 @@ namespace runtime
         constexpr auto base_shim()
         {
             return host_shim<t>(t);
+        }
+
+        template<typename V, V& v, typename return_type, typename... args_type>
+        std::optional<runtime::value> host_shim_impl_with_runtime(const types::vec<runtime::value>& vals, runtime::store* s)
+        {
+            std::tuple<args_type..., runtime::store*> args;
+
+            std::index_sequence_for<args_type...> iseq;
+
+            set_args(args, vals, iseq, s);
+
+            constexpr int nargs = sizeof...(args_type);
+
+            std::get<nargs>(args) = s;
+
+            if constexpr(std::is_same_v<return_type, void>)
+            {
+                apply_from_tuple(v, args);
+                return std::nullopt;
+            }
+
+            if constexpr(!std::is_same_v<return_type, void>)
+            {
+                return apply_from_tuple(v, args);
+            }
+        }
+
+        template<auto& v, typename T, typename... U>
+        auto host_shim_with_runtime(T(*func)(U... args))
+        {
+            return &host_shim_impl_with_runtime<decltype(v), v, T, U...>;
+        }
+
+        template<auto& t>
+        constexpr auto base_shim_with_runtime()
+        {
+            return host_shim_with_runtime<t>(t);
         }
     }
 
@@ -564,9 +636,18 @@ namespace runtime
     {
         types::functype type = detail::get_functype(t);
 
-        auto shim = detail::base_shim<t>();
+        if constexpr(!detail::has_runtime(t))
+        {
+            auto shim = detail::base_shim<t>();
 
-        return s.allochostfunction(type, shim);
+            return s.allochostfunction(type, shim);
+        }
+        else
+        {
+            auto shim = detail::base_shim_with_runtime<t>();
+
+            return s.allochostfunction(type, shim);
+        }
     }
 
     template<typename T>

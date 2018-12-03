@@ -37,6 +37,13 @@ void test_serialise()
     test_serialisable test;
     test.val_1 = "asdf";
 
+    c_str nullkey("");
+
+    game_api_t gapi;
+    serialise_object_begin(gapi, &nullkey);
+    to_gameapi(gapi, test, "", true);
+    serialise_object_end(gapi, &nullkey);
+
     //serialise(passthrough, test, "", true);
 
     /*std::map<std::string, std::string> rmap;
