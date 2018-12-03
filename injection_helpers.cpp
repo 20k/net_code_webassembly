@@ -50,7 +50,7 @@ struct c_str
 ///now we need a context pointer in the webassembly instance that we can use to store intermediate data?
 void serialise_object_begin(uint32_t gapi, c_str* key)
 {
-    printf("test object begin\n");
+    printf("test object begin\n\n\n\n\n\n\n\n\n");
 }
 
 void serialise_object_end(uint32_t gapi, c_str* key)

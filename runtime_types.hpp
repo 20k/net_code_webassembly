@@ -323,7 +323,7 @@ namespace runtime
         inline
         constexpr void count_runtime(int& cnt)
         {
-            if constexpr(std::is_same<check, U>())
+            if constexpr(std::is_same<std::remove_pointer_t<check>, std::remove_pointer_t<U>>())
             {
                 cnt++;
 
@@ -521,7 +521,7 @@ namespace runtime
         template<typename V, V& v, typename return_type, typename... args_type>
         std::optional<runtime::value> host_shim_impl_with_runtime(const types::vec<runtime::value>& vals, runtime::store* s)
         {
-            std::tuple<args_type..., runtime::store*> args;
+            std::tuple<args_type...> args;
 
             std::index_sequence_for<args_type...> iseq;
 
@@ -529,7 +529,7 @@ namespace runtime
 
             constexpr int nargs = sizeof...(args_type);
 
-            std::get<nargs>(args) = s;
+            std::get<nargs-1>(args) = s;
 
             if constexpr(std::is_same_v<return_type, void>)
             {
@@ -642,7 +642,8 @@ namespace runtime
 
             return s.allochostfunction(type, shim);
         }
-        else
+
+        if constexpr(detail::has_runtime(t))
         {
             auto shim = detail::base_shim_with_runtime<t>();
 
