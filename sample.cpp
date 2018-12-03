@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <map>
-//#include "gameapi.hpp"
+#include "gameapi.hpp"
 
 #define WASM_EXPORT __attribute__ ((visibility ("default"), used)) extern "C"
 
@@ -13,7 +13,7 @@
 extern "C" int needs_import(const char* x);
 extern "C" void print(const char* x);
 
-/*struct test_serialisable : serialisable
+struct test_serialisable : serialisable
 {
     std::string val_1;
     std::string val_2;
@@ -23,7 +23,7 @@ extern "C" void print(const char* x);
         SER(val_1);
         SER(val_2);
     }
-};*/
+};
 
 ///hmm so there's a suspicious constant
 ///r2 loads 1868920584 where r1 loads 8
@@ -32,12 +32,13 @@ extern "C" void print(const char* x);
 WASM_EXPORT
 void test_serialise()
 {
-    /*object passthrough;
+    //object passthrough;
 
     test_serialisable test;
     test.val_1 = "asdf";
 
-    serialise(passthrough, test, "", true);*/
+    //serialise(passthrough, test, "", true);
+
     /*std::map<std::string, std::string> rmap;
 
     rmap["test"] = std::string("weow");
@@ -49,12 +50,12 @@ void test_serialise()
 
     //std::map<std::string, std::string> rmap{{"weow", std::string("test")}};
 
-    std::map<std::string, std::string> rmap;
+    /*std::map<std::string, std::string> rmap;
 
     rmap["weow"] = std::string("asdfdsf");
 
     if(rmap["weow"] == "")
-        print(rmap["weow"].c_str());
+        print(rmap["weow"].c_str());*/
 
     /*std::string some_test = "asdf43212345";
 
