@@ -83,6 +83,16 @@ struct c_str
     }
 };
 
+template<typename T>
+void generic_serialise(runtime::store* s, uint32_t gapi, T* type, char* key_in, bool ser)
+{
+    c_str key((uint8_t*)key_in, s);
+
+    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+
+    ielem->update_object_element(key.to_str(), *type);
+}
+
 ///so
 ///now we need a context pointer in the webassembly instance that we can use to store intermediate data?
 void serialise_object_begin(runtime::store* s, uint32_t gapi, char* key_in, bool ser)
@@ -159,41 +169,10 @@ void serialise_object_end_base(runtime::store* s, uint32_t gapi, bool ser)
     }
 }
 
-void serialise_basic_u32(runtime::store* s, uint32_t gapi, uint32_t* u, char* key_in, bool ser)
-{
-    c_str key((uint8_t*)key_in, s);
-
-    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
-
-    ielem->update_object_element(key.to_str(), *u);
-}
-
-void serialise_basic_u64(runtime::store* s, uint32_t gapi, uint64_t* u, char* key_in, bool ser)
-{
-    c_str key((uint8_t*)key_in, s);
-
-    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
-
-    ielem->update_object_element(key.to_str(), *u);
-}
-
-void serialise_basic_float(runtime::store* s, uint32_t gapi, float* u, char* key_in, bool ser)
-{
-    c_str key((uint8_t*)key_in, s);
-
-    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
-
-    ielem->update_object_element(key.to_str(), *u);
-}
-
-void serialise_basic_double(runtime::store* s, uint32_t gapi, double* u, char* key_in, bool ser)
-{
-    c_str key((uint8_t*)key_in, s);
-
-    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
-
-    ielem->update_object_element(key.to_str(), *u);
-}
+constexpr void (*serialise_basic_u32)(runtime::store* s, uint32_t gapi, uint32_t* u, char* key_in, bool ser) = generic_serialise<uint32_t>;
+constexpr void (*serialise_basic_u64)(runtime::store* s, uint32_t gapi, uint64_t* u, char* key_in, bool ser) = generic_serialise<uint64_t>;
+constexpr void (*serialise_basic_float)(runtime::store* s, uint32_t gapi, float* u, char* key_in, bool ser) = generic_serialise<float>;
+constexpr void (*serialise_basic_double)(runtime::store* s, uint32_t gapi, double* u, char* key_in, bool ser) = generic_serialise<double>;
 
 void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t l, char* key_in, bool ser)
 {
