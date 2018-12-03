@@ -17,11 +17,13 @@ struct test_serialisable : serialisable
 {
     std::string val_1;
     std::string val_2;
+    uint32_t test_int;
 
     SERIALISE_FUNC()
     {
         SER(val_1);
         SER(val_2);
+        SER(test_int);
     }
 };
 
@@ -37,6 +39,7 @@ void test_serialise()
     test_serialisable test;
     test.val_1 = "asdf";
     test.val_2 = "second";
+    test.test_int = 53;
 
     //c_str nullkey("");
 
