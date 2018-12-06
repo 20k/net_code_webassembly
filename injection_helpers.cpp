@@ -312,9 +312,21 @@ void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t 
     }
 }
 
+game_api_t runtime_invoke(runtime::store* s, uint32_t address, game_api_t gapi)
+{
+    //return s->invoke_by_name("invoke_address", s->)
+}
+
 void serialise_basic_function(runtime::store* s, uint32_t gapi, uint32_t* address, char* key_in, bool ser)
 {
+    if(ser)
+    {
+        interop_element::func_ptr ptr = std::bind(runtime_invoke, s, *address, std::placeholders::_1);
+    }
+    else
+    {
 
+    }
 }
 
 uint32_t gameapi_get_next_id(runtime::store* s)

@@ -1042,6 +1042,8 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
 
     m_minst = new runtime::moduleinst(minst);
 
+    s.interop_context.mod = m_minst;
+
     //s.invoke({0})
 
     /*for(int i=0; i < (int)minst.exports.v.size(); i++)
@@ -1079,7 +1081,7 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
 
     //types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
 
-    types::vec<runtime::value> vals = s.invoke_by_name("test_serialise", minst, {});
+    types::vec<runtime::value> vals = s.invoke_by_name("test_serialise", *m_minst, {});
 
     std::cout << "time " << clk.getElapsedTime().asMicroseconds() / 1000. << std::endl;
 

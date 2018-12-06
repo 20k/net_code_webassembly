@@ -43,6 +43,7 @@ struct interop_element
 namespace runtime
 {
     struct store;
+    struct moduleinst;
 }
 
 struct wasm_interop_context
@@ -53,6 +54,8 @@ struct wasm_interop_context
     std::shared_ptr<interop_element> get_back(runtime::store* s, uint32_t gapi);
 
     uint32_t next_id = 0;
+
+    runtime::moduleinst* mod = nullptr; ///this is really bad code TODO FIXME
 };
 
 #endif // WASM_INTEROP_CONTEXT_HPP_INCLUDED
