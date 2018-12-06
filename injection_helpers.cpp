@@ -312,6 +312,11 @@ void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t 
     }
 }
 
+void serialise_basic_function(runtime::store* s, uint32_t gapi, uint32_t* address, char* key_in, bool ser)
+{
+
+}
+
 uint32_t gameapi_get_next_id(runtime::store* s)
 {
     return s->interop_context.next_id++;
@@ -354,6 +359,7 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     runtime::externval serialise_double;
     runtime::externval serialise_string;
     runtime::externval serialise_length;
+    runtime::externval serialise_function;
 
     runtime::externval get_next;
 
@@ -369,6 +375,7 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     serialise_double.val = runtime::allochostsimplefunction<serialise_basic_double>(s);
     serialise_string.val = runtime::allochostsimplefunction<serialise_basic_string>(s);
     serialise_length.val = runtime::allochostsimplefunction<serialise_basic_string_length>(s);
+    serialise_function.val = runtime::allochostsimplefunction<serialise_basic_function>(s);
 
     get_next.val = runtime::allochostsimplefunction<gameapi_get_next_id>(s);
 
@@ -396,6 +403,7 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     vals["env"]["serialise_basic_double"] = serialise_double;
     vals["env"]["serialise_basic_string"] = serialise_string;
     vals["env"]["serialise_basic_string_length"] = serialise_length;
+    vals["env"]["serialise_basic_function"] = serialise_function;
 
     vals["env"]["get_next_id"] = get_next;
 

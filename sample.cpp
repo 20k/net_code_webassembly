@@ -6,8 +6,6 @@
 #include <map>
 #include "gameapi.hpp"
 
-#define WASM_EXPORT __attribute__ ((visibility ("default"), used)) extern "C"
-
 //#define WASM_EXPORT __attribute__ ((used))
 
 extern "C" int needs_import(const char* x);
@@ -43,7 +41,12 @@ struct test_serialisable : serialisable
 
     ///cpp member functions need pointer transfer before i can do other stuff?
 
-    static game_api_t raw_function(game_api_t args);
+    static game_api_t raw_function(game_api_t args)
+    {
+        return 53;
+    }
+
+    game_func fptr = &raw_function;
 
     SERIALISE_FUNC()
     {
@@ -51,7 +54,7 @@ struct test_serialisable : serialisable
         SER(val_2);
         SER(test_int);
         SER(tsub);
-        SER(&raw_function);
+        SER(fptr);
         //SER(&test_serialisable::raw_function);
     }
 };
