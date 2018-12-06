@@ -349,7 +349,9 @@ void serialise_basic_function(runtime::store* s, uint32_t gapi, uint32_t* addres
     }
     else
     {
-
+        ///uuh
+        ///how can we possibly write a useful function pointer here?
+        ///maybe we'll just set it to a generic invoke_from_host thing which takes a generic gameapi thing and jumps to the host?
     }
 }
 
