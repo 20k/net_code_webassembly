@@ -13,6 +13,12 @@
 extern "C" int needs_import(const char* x);
 extern "C" void print(const char* x);
 
+///how on earth are function pointers going to work?
+///obviously itll have to be only c style pointers, but even then...
+///maybe they'll take a vector of serialisables and return an optional to a serialisable (or a game_api_t which we can treat a bit like JSON?)?
+///maybe it should be a vector of game_api_ts and return an optional, or game_api_t -1 should be an error for glorious c compat
+///it'd be easier to take one gameapi_t and then dynamically unpack it through template magic?
+
 struct test_subclass : serialisable
 {
     std::string tval;
@@ -30,12 +36,23 @@ struct test_serialisable : serialisable
     uint32_t test_int;
     test_subclass tsub;
 
+    /*game_api_t raw_function(game_api_t args)
+    {
+        return 12;
+    }*/
+
+    ///cpp member functions need pointer transfer before i can do other stuff?
+
+    static game_api_t raw_function(game_api_t args);
+
     SERIALISE_FUNC()
     {
         SER(val_1);
         SER(val_2);
         SER(test_int);
         SER(tsub);
+        SER(&raw_function);
+        //SER(&test_serialisable::raw_function);
     }
 };
 
