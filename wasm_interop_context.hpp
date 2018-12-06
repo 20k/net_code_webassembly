@@ -5,11 +5,12 @@
 #include <nlohmann/json.hpp>
 #include <map>
 #include <iostream>
+#include "types.hpp"
 
 struct interop_element
 {
     using object = std::map<std::string, std::shared_ptr<interop_element>>;
-    using func_ptr = std::function<uint32_t(uint32_t)>;
+    using func_ptr = std::function<types::vec<uint32_t>(uint32_t)>;
 
     ///either we contain data, a function pointer, or we're an object which is a map of elements
     std::variant<nlohmann::json, func_ptr, object> data;

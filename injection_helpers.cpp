@@ -1,6 +1,7 @@
 #include "injection_helpers.hpp"
 #include "runtime_types.hpp"
 #include <iostream>
+#include "types.hpp"
 
 /*import1 env
 import2 _ZSt15get_new_handlerv
@@ -312,16 +313,39 @@ void serialise_basic_string(runtime::store* s, uint32_t gapi, char* u, uint32_t 
     }
 }
 
-game_api_t runtime_invoke(runtime::store* s, uint32_t address, game_api_t gapi)
+types::vec<game_api_t> runtime_invoke(runtime::store* s, uint32_t address, game_api_t gapi)
 {
-    //return s->invoke_by_name("invoke_address", s->)
+    if(s->interop_context.mod == nullptr)
+        throw std::runtime_error("Nullptr");
+
+    runtime::value val1{address};
+    runtime::value val2{gapi};
+
+    types::vec<runtime::value> ret = s->invoke_by_name("invoke_address", *s->interop_context.mod, {val1, val2});
+
+    types::vec<game_api_t> rvals;
+
+    for(runtime::value& i : ret)
+    {
+        if(!i.is_i32())
+            throw std::runtime_error("Expected i32 return value, game_api_t");
+
+        rvals.push_back((uint32_t)std::get<types::i32>(i.v).val);
+    }
+
+    return rvals;
 }
 
 void serialise_basic_function(runtime::store* s, uint32_t gapi, uint32_t* address, char* key_in, bool ser)
 {
+    c_str key((uint8_t*)key_in, s);
+    std::shared_ptr<interop_element> ielem = s->interop_context.get_back(s, gapi);
+
     if(ser)
     {
         interop_element::func_ptr ptr = std::bind(runtime_invoke, s, *address, std::placeholders::_1);
+
+        ielem->update_object_element(key.to_str(), ptr);
     }
     else
     {
