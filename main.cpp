@@ -5,6 +5,7 @@
 #include <memory>
 #include "compile.hpp"
 #include "injection_helpers.hpp"
+#include "JIT.hpp"
 
 std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& vals, runtime::store& s)
 {
@@ -49,6 +50,7 @@ void print(const char* ptr)
 ///so we need to be able to go js Object -> c structure, and back
 int main()
 {
+    test_jit();
     leb_tests();
 
     data example;

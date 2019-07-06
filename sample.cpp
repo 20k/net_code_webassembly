@@ -4,9 +4,9 @@
 #include <vector>
 #include <string>
 #include <map>
-#include "gameapi.hpp"
+//#include "gameapi.hpp"
 
-//#define WASM_EXPORT __attribute__ ((used))
+#define WASM_EXPORT __attribute__ ((visibility ("default"), used)) extern "C"
 
 extern "C" int needs_import(const char* x);
 extern "C" void print(const char* x);
@@ -17,6 +17,7 @@ extern "C" void print(const char* x);
 ///maybe it should be a vector of game_api_ts and return an optional, or game_api_t -1 should be an error for glorious c compat
 ///it'd be easier to take one gameapi_t and then dynamically unpack it through template magic?
 
+#if 0
 struct test_subclass : serialisable
 {
     std::string tval;
@@ -119,6 +120,7 @@ void test_serialise()
 
     print(&some_test[5]);*/
 }
+#endif
 
 WASM_EXPORT
 int import_test(int x)
