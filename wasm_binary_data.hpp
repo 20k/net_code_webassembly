@@ -10,6 +10,7 @@ struct wasm_binary_data
     //void init(data d, const types::vec<runtime::externval>& eval);
 
     void init(data d, const std::map<std::string, std::map<std::string, runtime::externval>>& evals);
+    void self_test();
 
     runtime::moduleinst* m_minst = nullptr;
     runtime::store s;

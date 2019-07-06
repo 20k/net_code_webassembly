@@ -1059,7 +1059,10 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
     }*/
 
     //types::vec<runtime::value> vals = s.invoke_by_name("_start", minst, {});
+}
 
+void wasm_binary_data::self_test()
+{
     sf::Clock clk;
 
     runtime::value arg;
@@ -1079,7 +1082,7 @@ void wasm_binary_data::init(data d, const std::map<std::string, std::map<std::st
     //types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
     //types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, {arg});
 
-    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
+    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", *m_minst, {arg});
 
     //types::vec<runtime::value> vals = s.invoke_by_name("test_serialise", *m_minst, {});
 

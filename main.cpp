@@ -83,6 +83,7 @@ int main()
     vals["env"]["print"] = tprint;
 
     test.init(example, vals);
+    test.self_test();
 
     return 0;
 }
