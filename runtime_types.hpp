@@ -13,10 +13,21 @@ namespace runtime
 {
     struct addr : types::integral<uint32_t, addr>{};
 
-    struct funcaddr : addr {};;
+    struct funcaddr : addr {friend bool operator<(const funcaddr& one, const funcaddr& two);};
     struct tableaddr : addr {};
     struct memaddr : addr {};
     struct globaladdr : addr {};
+
+    inline
+    bool operator<(const runtime::funcaddr& one, const runtime::funcaddr& two)
+    {
+        return one.val < two.val;
+    }
+
+    /*constexpr bool operator<(runtime::funcaddr one, runtime::funcaddr two)
+    {
+        return one.val < two.val;
+    }*/
 
     struct externval
     {
@@ -690,6 +701,8 @@ namespace runtime
         types::vec<tableaddr> tableaddrs;
         types::vec<memaddr> memaddrs;
         types::vec<globaladdr> globaladdrs;
+
+        std::map<funcaddr, std::string> funcnames;
 
         types::vec<exportinst> exports;
     };

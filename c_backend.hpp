@@ -6,6 +6,6 @@
 
 struct data;
 
-std::string get_as_c_program(data d, const std::map<std::string, std::map<std::string, runtime::externval>>& evals);
+std::string get_as_c_program(wasm_binary_data& bin);
 
 #endif // C_BACKEND_HPP_INCLUDED

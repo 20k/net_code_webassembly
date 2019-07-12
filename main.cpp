@@ -6,6 +6,7 @@
 #include "compile.hpp"
 #include "injection_helpers.hpp"
 #include "JIT.hpp"
+#include "c_backend.hpp"
 
 std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& vals, runtime::store& s)
 {
@@ -84,6 +85,14 @@ int main()
 
     test.init(example, vals);
     test.self_test();
+
+    std::string as_c_program = get_as_c_program(test);
+
+    if(as_c_program.size() > 0)
+    {
+        auto file = std::fstream("out.cpp", std::ios::out | std::ios::binary);
+        file.write(as_c_program.c_str(), as_c_program.size());
+    }
 
     return 0;
 }

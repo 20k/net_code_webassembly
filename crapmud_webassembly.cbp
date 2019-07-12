@@ -53,9 +53,13 @@
 		<Linker>
 			<Add option="-lsfml-system" />
 		</Linker>
+		<Unit filename="JIT.cpp" />
+		<Unit filename="JIT.hpp" />
 		<Unit filename="LEB.cpp" />
 		<Unit filename="LEB.hpp" />
 		<Unit filename="basic_ops.hpp" />
+		<Unit filename="c_backend.cpp" />
+		<Unit filename="c_backend.hpp" />
 		<Unit filename="compile.cpp" />
 		<Unit filename="compile.hpp" />
 		<Unit filename="injection_helpers.cpp" />

@@ -847,6 +847,8 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
                 throw std::runtime_error(error);
             }
 
+            inst.funcnames[adr] = n2.friendly();
+
             satisfied_imports++;
         }
     }
