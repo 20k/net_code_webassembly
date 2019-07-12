@@ -24,11 +24,6 @@ namespace runtime
         return one.val < two.val;
     }
 
-    /*constexpr bool operator<(runtime::funcaddr one, runtime::funcaddr two)
-    {
-        return one.val < two.val;
-    }*/
-
     struct externval
     {
         std::variant<funcaddr, tableaddr, memaddr, globaladdr> val;
