@@ -415,7 +415,7 @@ namespace types
             f64 f_64;
         } val;*/
 
-        std::string friendly()
+        std::string friendly() const
         {
             switch(which)
             {
