@@ -82,6 +82,14 @@ std::string declare_function(runtime::store& s, runtime::funcaddr address, runti
     ///careful of ifs because this is not a linear code segment
 }
 
+///don't need to support eval with frame, do need to support eval with label
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, int return_arity)
+{
+    size_t len = exp.size();
+
+
+}
+
 std::string define_function(runtime::store& s, runtime::funcaddr address, runtime::moduleinst& minst)
 {
     std::string sig = declare_function(s, address, minst);
@@ -127,6 +135,8 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
 
 std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runtime::moduleinst& minst, const types::vec<std::string>& vals)
 {
+    ///need to inject memory
+
     std::string res =
     R"(
 #include <vector>
