@@ -3,6 +3,7 @@
 #include "wasm_binary_data.hpp"
 #include "LEB.hpp"
 #include "serialisable.hpp"
+#include "invoke.hpp"
 
 std::string get_variable_name(int offset)
 {
@@ -87,7 +88,39 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 {
     size_t len = exp.size();
 
+    std::string ret;
 
+    for(size_t ilen=0; ilen < len; ilen++)
+    {
+        const types::instr& is = exp[ilen];
+
+        size_t which = is.which;
+
+        ret += "//" + instr_to_str(which) + "\n";
+
+        switch(which)
+        {
+            case 0x00:
+                ret += "assert(false);";
+                break;
+            case 0x01:
+                break;
+            /*case 0x02:
+                ret += "assert(false);"
+                break;
+            case 0x03:
+                ret += "assert"*/
+
+            default:
+                ret += "assert(false)";
+                break;
+
+        }
+
+        ret += "\n";
+    }
+
+    return ret;
 }
 
 std::string define_function(runtime::store& s, runtime::funcaddr address, runtime::moduleinst& minst)
@@ -129,6 +162,8 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
             function_body += full_decl + "\n";
         }
     }
+
+    function_body += define_expr(s, wasm_func.funct.fnc.e.i, return_arity);
 
     return function_body + "\n}";
 }

@@ -2,6 +2,8 @@
 #include "runtime_types.hpp"
 #include <iostream>
 
+std::string instr_to_str(uint8_t which);
+
 struct frame
 {
     //types::vec<runtime::value> locals;
