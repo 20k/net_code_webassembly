@@ -590,6 +590,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             case 0x01:
                 break;
 
+            ///block
             case 0x02:
             {
                 const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
@@ -610,6 +611,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 break;
             }
 
+            ///loop
             case 0x03:
             {
                 const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
@@ -633,6 +635,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
                 break;
             }
 
+            ///if
             case 0x04:
             {
                 const types::double_branch_data& dbd = std::get<types::double_branch_data>(is.dat);
@@ -1271,7 +1274,7 @@ types::vec<runtime::value> eval_with_frame(runtime::moduleinst& minst, runtime::
 
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full, activation& activate)
 {
-    bool has_delayed_values_push = false;
+    //bool has_delayed_values_push = false;
 
     ///ok
     ///so basically I really want to avoid this push here in this loop
@@ -1289,15 +1292,20 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
         */
 
         ///that would mean that this statement is unnecessary
-        if(has_delayed_values_push)
+        /*if(has_delayed_values_push)
         {
             if(ctx.capture_arity)
+            {
+                printf("hello\n");
                 full.push_values(ctx.capture_val);
+            }
 
             ctx.capture_arity = 0;
 
             has_delayed_values_push = false;
-        }
+        }*/
+
+        assert(ctx.capture_arity == 0);
 
         ///i'm very much not convinced this is correct at all anymore
         ctx.current_arity = l.btype.arity();
@@ -1321,7 +1329,7 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             {
                 if(l.continuation == 2)
                 {
-                    has_delayed_values_push = true;
+                    //has_delayed_values_push = true;
 
                     ///ok so logic is
                     ///pop values off stack
