@@ -204,7 +204,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     ///one stack value argument
     if(l.btype.arity() == 1)
     {
-        fbody += l.btype.friendly() + " r_" + std::to_string(ctx.label_depth) + " = 0;";
+        fbody += l.btype.friendly() + " r_" + std::to_string(ctx.label_depth) + " = 0;\n";
     }
 
     if(l.continuation == 2)
@@ -275,6 +275,22 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 void add_abort(std::string& in)
 {
     in += "if(abort_stack > 0)\n    break;\n";
+}
+
+std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
+{
+    std::string ret;
+
+    int next_label_depth = ctx.label_depth - (int)(uint32_t)lidx;
+
+    int arity = ctx.label_arities[next_label_depth];
+
+    if(arity > 0)
+        ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
+
+    ret += "abort_stack = " + std::to_string((uint32_t)lidx + 1) + "\n";
+
+    return ret;
 }
 
 ///don't need to support eval with frame, do need to support eval with label
@@ -369,20 +385,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             {
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-                ///ok say we're at label 5
-                ///this means that the entry of the literal value label[5] is occupied due to off by 1
-                int current_label_depth = ctx.label_depth;
-
-                ///we want to jump up 1, lets say. This means that we want to go to the label which is 1 above us
-                ///so check literal val of 4
-                int next_label_depth = current_label_depth - (int)(uint32_t)lidx;
-
-                int arity = ctx.label_arities[next_label_depth];
-
-                if(arity > 0)
-                    ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
-
-                ret += "abort_stack = " + std::to_string((uint32_t)lidx + 1) + "\n";
+                ret += sfjump(ctx, stack_offset, lidx);
 
                 add_abort(ret);
 
@@ -390,6 +393,68 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             }
 
             ///br_if
+
+            case 0x0D:
+            {
+                int decision_variable = stack_offset.pop_back();
+
+                ret = "if(" + get_variable_name(decision_variable) + " != 0) {\n";
+
+                ret += sfjump(ctx, stack_offset, lidx);
+
+                add_abort(ret);
+
+                ret += "}";
+
+                break;
+            }
+
+            case 0x0E:
+            {
+                const types::br_table_data& br_td = std::get<types::br_table_data>(is.dat);
+
+                const types::vec<types::labelidx>& labels = br_td.labels;
+
+                int decision_variable = stack_offset.pop_back();
+
+                for(int i=0; i < labels.size(); i++)
+                {
+                    if(i == 0)
+                    {
+                        ret += "if(";
+                    }
+                    else
+                    {
+                        ret += "else if(";
+                    }
+
+                    ret += get_variable_name(decision_variable) +  " == " + std::to_string(i) + ") {\n";
+
+                    types::labelidx lidx = labels[i];
+
+                    ret += sfjump(ctx, stack_offset, lidx);
+
+                    ret += "}";
+                }
+
+                if(labels.size() > 0)
+                    ret += "else {\n";
+                else
+                    ret += "{\n";
+
+                types::labelidx lidx = br_td.fin;
+
+                ret += sfjump(ctx, stack_offset, lidx);
+
+                ret += "}";
+
+                stack_offset.pop_back();
+
+                printf("Warning: Generating br_td which isn't well tested\n");
+
+
+                break;
+            }
 
             ///br_t
 
