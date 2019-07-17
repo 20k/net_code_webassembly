@@ -468,7 +468,7 @@ namespace types
     {
         uint8_t which = 0;
 
-        std::string friendly()
+        std::string friendly() const
         {
             switch(which)
             {

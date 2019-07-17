@@ -83,8 +83,140 @@ std::string declare_function(runtime::store& s, runtime::funcaddr address, runti
     ///careful of ifs because this is not a linear code segment
 }
 
+/*struct value_stack
+{
+    std::vector<int> values;
+    int last = 0;
+
+    std::vector<int> starts{0};
+
+    void push_stack()
+    {
+        starts.push_back(values.size());
+    }
+
+    void pop_all_values()
+    {
+        values.resize(starts.back());
+    }
+
+    void pop_stack()
+    {
+        starts.pop_back();
+    }
+
+    int& get_next()
+    {
+        values.push_back(last++);
+    }
+
+    int pop_back()
+    {
+        assert(values.size() > 0);
+        int last = values.back();
+        values.pop_back();
+
+        return last;
+    }
+
+    void push_value(int val)
+    {
+        values.push_back(val);
+    }
+};*/
+
+struct c_context
+{
+    int current_arity = 0;
+    int capture_arity = 0;
+
+    //value_stack stk;
+
+    int label_depth = 0;
+};
+
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, int& stack_offset);
+
+///so, frame_abort = true is just a return <last_stack_item> if our arity is > 0
+///only thing return arity is used for
+///that and functions automatically always return their last stack value
+///so basically just do if(return_arity) { return very_first_varible;}
+
+///pops all values off stack when we exit
+///have to pass values manually to higher level variables
+///each label capture arity has an associated variable
+std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, int stack_offset)
+{
+    ctx.label_depth++;
+
+    int argument = -1;
+
+    //int rval = ctx.stk.get_next();
+    ctx.current_arity = l.btype.arity();
+
+    /*if(l.btype.arity() > 0)
+        fbody += "//return val for label\n" + l.btype.friendly() + " " + get_variable_name(rval) + " = 0;\n";*/
+
+    std::string fbody;
+
+    ///one stack value argument
+    if(l.btype.arity() == 1)
+    {
+        fbody += l.btype.friendly() + " r_" + std::to_string(ctx.label_depth) + " = 0;";
+    }
+
+    if(l.continuation == 2)
+        fbody += "//label, 2\nwhile(1){\n";
+    else
+        fbody += "//label, !2\ndo {\n";
+
+    if(l.btype.arity() == 1)
+    {
+        fbody += l.btype.friendly() + " " + get_variable_name(stack_offset++) + " = r_" + std::to_string(ctx.label_depth) + ";";
+    }
+
+    //ctx.stk.push_stack();
+
+    define_expr(s, exp, ctx, stack_offset);
+
+    //ctx.stk.pop_all_values();
+    //ctx.stk.pop_stack();
+
+    ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
+    ///in the event that there's an abort and we are it, our return value is the next item on the stack
+
+    fbody += "if(abort_stack > 0)\n{    abort_stack--;\n";
+
+    ///code doesn't need to do anything?
+    if(l.continuation == 2)
+    {
+        fbody += "    if(abort_stack == 0)\n    {";
+        fbody += "        continue;\n        }";
+    }
+    else
+    {
+
+    }
+
+    fbody += "}\n";
+
+
+    ctx.label_depth--;
+
+
+    if(l.continuation == 2)
+        return fbody + "}\n";
+    else
+        return fbody + "}\nwhile(0);\n";
+}
+
+void add_abort(std::string& in)
+{
+    in += "if(abort_stack > 0)\n    break;\n";
+}
+
 ///don't need to support eval with frame, do need to support eval with label
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, int return_arity)
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, int& stack_offset)
 {
     size_t len = exp.size();
 
@@ -110,6 +242,23 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 break;
             case 0x03:
                 ret += "assert"*/
+
+            case 0x02:
+            {
+                const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
+
+                int la = ctx.current_arity;
+
+                label l;
+                l.btype = sbd.btype;
+                l.continuation = 1;
+
+                ret += define_label(s, sbd.first, l, ctx, stack_offset);
+
+                ctx.current_arity = la;
+
+                add_abort(ret);
+            }
 
             default:
                 ret += "assert(false)";
@@ -151,6 +300,13 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
 
     int return_arity = ftype.results.size() > 0;
 
+    function_body += "int return_arity = " + std::to_string(return_arity) + ";\n";
+    //function_body += "int current_arity = 0;\n";
+    //function_body += "int backup_arity = 0;\n";
+    function_body += "int abort_stack = 0;\n";
+
+    function_body += "do {\n";
+
     for(const types::local& loc : local_types)
     {
         for(uint32_t i=0; i < (uint32_t)loc.n; i++)
@@ -163,9 +319,12 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
         }
     }
 
-    function_body += define_expr(s, wasm_func.funct.fnc.e.i, return_arity);
+    c_context ctx;
 
-    return function_body + "\n}";
+    int soffset = 0;
+    function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset);
+
+    return function_body + "\nwhile(0);\n}";
 }
 
 std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runtime::moduleinst& minst, const types::vec<std::string>& vals)

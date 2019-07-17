@@ -1305,7 +1305,8 @@ void eval_with_label(context& ctx, runtime::store& s, const label& l, const type
             has_delayed_values_push = false;
         }*/
 
-        assert(ctx.capture_arity == 0);
+        if(l.continuation == 2)
+            assert(ctx.capture_arity == 0);
 
         ///i'm very much not convinced this is correct at all anymore
         ctx.current_arity = l.btype.arity();
