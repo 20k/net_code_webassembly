@@ -315,7 +315,7 @@ std::string and_push(const std::string& in, value_stack& stack_offset, types::va
     return type.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = " + in + ";";
 }
 
-std::string invoke_function(runtime::store& s, c_context& ctx, value_stack& stack_offset, runtime::moduleinst& minst, runtime::funcaddr address)
+std::string invoke_function(runtime::store& s, c_context& ctx, value_stack& stack_offset, runtime::moduleinst& minst, runtime::funcaddr address, bool push)
 {
     uint32_t adr = (uint32_t)address;
 
@@ -355,7 +355,7 @@ std::string invoke_function(runtime::store& s, c_context& ctx, value_stack& stac
 
     std::string ret = to_call;
 
-    if(num_rets > 0)
+    if(num_rets > 0 && push)
     {
         ret = and_push(to_call, stack_offset, ftype.results[0]);
     }
@@ -558,13 +558,92 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 if(idx >= (uint32_t)minst.funcaddrs.size())
                     throw std::runtime_error("Bad fidx in 0x10 [call]");
 
-                ret += invoke_function(s, ctx, stack_offset, minst, minst.funcaddrs[idx]);
+                ret += invoke_function(s, ctx, stack_offset, minst, minst.funcaddrs[idx], true);
 
                 add_abort(ret);
+
+                break;
+            }
+
+            ///calli
+            case 0x11:
+            {
+                types::typeidx found_tidx = std::get<types::typeidx>(is.dat);
+
+                if(minst.tableaddrs.size() < 1)
+                    throw std::runtime_error("Failed table addr < 1 in indirect call");
+
+                runtime::tableaddr taddr = minst.tableaddrs[0];
+
+                uint32_t tidx = (uint32_t)taddr;
+
+                if(tidx >= (uint32_t)s.tables.size())
+                    throw std::runtime_error("Bad tidx in indirect call");
+
+                runtime::tableinst& tinst = s.tables[tidx];
+
+                uint32_t type_idx = (uint32_t)found_tidx;
+
+                if(type_idx >= (uint32_t)minst.typel.size())
+                    throw std::runtime_error("Bad fidx");
+
+                types::functype ft_expect = minst.typel[type_idx];
+
+                int check_variable = stack_offset.pop_back();
+
+                int declared_return = -1;
+
+                if(ft_expect.results.size() > 0)
+                {
+                    declared_return = stack_offset.get_next();;
+                    ret += ft_expect.results[0].friendly() + " " + get_variable_name(declared_return) + " = 0;\n";
+                }
+
+                for(int i=0; i < (int)tinst.elem.size(); i++)
+                {
+                    if(i == 0)
+                        ret += "if(";
+                    else
+                        ret += "else if(";
+
+                    ret += get_variable_name(check_variable) + " == " + std::to_string(i) + ") {\n";
+
+                    runtime::funcaddr runtime_addr = tinst.elem[i].addr.value();
+
+                    uint32_t runtime_idx = (uint32_t)runtime_addr;
+
+                    if(runtime_idx >= (uint32_t)s.funcs.size())
+                        throw std::runtime_error("Runtime idx oob (validation)");
+
+                    runtime::funcinst& finst = s.funcs[runtime_idx];
+
+                    types::functype ft_actual = finst.type;
+
+                    if(types::funcs_equal(ft_actual, ft_expect))
+                    {
+                        if(ft_expect.results.size() > 0)
+                            ret += get_variable_name(declared_return) + " = " + invoke_function(s, ctx, stack_offset, minst, runtime_addr, false) + ";\n";
+                        else
+                            ret += invoke_function(s, ctx, stack_offset, minst, runtime_addr, false) + ";\n";
+                    }
+                    else
+                    {
+                        ret += "assert(false);\n";
+                    }
+
+                    ret += "}\n";
+                }
+
+                if(tinst.elem.size() > 0)
+                    ret += "else {assert(false);}\n";
+                else
+                    ret += "{assert(false);}\n";
+
+                break;
             }
 
             default:
-                ret += "assert(false)";
+                ret += "assert(false); //fellthrough";
                 break;
 
         }
