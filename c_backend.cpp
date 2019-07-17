@@ -256,6 +256,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0x03:
                 ret += "assert"*/
 
+            ///block
             case 0x02:
             {
                 const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
@@ -267,6 +268,25 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset);
 
                 add_abort(ret);
+                break;
+            }
+
+            ///loop
+            case 0x03:
+            {
+                const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
+
+                label l;
+                l.btype = sbd.btype;
+                l.continuation = 2;
+
+                assert(l.btype.arity() == 0);
+
+                ret += define_label(s, sbd.first, l, ctx, stack_offset);
+
+                add_abort(ret);
+
+                break;
             }
 
             default:
