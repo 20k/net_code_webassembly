@@ -396,6 +396,9 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
+                if(l.btype.arity() > 0)
+                    ret += dbd.btype.friendly() + " " + get_variable_name(value_stack.get_next()) + " = 0\n";
+
                 ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
                 add_abort(ret);
@@ -430,6 +433,9 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 l.continuation = 3;
 
                 int branch_variable = stack_offset.pop_back();
+
+                if(l.btype.arity() > 0)
+                    ret += dbd.btype.friendly() + " " + get_variable_name(value_stack.get_next()) + " = 0\n";
 
                 ret += "if(" + get_variable_name(branch_variable) + " != 0)\n{";
 
