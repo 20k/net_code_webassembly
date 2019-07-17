@@ -217,7 +217,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     if(l.continuation == 2)
         fbody += "//label, 2\nwhile(1){\n";
     else
-        fbody += "//label, !2\ndo {\n";
+        fbody += "//label d " + std::to_string(ctx.label_depth) + " , !2\ndo {\n";
 
     fbody += "    do { //skip point\n";
 
@@ -296,7 +296,11 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
 
     int next_label_depth = ctx.label_depth - (int)(uint32_t)lidx;
 
-    int arity = ctx.label_arities[next_label_depth];
+    int nidx = next_label_depth - 1;
+
+    assert(nidx >= 0 && nidx < (int)ctx.label_arities.size());
+
+    int arity = ctx.label_arities[nidx];
 
     if(arity > 0)
         ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
