@@ -354,6 +354,34 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 break;
             }
 
+            ///br
+            case 0x0C:
+            {
+                types::labelidx lidx = std::get<types::labelidx>(is.dat);
+
+                ///ok say we're at label 5
+                ///this means that the entry of the literal value label[5] is occupied due to off by 1
+                int current_label_depth = ctx.label_depth;
+
+                ///we want to jump up 1, lets say. This means that we want to go to the label which is 1 above us
+                ///so check literal val of 4
+                int next_label_depth = current_label_depth - (int)(uint32_t)lidx;
+
+                int arity = ctx.label_arities[next_label_depth];
+
+                ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
+
+                ret += "abort_stack = " + std::to_string((uint32_t)lidx + 1) + "\n";
+
+                add_abort(ret);
+
+                break;
+            }
+
+            ///br_if
+
+            ///br_t
+
             default:
                 ret += "assert(false)";
                 break;
