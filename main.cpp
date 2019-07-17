@@ -51,7 +51,7 @@ void print(const char* ptr)
 ///so we need to be able to go js Object -> c structure, and back
 int main()
 {
-    test_jit();
+    //test_jit();
     leb_tests();
 
     data example;
@@ -84,7 +84,7 @@ int main()
     vals["env"]["print"] = tprint;
 
     test.init(example, vals);
-    test.self_test();
+    //test.self_test();
 
     std::string as_c_program = get_as_c_program(test);
 

@@ -142,7 +142,12 @@ struct value_stack
     int pop_back()
     {
         if(stk.size() == 0)
-            throw std::runtime_error("Bad stack");
+        {
+            printf("Warning, invalid pop_back\n");
+            return -1;
+        }
+
+        //throw std::runtime_error("Bad stack");
 
         int val = stk.back();
 
@@ -154,7 +159,12 @@ struct value_stack
     int peek_back()
     {
         if(stk.size() == 0)
-            throw std::runtime_error("Bad peek");
+        {
+            printf("Warning, invalid peek_back\n");
+            return -1;
+        }
+
+        //throw std::runtime_error("Bad peek");
 
         return stk.back();
     }
@@ -209,7 +219,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         fbody += l.btype.friendly() + " " + get_variable_name(stack_offset++) + " = r_" + std::to_string(ctx.label_depth) + ";";
     }*/
 
-    define_expr(s, exp, ctx, stack_offset);
+    fbody += define_expr(s, exp, ctx, stack_offset);
 
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
@@ -225,11 +235,11 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         ///loops take no argument
         ///so just keep looping
         assert(l.btype.arity() == 0);
-        fbody += "    if(abort_stack == 0) {continue;}";
+        fbody += "    if(abort_stack == 0) {continue;}\n";
 
         ///ok but what if its not us?
         ///Just pop all values on stack? AKA just break outside of this?
-        fbody += "    if(abort_stack > 0) {break;}";
+        fbody += "    if(abort_stack > 0) {break;}\n";
     }
     else
     {
@@ -369,7 +379,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 int arity = ctx.label_arities[next_label_depth];
 
-                ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
+                if(arity > 0)
+                    ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
 
                 ret += "abort_stack = " + std::to_string((uint32_t)lidx + 1) + "\n";
 
