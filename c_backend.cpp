@@ -202,7 +202,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     else
         fbody += "//label, !2\ndo {\n";
 
-    fbody += "//    do { //skip point\n";
+    fbody += "    do { //skip point\n";
 
     /*if(l.btype.arity() == 1)
     {
@@ -322,6 +322,32 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 assert(l.btype.arity() == 0);
 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset);
+
+                add_abort(ret);
+
+                break;
+            }
+
+            ///if
+            case 0x04:
+            {
+                const types::double_branch_data& dbd = std::get<types::double_branch_data>(is.dat);
+
+                label l;
+                l.btype = dbd.btype;
+                l.continuation = 3;
+
+                int branch_variable = stack_offset.pop_back();
+
+                ret += "if(" + get_variable_name(branch_variable) + " != 0)\n{";
+
+                ret += define_label(s, dbd.first, l, ctx, stack_offset);
+
+                ret += "} else { ";
+
+                ret += define_label(s, dbd.second, l, ctx, stack_offset);
+
+                ret += "} //endif";
 
                 add_abort(ret);
 
