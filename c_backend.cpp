@@ -458,7 +458,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             }
 
             ///return
-            case 0x0F
+            case 0x0F:
             {
                 if(return_arity > 0)
                 {
