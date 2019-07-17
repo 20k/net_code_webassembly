@@ -160,7 +160,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     else
         fbody += "//label, !2\ndo {\n";
 
-    fbody += "//skip point\n    do {\n"
+    fbody += "//skip point\n    do {\n";
 
     if(l.btype.arity() == 1)
     {
@@ -187,13 +187,13 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
         ///ok but what if its not us?
         ///Just pop all values on stack? AKA just break outside of this?
-        fbody += "    if(abort_stack > 0) {break;}"
+        fbody += "    if(abort_stack > 0) {break;}";
     }
     else
     {
         if(l.btype.arity() == 0)
         {
-            if()
+
         }
     }
 
