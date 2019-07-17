@@ -32,6 +32,18 @@ std::string join_commawise(const std::vector<std::string>& in)
     return ret;
 }
 
+std::string function_name(runtime::moduleinst& minst, runtime::funcinst& finst, runtime::funcaddr address)
+{
+    std::string func_name = "f_" + std::to_string((uint32_t)address);
+
+    if(auto it = minst.funcnames.find(address); it != minst.funcnames.end())
+    {
+        func_name = it->second;
+    }
+
+    return func_name;
+}
+
 //, const types::vec<std::string>& vals
 
 ///need to import function names
@@ -55,12 +67,7 @@ std::string declare_function(runtime::store& s, runtime::funcaddr address, runti
         throw std::runtime_error("Argument mismatch received " + std::to_string(vals.size()) + " but expected " + std::to_string(ftype.params.size()));*/
 
     std::string func_return = ftype.results.size() > 0 ? ftype.results[0].friendly() : "void";
-    std::string func_name = "f_" + std::to_string(adr);
-
-    if(auto it = minst.funcnames.find(address); it != minst.funcnames.end())
-    {
-        func_name = it->second;
-    }
+    std::string func_name = function_name(minst, finst, address);
 
     std::vector<std::string> args;
 
@@ -176,7 +183,7 @@ struct c_context
     std::vector<int> label_arities;
 };
 
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity);
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity, runtime::moduleinst& minst);
 
 ///so, frame_abort = true is just a return <last_stack_item> if our arity is > 0
 ///only thing return arity is used for
@@ -186,7 +193,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 ///pops all values off stack when we exit
 ///have to pass values manually to higher level variables
 ///each label capture arity has an associated variable
-std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, value_stack stack_offset, int return_arity)
+std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, value_stack stack_offset, int return_arity, runtime::moduleinst& minst)
 {
     ctx.label_depth++;
 
@@ -219,7 +226,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         fbody += l.btype.friendly() + " " + get_variable_name(stack_offset++) + " = r_" + std::to_string(ctx.label_depth) + ";";
     }*/
 
-    fbody += define_expr(s, exp, ctx, stack_offset, return_arity);
+    fbody += define_expr(s, exp, ctx, stack_offset, return_arity, minst);
 
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
@@ -260,8 +267,14 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         }
     }
 
-    fbody += "}\n";
+    fbody += "}";
 
+    if(l.btype.arity() > 0)
+    {
+        fbody += " else { \n";
+
+        fbody += get_variable_name(destination_stack_val) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n}";
+    }
 
     ctx.label_depth--;
     ctx.label_arities.pop_back();
@@ -293,8 +306,61 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
     return ret;
 }
 
+std::string and_push(const std::string& in, value_stack& stack_offset, types::valtype type)
+{
+    return type.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = " + in + ";";
+}
+
+std::string invoke_function(runtime::store& s, c_context& ctx, value_stack& stack_offset, runtime::moduleinst& minst, runtime::funcaddr address)
+{
+    uint32_t adr = (uint32_t)address;
+
+    if(adr >= (uint32_t)s.funcs.size())
+        throw std::runtime_error("Adr out of bounds");
+
+    runtime::funcinst& finst = s.funcs[adr];
+
+    types::functype ftype = finst.type;
+
+    int num_args = ftype.params.size();
+    int num_rets = ftype.results.size();
+
+    std::string to_call = function_name(minst, finst, address);
+
+    to_call += "(";
+
+    std::vector<int> rargs;
+
+    for(int i=0; i < num_args; i++)
+    {
+        rargs.push_back(stack_offset.pop_back());
+    }
+
+    auto args = rargs;
+    std::reverse(args.begin(), args.end());
+
+    for(int i=0; i < num_args; i++)
+    {
+        to_call += get_variable_name(args[i]);
+
+        if(i != num_args-1)
+            to_call += ", ";
+    }
+
+    to_call += ");";
+
+    std::string ret = to_call;
+
+    if(num_rets > 0)
+    {
+        ret = and_push(to_call, stack_offset, ftype.results[0]);
+    }
+
+    return ret + "\n";
+}
+
 ///don't need to support eval with frame, do need to support eval with label
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity)
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity, runtime::moduleinst& minst)
 {
     size_t len = exp.size();
 
@@ -330,7 +396,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
-                ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity);
+                ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
                 add_abort(ret);
                 break;
@@ -347,7 +413,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 assert(l.btype.arity() == 0);
 
-                ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity);
+                ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
                 add_abort(ret);
 
@@ -367,11 +433,11 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += "if(" + get_variable_name(branch_variable) + " != 0)\n{";
 
-                ret += define_label(s, dbd.first, l, ctx, stack_offset, return_arity);
+                ret += define_label(s, dbd.first, l, ctx, stack_offset, return_arity, minst);
 
                 ret += "} else { ";
 
-                ret += define_label(s, dbd.second, l, ctx, stack_offset, return_arity);
+                ret += define_label(s, dbd.second, l, ctx, stack_offset, return_arity, minst);
 
                 ret += "} //endif";
 
@@ -419,7 +485,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 int decision_variable = stack_offset.pop_back();
 
-                for(int i=0; i < labels.size(); i++)
+                for(int i=0; i < (int)labels.size(); i++)
                 {
                     if(i == 0)
                     {
@@ -470,6 +536,21 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 }
 
                 break;
+            }
+
+            ///call
+            case 0x10:
+            {
+                types::funcidx fidx = std::get<types::funcidx>(is.dat);
+
+                uint32_t idx = (uint32_t)fidx;
+
+                if(idx >= (uint32_t)minst.funcaddrs.size())
+                    throw std::runtime_error("Bad fidx in 0x10 [call]");
+
+                ret += invoke_function(s, ctx, stack_offset, minst, minst.funcaddrs[idx]);
+
+                add_abort(ret);
             }
 
             default:
@@ -534,7 +615,7 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     c_context ctx;
 
     value_stack soffset;
-    function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset, return_arity);
+    function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset, return_arity, minst);
 
     return function_body + "\nwhile(0);\n}";
 }
