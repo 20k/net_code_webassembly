@@ -130,9 +130,8 @@ struct c_context
     int current_arity = 0;
     int capture_arity = 0;
 
-    //value_stack stk;
-
     int label_depth = 0;
+    std::vector<int> label_arities;
 };
 
 std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, int& stack_offset);
@@ -153,6 +152,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
     //int rval = ctx.stk.get_next();
     ctx.current_arity = l.btype.arity();
+    ctx.label_arities.push_back(l.btype.arity());
 
     /*if(l.btype.arity() > 0)
         fbody += "//return val for label\n" + l.btype.friendly() + " " + get_variable_name(rval) + " = 0;\n";*/
@@ -202,6 +202,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
 
     ctx.label_depth--;
+    ctx.label_arities.pop_back();
 
 
     if(l.continuation == 2)

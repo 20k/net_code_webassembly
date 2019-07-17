@@ -56,6 +56,7 @@ struct context
 void eval_with_label(context& ctx, runtime::store& s, const label& l, const types::vec<types::instr>& exp, full_stack& full, activation& activate);
 types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_stack& full, const runtime::funcaddr& address, runtime::moduleinst& minst);
 
+///pretty sure current arity is incorrect. It should be the arity of what we're jumping to
 inline
 void fjump(context& ctx, types::labelidx lidx, full_stack& full)
 {
