@@ -176,7 +176,7 @@ struct c_context
     std::vector<int> label_arities;
 };
 
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset);
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity);
 
 ///so, frame_abort = true is just a return <last_stack_item> if our arity is > 0
 ///only thing return arity is used for
@@ -186,7 +186,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 ///pops all values off stack when we exit
 ///have to pass values manually to higher level variables
 ///each label capture arity has an associated variable
-std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, value_stack stack_offset)
+std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, value_stack stack_offset, int return_arity)
 {
     ctx.label_depth++;
 
@@ -219,7 +219,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         fbody += l.btype.friendly() + " " + get_variable_name(stack_offset++) + " = r_" + std::to_string(ctx.label_depth) + ";";
     }*/
 
-    fbody += define_expr(s, exp, ctx, stack_offset);
+    fbody += define_expr(s, exp, ctx, stack_offset, return_arity);
 
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
@@ -294,7 +294,7 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
 }
 
 ///don't need to support eval with frame, do need to support eval with label
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset)
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity)
 {
     size_t len = exp.size();
 
@@ -330,7 +330,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
-                ret += define_label(s, sbd.first, l, ctx, stack_offset);
+                ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity);
 
                 add_abort(ret);
                 break;
@@ -347,7 +347,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 assert(l.btype.arity() == 0);
 
-                ret += define_label(s, sbd.first, l, ctx, stack_offset);
+                ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity);
 
                 add_abort(ret);
 
@@ -367,11 +367,11 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += "if(" + get_variable_name(branch_variable) + " != 0)\n{";
 
-                ret += define_label(s, dbd.first, l, ctx, stack_offset);
+                ret += define_label(s, dbd.first, l, ctx, stack_offset, return_arity);
 
                 ret += "} else { ";
 
-                ret += define_label(s, dbd.second, l, ctx, stack_offset);
+                ret += define_label(s, dbd.second, l, ctx, stack_offset, return_arity);
 
                 ret += "} //endif";
 
@@ -393,7 +393,6 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             }
 
             ///br_if
-
             case 0x0D:
             {
                 int decision_variable = stack_offset.pop_back();
@@ -411,6 +410,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 break;
             }
 
+            ///br_t
             case 0x0E:
             {
                 const types::br_table_data& br_td = std::get<types::br_table_data>(is.dat);
@@ -454,11 +454,23 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 printf("Warning: Generating br_td which isn't well tested\n");
 
-
                 break;
             }
 
-            ///br_t
+            ///return
+            case 0x0F
+            {
+                if(return_arity > 0)
+                {
+                    ret += "return " + get_variable_name(stack_offset.pop_back()) + ";";
+                }
+                else
+                {
+                    ret += "return;";
+                }
+
+                break;
+            }
 
             default:
                 ret += "assert(false)";
@@ -500,7 +512,7 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
 
     int return_arity = ftype.results.size() > 0;
 
-    function_body += "int return_arity = " + std::to_string(return_arity) + ";\n";
+    //function_body += "int return_arity = " + std::to_string(return_arity) + ";\n";
     //function_body += "int current_arity = 0;\n";
     //function_body += "int backup_arity = 0;\n";
     function_body += "int abort_stack = 0;\n";
@@ -522,7 +534,7 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     c_context ctx;
 
     value_stack soffset;
-    function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset);
+    function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset, return_arity);
 
     return function_body + "\nwhile(0);\n}";
 }
