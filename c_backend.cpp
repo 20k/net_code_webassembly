@@ -125,13 +125,48 @@ std::string declare_function(runtime::store& s, runtime::funcaddr address, runti
     }
 };*/
 
+struct value_stack
+{
+    int safe_offset = 0;
+    std::vector<int> stk;
+
+    int get_next()
+    {
+        int next = safe_offset++;
+
+        stk.push_back(next);
+
+        return next;
+    }
+
+    int pop_back()
+    {
+        if(stk.size() == 0)
+            throw std::runtime_error("Bad stack");
+
+        int val = stk.back();
+
+        stk.pop_back();
+
+        return val;
+    }
+
+    int peek_back()
+    {
+        if(stk.size() == 0)
+            throw std::runtime_error("Bad peek");
+
+        return stk.back();
+    }
+};
+
 struct c_context
 {
     int label_depth = 0;
     std::vector<int> label_arities;
 };
 
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, int& stack_offset);
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset);
 
 ///so, frame_abort = true is just a return <last_stack_item> if our arity is > 0
 ///only thing return arity is used for
@@ -141,12 +176,16 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 ///pops all values off stack when we exit
 ///have to pass values manually to higher level variables
 ///each label capture arity has an associated variable
-std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, int stack_offset)
+std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, value_stack stack_offset)
 {
     ctx.label_depth++;
 
-    ///where we're storing our variable into
-    int destination_stack_val = stack_offset;
+    int destination_stack_val = -1;
+
+    if(l.btype.arity() > 0)
+    {
+        destination_stack_val = stack_offset.peek_back();
+    }
 
     ctx.label_arities.push_back(l.btype.arity());
 
@@ -229,7 +268,7 @@ void add_abort(std::string& in)
 }
 
 ///don't need to support eval with frame, do need to support eval with label
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, int& stack_offset)
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset)
 {
     size_t len = exp.size();
 
@@ -350,7 +389,7 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
 
     c_context ctx;
 
-    int soffset = 0;
+    value_stack soffset;
     function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset);
 
     return function_body + "\nwhile(0);\n}";
