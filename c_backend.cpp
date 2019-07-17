@@ -145,6 +145,9 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 {
     ctx.label_depth++;
 
+    ///where we're storing our variable into
+    int destination_stack_val = stack_offset;
+
     ctx.label_arities.push_back(l.btype.arity());
 
     std::string fbody;
@@ -160,21 +163,21 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     else
         fbody += "//label, !2\ndo {\n";
 
-    fbody += "//skip point\n    do {\n";
+    fbody += "//    do { //skip point\n";
 
-    if(l.btype.arity() == 1)
+    /*if(l.btype.arity() == 1)
     {
         fbody += l.btype.friendly() + " " + get_variable_name(stack_offset++) + " = r_" + std::to_string(ctx.label_depth) + ";";
-    }
+    }*/
 
     define_expr(s, exp, ctx, stack_offset);
 
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
 
-    fbody += "    } ///end skip point\n";
+    fbody += "    } //end skip point\n";
 
-    fbody += "if(abort_stack > 0) {    abort_stack--;\n";
+    fbody += "if(abort_stack > 0) {\n    abort_stack--;\n";
 
     ///code doesn't need to do anything?
     if(l.continuation == 2)
@@ -193,7 +196,18 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     {
         if(l.btype.arity() == 0)
         {
+            fbody += "    if(abort_stack > 0) {break;}\n";
+            fbody += "    if(abort_stack == 0) {break;}\n"; ///no capture arity for me?
+        }
+        else
+        {
+            fbody += "    if(abort_stack > 0) {break;}\n";
 
+            ///uuh ok what to do with return value
+            ///so basically r_labelidx is going to be set to the value we want right?
+            ///so we need to take the stack value that we're meant to be popping into
+            ///which is... stack_offset
+            fbody += "    if(abort_stack == 0) { " + get_variable_name(destination_stack_val) + " = r_" + std::to_string(ctx.label_depth) + "; break;}\n";
         }
     }
 
