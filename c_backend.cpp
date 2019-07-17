@@ -127,9 +127,6 @@ std::string declare_function(runtime::store& s, runtime::funcaddr address, runti
 
 struct c_context
 {
-    int current_arity = 0;
-    int capture_arity = 0;
-
     int label_depth = 0;
     std::vector<int> label_arities;
 };
@@ -148,14 +145,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 {
     ctx.label_depth++;
 
-    int argument = -1;
-
-    //int rval = ctx.stk.get_next();
-    ctx.current_arity = l.btype.arity();
     ctx.label_arities.push_back(l.btype.arity());
-
-    /*if(l.btype.arity() > 0)
-        fbody += "//return val for label\n" + l.btype.friendly() + " " + get_variable_name(rval) + " = 0;\n";*/
 
     std::string fbody;
 
@@ -170,32 +160,41 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     else
         fbody += "//label, !2\ndo {\n";
 
+    fbody += "//skip point\n    do {\n"
+
     if(l.btype.arity() == 1)
     {
         fbody += l.btype.friendly() + " " + get_variable_name(stack_offset++) + " = r_" + std::to_string(ctx.label_depth) + ";";
     }
 
-    //ctx.stk.push_stack();
-
     define_expr(s, exp, ctx, stack_offset);
-
-    //ctx.stk.pop_all_values();
-    //ctx.stk.pop_stack();
 
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
 
-    fbody += "if(abort_stack > 0)\n{    abort_stack--;\n";
+    fbody += "    } ///end skip point\n";
+
+    fbody += "if(abort_stack > 0) {    abort_stack--;\n";
 
     ///code doesn't need to do anything?
     if(l.continuation == 2)
     {
-        fbody += "    if(abort_stack == 0)\n    {";
-        fbody += "        continue;\n        }";
+        ///if we aborted to this loop
+        ///loops take no argument
+        ///so just keep looping
+        assert(l.btype.arity() == 0);
+        fbody += "    if(abort_stack == 0) {continue;}";
+
+        ///ok but what if its not us?
+        ///Just pop all values on stack? AKA just break outside of this?
+        fbody += "    if(abort_stack > 0) {break;}"
     }
     else
     {
-
+        if(l.btype.arity() == 0)
+        {
+            if()
+        }
     }
 
     fbody += "}\n";
@@ -203,7 +202,6 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
     ctx.label_depth--;
     ctx.label_arities.pop_back();
-
 
     if(l.continuation == 2)
         return fbody + "}\n";
@@ -248,15 +246,11 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             {
                 const types::single_branch_data& sbd = std::get<types::single_branch_data>(is.dat);
 
-                int la = ctx.current_arity;
-
                 label l;
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset);
-
-                ctx.current_arity = la;
 
                 add_abort(ret);
             }
