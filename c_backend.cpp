@@ -660,6 +660,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 int first = stack_offset.pop_back();
 
                 ret += auto_push(get_variable_name(decider) + " ? " + get_variable_name(first) + " : " + get_variable_name(second) + ";\n", stack_offset);
+                break;
             }
 
             default:
