@@ -312,7 +312,12 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
 
 std::string and_push(const std::string& in, value_stack& stack_offset, types::valtype type)
 {
-    return type.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = " + in + ";";
+    return type.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = " + in;
+}
+
+std::string auto_push(const std::string& in, value_stack& stack_offset)
+{
+    return "auto " + get_variable_name(stack_offset.get_next()) + " = " + in;
 }
 
 std::string invoke_function(runtime::store& s, c_context& ctx, value_stack& stack_offset, runtime::moduleinst& minst, runtime::funcaddr address, bool push)
@@ -640,6 +645,21 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                     ret += "{assert(false);}\n";
 
                 break;
+            }
+
+            case 0x1A:
+            {
+                stack_offset.pop_back();
+                break;
+            }
+
+            case 0x1B:
+            {
+                int decider = stack_offset.pop_back();
+                int second = stack_offset.pop_back();
+                int first = stack_offset.pop_back();
+
+                ret += auto_push(get_variable_name(decider) + " ? " + get_variable_name(first) + " : " + get_variable_name(second) + ";\n", stack_offset);
             }
 
             default:
