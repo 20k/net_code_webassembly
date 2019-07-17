@@ -400,6 +400,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret = "if(" + get_variable_name(decision_variable) + " != 0) {\n";
 
+                types::labelidx lidx = std::get<types::labelidx>(is.dat);
+
                 ret += sfjump(ctx, stack_offset, lidx);
 
                 add_abort(ret);
