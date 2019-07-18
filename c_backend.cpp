@@ -1264,7 +1264,10 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     value_stack soffset;
     function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset, return_arity, minst);
 
-    return function_body + "\nwhile(0);\n}";
+    if(return_arity > 0)
+        return function_body + "}\nwhile(0);\nreturn " + get_variable_name(soffset.pop_back()) + ";\n}\n";
+    else
+        return function_body + "}\nwhile(0);\n}";
 }
 
 std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runtime::moduleinst& minst, const types::vec<std::string>& vals)
@@ -1279,6 +1282,8 @@ std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runt
 #include <type_traits>
 #include <algorithm>
 #include <math.h>
+#include <assert.h>
+#include <string.h>
 
 using i32 = uint32_t;
 using i64 = uint64_t;
