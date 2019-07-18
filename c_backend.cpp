@@ -139,6 +139,9 @@ std::string declare_function(runtime::store& s, runtime::funcaddr address, runti
     std::string func_return = ftype.results.size() > 0 ? ftype.results[0].friendly() : "void";
     std::string func_name = function_name(minst, finst, address);
 
+    if(func_name == "main")
+        func_return = "int";
+
     std::vector<std::string> args;
 
     for(int aidx = 0; aidx < (int)ftype.params.size(); aidx++)
