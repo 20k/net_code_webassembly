@@ -4,7 +4,6 @@
 #include "LEB.hpp"
 #include "serialisable.hpp"
 #include "invoke.hpp"
-#include "c_basic_ops.hpp"
 
 std::string get_variable_name(int offset)
 {
@@ -20,6 +19,8 @@ std::string get_global_name(int offset)
 {
     return "g_" + std::to_string(offset);
 }
+
+#include "c_basic_ops.hpp"
 
 std::string join_commawise(const std::vector<std::string>& in)
 {
@@ -391,10 +392,10 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
             break; \
         }
 
-#define ASSERT_TYPE(x, y) ret += "static_assert(std::is_same_v<" + get_variable_name(x) + ", " + types::friendly(y) + ">);\n";
+#define ASSERT_TYPE(x, y) ret += "static_assert(std::is_same_v<" + get_variable_name(x) + ", " + types::friendly(y()) + ">);\n";
 
-#define C_POPAT(x, y){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += auto_push(x<y>(val_1), stack_offset); break;}
-#define C_POPBT(x, y){int val_2 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); int val_1 = stack_offset.pop_back(); ret += auto_push(x<y>(val_1, val_2), stack_offset); break;}
+#define C_POPAT(x, y, z){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += and_push(x(val_1), stack_offset, z()); break;}
+#define C_POPBT(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += and_push(x(val_1, val_2), stack_offset, z()); break;}
 
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
@@ -419,6 +420,15 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
 std::string and_push(const std::string& in, value_stack& stack_offset, types::valtype type)
 {
     return type.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = " + in;
+}
+
+template<typename T>
+std::string and_push(const std::string& in, value_stack& stack_offset, T t)
+{
+    types::valtype vt;
+    vt.set<T>();
+
+    return and_push(in, stack_offset, vt);
 }
 
 std::string auto_push(const std::string& in, value_stack& stack_offset)
@@ -584,7 +594,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             {
                 int decision_variable = stack_offset.pop_back();
 
-                ret = "if(" + get_variable_name(decision_variable) + " != 0) {\n";
+                ret += "if(" + get_variable_name(decision_variable) + " != 0) {\n";
 
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
@@ -953,6 +963,30 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 C_PUSH_CONSTANT(types::f32);
             case 0x44:
                 C_PUSH_CONSTANT(types::f64);
+
+            ///func, input type, output type
+            case 0x45:
+                C_POPAT(c_ieqz<uint32_t>, types::i32, types::i32);
+            case 0x46:
+                C_POPBT(c_eq<uint32_t>, types::i32, types::i32);
+            case 0x47:
+                C_POPBT(c_ne<uint32_t>, types::i32, types::i32);
+            case 0x48:
+                C_POPBT(c_ilt_s<int32_t>, types::i32, types::i32);
+            case 0x49:
+                C_POPBT(c_ilt_u<uint32_t>, types::i32, types::i32);
+            case 0x4A:
+                C_POPBT(c_igt_s<int32_t>, types::i32, types::i32);
+            case 0x4B:
+                C_POPBT(c_igt_u<uint32_t>, types::i32, types::i32);
+            case 0x4C:
+                C_POPBT(c_ile_s<int32_t>, types::i32, types::i32);
+            case 0x4D:
+                C_POPBT(c_ile_u<uint32_t>, types::i32, types::i32);
+            case 0x4E:
+                C_POPBT(c_ige_s<int32_t>, types::i32, types::i32);
+            case 0x4F:
+                C_POPBT(c_ige_u<uint32_t>, types::i32, types::i32);
 
             default:
                 ret += "assert(false); //fellthrough";
