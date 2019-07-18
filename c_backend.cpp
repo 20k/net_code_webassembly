@@ -20,6 +20,58 @@ std::string get_global_name(int offset)
     return "g_" + std::to_string(offset);
 }
 
+struct value_stack
+{
+    int safe_offset = 0;
+    std::vector<int> stk;
+
+    int get_next()
+    {
+        int next = safe_offset++;
+
+        stk.push_back(next);
+
+        return next;
+    }
+
+    int pop_back()
+    {
+        if(stk.size() == 0)
+        {
+            printf("Warning, invalid pop_back\n");
+            return -1;
+        }
+
+        //throw std::runtime_error("Bad stack");
+
+        int val = stk.back();
+
+        stk.pop_back();
+
+        return val;
+    }
+
+    int peek_back()
+    {
+        if(stk.size() == 0)
+        {
+            printf("Warning, invalid peek_back\n");
+            return -1;
+        }
+
+        //throw std::runtime_error("Bad peek");
+
+        return stk.back();
+    }
+
+    int get_temporary()
+    {
+        int val = get_next();
+        pop_back();
+        return val;
+    }
+};
+
 #include "c_basic_ops.hpp"
 
 std::string join_commawise(const std::vector<std::string>& in)
@@ -138,58 +190,6 @@ std::string declare_function(runtime::store& s, runtime::funcaddr address, runti
         values.push_back(val);
     }
 };*/
-
-struct value_stack
-{
-    int safe_offset = 0;
-    std::vector<int> stk;
-
-    int get_next()
-    {
-        int next = safe_offset++;
-
-        stk.push_back(next);
-
-        return next;
-    }
-
-    int pop_back()
-    {
-        if(stk.size() == 0)
-        {
-            printf("Warning, invalid pop_back\n");
-            return -1;
-        }
-
-        //throw std::runtime_error("Bad stack");
-
-        int val = stk.back();
-
-        stk.pop_back();
-
-        return val;
-    }
-
-    int peek_back()
-    {
-        if(stk.size() == 0)
-        {
-            printf("Warning, invalid peek_back\n");
-            return -1;
-        }
-
-        //throw std::runtime_error("Bad peek");
-
-        return stk.back();
-    }
-
-    int get_temporary()
-    {
-        int val = get_next();
-        pop_back();
-        return val;
-    }
-};
 
 struct c_context
 {
@@ -396,6 +396,8 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 
 #define C_POPAT(x, y, z){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += and_push(x(val_1), stack_offset, z()); break;}
 #define C_POPBT(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += and_push(x(val_1, val_2), stack_offset, z()); break;}
+
+#define C_POPBT_RAW(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += x(val_1, val_2, stack_offset, z()); break;
 
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
@@ -1037,6 +1039,43 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 C_POPBT(c_fle<double>, types::f64, types::i32);
             case 0x66:
                 C_POPBT(c_fge<double>, types::f64, types::i32);
+
+            case 0x67:
+                C_POPAT(c_iclz<uint32_t>, types::i32, types::i32);
+            case 0x68:
+                C_POPAT(c_ictz<uint32_t>, types::i32, types::i32);
+            case 0x69:
+                C_POPAT(c_ipopcnt<uint32_t>, types::i32, types::i32);
+            case 0x6A:
+                C_POPBT(c_add<uint32_t>, types::i32, types::i32);
+            case 0x6B:
+                C_POPBT(c_sub<uint32_t>, types::i32, types::i32);
+            case 0x6C:
+                C_POPBT(c_mul<uint32_t>, types::i32, types::i32);
+            case 0x6D:
+                C_POPBT_RAW(c_idiv<int32_t>, types::i32, types::i32);
+            case 0x6E:
+                C_POPBT_RAW(c_idiv<uint32_t>, types::i32, types::i32);
+            case 0x6F:
+                C_POPBT_RAW(c_remi<int32_t>, types::i32, types::i32);
+            case 0x70:
+                C_POPBT_RAW(c_remi<uint32_t>, types::i32, types::i32);
+            case 0x71:
+                C_POPBT(c_iand<uint32_t>, types::i32, types::i32);
+            case 0x72:
+                C_POPBT(c_ior<uint32_t>, types::i32, types::i32);
+            case 0x73:
+                C_POPBT(c_ixor<uint32_t>, types::i32, types::i32);
+            case 0x74:
+                C_POPBT(c_ishl<uint32_t>, types::i32, types::i32);
+            case 0x75:
+                C_POPBT(c_ishr_s<int32_t>, types::i32, types::i32);
+            case 0x76:
+                C_POPBT(c_ishr_u<uint32_t>, types::i32, types::i32);
+            case 0x77:
+                C_POPBT(c_irotl<uint32_t>, types::i32, types::i32);
+            case 0x78:
+                C_POPBT(c_irotr<uint32_t>, types::i32, types::i32);
 
             default:
                 ret += "assert(false); //fellthrough";
