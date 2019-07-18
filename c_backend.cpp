@@ -893,6 +893,41 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0x3E:
                 C_MEM_STORE(uint64_t, 4);
 
+            ///mem.size
+            case 0x3F:
+            {
+                minst.memaddrs.check(0);
+                runtime::memaddr maddr = minst.memaddrs[0];
+
+                int next_val = stack_offset.get_next();
+
+                ret += "i32 " + get_variable_name(next_val) + " = mem_" + std::to_string((uint32_t)maddr) + ".size() / " + std::to_string(runtime::page_size) + ";\n";
+
+                break;
+            }
+
+            ///mem.grow
+            case 0x40:
+            {
+                minst.memaddrs.check(0);
+                runtime::memaddr maddr = minst.memaddrs[0];
+
+                std::string mem = "mem_" + std::to_string((uint32_t)maddr);
+
+                int pages_variable = stack_offset.pop_back();
+                int return_value = stack_offset.get_next();
+
+                int temp_var = stack_offset.get_temporary();
+
+                ret += "i32 " + get_variable_name(return_value) + " = 0;\n";
+
+                ret += "i32 " + get_variable_name(temp_var) + " = (" + mem + ".size() / " + std::to_string(runtime::page_size) + ") + " + get_variable_name(pages_variable) + ";\n";
+
+                ret += "if(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + " >= " + std::to_string(runtime::sandbox_mem_cap) + "){" + get_variable_name(return_value) + " = -1;}";
+                ret += "if(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + " < " + std::to_string(runtime::sandbox_mem_cap) + "){" + mem + ".resize(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + "+1); " + get_variable_name(return_value) + " = " + get_variable_name(temp_var) + ";}";
+
+                break;
+            }
 
             default:
                 ret += "assert(false); //fellthrough";
