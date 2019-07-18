@@ -296,9 +296,6 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         }
     }
 
-    ///reached end of block
-    fbody += "    break;\n";
-
     fbody += "}\n";
 
     if(l.btype.arity() > 0)
@@ -307,6 +304,9 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
         fbody += get_variable_name(destination_stack_val) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n}";
     }
+
+    ///reached end of block
+    fbody += "    break;\n";
 
     ctx.label_depth--;
     ctx.label_arities.pop_back();
