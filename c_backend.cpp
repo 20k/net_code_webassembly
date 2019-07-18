@@ -1145,6 +1145,60 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0x98:
                 C_POPBT(c_fcopysign<float>, types::f32, types::f32);
 
+            ///these functions are all template parameter format
+            ///<dest, src>
+            ///so trunc_s takes the argument as a float
+            ///and then converts it to an int32_t
+            case 0xA7:
+                C_POPAT((c_wrap<uint32_t, 32>), types::i64, types::i32);
+            case 0xA8:
+                C_POPAT((c_trunc_s<int32_t, float>), types::f32, types::i32);
+            case 0xA9:
+                C_POPAT((c_trunc_u<uint32_t, float>), types::f32, types::i32);
+            case 0xAA:
+                C_POPAT((c_trunc_s<int32_t, double>), types::f64, types::i32);
+            case 0xAB:
+                C_POPAT((c_trunc_u<uint32_t, double>), types::f64, types::i32);
+            case 0xAC:
+                C_POPAT((c_extend_s<int64_t, int32_t>), types::i32, types::i32);
+            case 0xAD:
+                C_POPAT((c_extend_u<uint64_t, uint32_t>), types::i32, types::i64);
+            case 0xAE:
+                C_POPAT((c_trunc_s<int64_t, float>), types::f32, types::i64);
+            case 0xAF:
+                C_POPAT((c_trunc_u<uint64_t, float>), types::f32, types::i64);
+            case 0xB0:
+                C_POPAT((c_trunc_s<int64_t, double>), types::f64, types::i64);
+            case 0xB1:
+                C_POPAT((c_trunc_u<uint64_t, double>), types::f64, types::i64);
+            case 0xB2:
+                C_POPAT((c_convert_s<float, int32_t>), types::i32, types::f32);
+            case 0xB3:
+                C_POPAT((c_convert_u<float, uint32_t>), types::i32, types::f32);
+            case 0xB4:
+                C_POPAT((c_convert_s<float, int64_t>), types::i64, types::f32);
+            case 0xB5:
+                C_POPAT((c_convert_u<float, uint64_t>), types::i64, types::f32);
+            case 0xB6:
+                C_POPAT((c_demote<float, double>), types::f64, types::f32);
+            case 0xB7:
+                C_POPAT((c_convert_s<double, int32_t>), types::i32, types::f64);
+            case 0xB8:
+                C_POPAT((c_convert_u<double, uint32_t>), types::i32, types::f64);
+            case 0xB9:
+                C_POPAT((c_convert_s<double, int64_t>), types::i64, types::f64);
+            case 0xBA:
+                C_POPAT((c_convert_u<double, uint64_t>), types::i64, types::f64);
+            case 0xBB:
+                C_POPAT((c_promote<double, float>), types::f32, types::f64);
+            case 0xBC:
+                C_POPAT((c_reinterpret<uint32_t, float>), types::f32, types::i32);
+            case 0xBD:
+                C_POPAT((c_reinterpret<uint64_t, double>), types::f64, types::i32);
+            case 0xBE:
+                C_POPAT((c_reinterpret<float, uint32_t>), types::i32, types::f32);
+            case 0xBF:
+                C_POPAT((c_reinterpret<double, uint64_t>), types::i64, types::f64);
 
 
             default:

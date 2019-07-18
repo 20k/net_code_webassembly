@@ -465,6 +465,42 @@ namespace types
     };
 
     inline
+    std::string friendly(uint32_t)
+    {
+        return "i32";
+    }
+
+    inline
+    std::string friendly(uint64_t)
+    {
+        return "i64";
+    }
+
+    inline
+    std::string friendly(int32_t)
+    {
+        return "i32";
+    }
+
+    inline
+    std::string friendly(int64_t)
+    {
+        return "i64";
+    }
+
+    inline
+    std::string friendly(float)
+    {
+        return "f32";
+    }
+
+    inline
+    std::string friendly(double)
+    {
+        return "f64";
+    }
+
+    inline
     std::string friendly(types::i32)
     {
         return "i32";

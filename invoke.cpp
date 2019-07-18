@@ -1162,7 +1162,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
             ///these functions are all template parameter format
             ///<dest, src>
             ///so trunc_s takes the argument as a float
-            ///and then converts it to an in32_t
+            ///and then converts it to an int32_t
             case 0xA7:
                 POPAT((wrap<uint32_t, 32>), types::i64);
             case 0xA8:
