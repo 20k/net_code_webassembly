@@ -539,6 +539,9 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
+                ///the reason why this abort is here is because
+                ///basically if we still need to abort upwards, we don't want to execute any more
+                ///code
                 if(ctx.label_depth > 0)
                     add_abort(ret);
 
