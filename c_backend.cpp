@@ -1116,6 +1116,37 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 C_POPBT(c_irotr<uint64_t>, types::i64, types::i64);
 
 
+            case 0x8B:
+                C_POPAT(c_absf<float>, types::f32, types::f32);
+            case 0x8C:
+                C_POPAT(c_fneg<float>, types::f32, types::f32);
+            case 0x8D:
+                C_POPAT(c_fceil<float>, types::f32, types::f32);
+            case 0x8E:
+                C_POPAT(c_ffloor<float>, types::f32, types::f32);
+            case 0x8F:
+                C_POPAT(c_ftrunc<float>, types::f32, types::f32);
+            case 0x90:
+                C_POPAT(c_fnearest<float>, types::f32, types::f32);
+            case 0x91:
+                C_POPAT(c_fsqrt<float>, types::f32, types::f32);
+            case 0x92:
+                C_POPBT(c_add<float>, types::f32, types::f32);
+            case 0x93:
+                C_POPBT(c_sub<float>, types::f32, types::f32);
+            case 0x94:
+                C_POPBT(c_mul<float>, types::f32, types::f32);
+            case 0x95:
+                C_POPBT(c_fdiv<float>, types::f32, types::f32);
+            case 0x96:
+                C_POPBT(c_fmin<float>, types::f32, types::f32);
+            case 0x97:
+                C_POPBT(c_fmax<float>, types::f32, types::f32);
+            case 0x98:
+                C_POPBT(c_fcopysign<float>, types::f32, types::f32);
+
+
+
             default:
                 ret += "assert(false); //fellthrough";
                 break;
@@ -1192,6 +1223,8 @@ std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runt
 #include <cstdint>
 #include <typeinfo>
 #include <type_traits>
+#include <algorithm>
+#include <math.h>
 
 using i32 = uint32_t;
 using i64 = uint64_t;

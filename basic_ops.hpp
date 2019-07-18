@@ -310,10 +310,10 @@ template<typename T>
 inline
 T fnearest(const T& t)
 {
-    if(t > 0 && t < 0.5)
+    if(t > 0 && t <= 0.5)
         return 0;
 
-    if(t < 0 && t > -0.5)
+    if(t < 0 && t >= -0.5)
         return -0;
 
     return round(t);
