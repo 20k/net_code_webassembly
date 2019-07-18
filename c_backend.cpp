@@ -1077,6 +1077,45 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0x78:
                 C_POPBT(c_irotr<uint32_t>, types::i32, types::i32);
 
+
+            case 0x79:
+                C_POPAT(c_iclz<uint64_t>, types::i64, types::i64);
+            case 0x7A:
+                C_POPAT(c_ictz<uint64_t>, types::i64, types::i64);
+            case 0x7B:
+                C_POPAT(c_ipopcnt<uint64_t>, types::i64, types::i64);
+            case 0x7C:
+                C_POPBT(c_add<uint64_t>, types::i64, types::i64);
+            case 0x7D:
+                C_POPBT(c_sub<uint64_t>, types::i64, types::i64);
+            case 0x7E:
+                C_POPBT(c_mul<uint64_t>, types::i64, types::i64);
+            case 0x7F:
+                C_POPBT_RAW(c_idiv<int64_t>, types::i64, types::i64);
+            case 0x80:
+                C_POPBT_RAW(c_idiv<uint64_t>, types::i64, types::i64);
+            case 0x81:
+                C_POPBT_RAW(c_remi<int64_t>, types::i64, types::i64);
+            case 0x82:
+                C_POPBT_RAW(c_remi<uint64_t>, types::i64, types::i64);
+            case 0x83:
+                C_POPBT(c_iand<uint64_t>, types::i64, types::i64);
+            case 0x84:
+                C_POPBT(c_ior<uint64_t>, types::i64, types::i64);
+            case 0x85:
+                C_POPBT(c_ixor<uint64_t>, types::i64, types::i64);
+            case 0x86:
+                C_POPBT(c_ishl<uint64_t>, types::i64, types::i64);
+            case 0x87:
+                C_POPBT(c_ishr_s<int64_t>, types::i64, types::i64);
+            case 0x88:
+                C_POPBT(c_ishr_u<uint64_t>, types::i64, types::i64);
+            case 0x89:
+                C_POPBT(c_irotl<uint64_t>, types::i64, types::i64);
+            case 0x8A:
+                C_POPBT(c_irotr<uint64_t>, types::i64, types::i64);
+
+
             default:
                 ret += "assert(false); //fellthrough";
                 break;
