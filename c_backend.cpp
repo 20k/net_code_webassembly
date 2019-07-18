@@ -414,7 +414,7 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
     if(arity > 0)
         ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
 
-    ret += "abort_stack = " + std::to_string((uint32_t)lidx + 1) + "\n";
+    ret += "abort_stack = " + std::to_string((uint32_t)lidx + 1) + ";\n";
 
     return ret;
 }
@@ -1243,7 +1243,7 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     //function_body += "int backup_arity = 0;\n";
     function_body += "int abort_stack = 0;\n";
 
-    function_body += "do {\n";
+    //function_body += "do {\n";
 
     for(const types::local& loc : local_types)
     {
@@ -1263,9 +1263,9 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset, return_arity, minst);
 
     if(return_arity > 0)
-        return function_body + "}\nwhile(0);\nreturn " + get_variable_name(soffset.pop_back()) + ";\n}\n";
+        return function_body + "return " + get_variable_name(soffset.pop_back()) + ";\n}\n";
     else
-        return function_body + "}\nwhile(0);\n}";
+        return function_body + "}\n";
 }
 
 std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runtime::moduleinst& minst, const types::vec<std::string>& vals)
