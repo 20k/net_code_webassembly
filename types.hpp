@@ -464,6 +464,30 @@ namespace types
         }
     };
 
+    inline
+    std::string friendly(types::i32)
+    {
+        return "i32";
+    }
+
+    inline
+    std::string friendly(types::i64)
+    {
+        return "i64";
+    }
+
+    inline
+    std::string friendly(types::f32)
+    {
+        return "f32";
+    }
+
+    inline
+    std::string friendly(types::f64)
+    {
+        return "f64";
+    }
+
     struct blocktype
     {
         uint8_t which = 0;

@@ -4,6 +4,7 @@
 #include "LEB.hpp"
 #include "serialisable.hpp"
 #include "invoke.hpp"
+#include "c_basic_ops.hpp"
 
 std::string get_variable_name(int offset)
 {
@@ -328,7 +329,7 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
     int u_1 = stack_offset.get_temporary();
     int t_1 = stack_offset.get_next();
 
-    ret += "static_assert(typeid(" + get_variable_name(top_val) + ") == typeid(i32));\n";
+    ret += "static_assert(std::is_same_v<" + get_variable_name(top_val) + ", i32>);\n";
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(top_val);
 
@@ -367,7 +368,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(store_bytes);
 
-    ret += "static_assert(typeid(" + get_variable_name(store_bytes) + ") == typeid(i32));\n";
+    ret += "static_assert(std::is_same_v<" + get_variable_name(store_bytes) + ", i32>);\n";
     ret += "if(" + sum + " + " + std::to_string(bytes) + " >= mem_0.size()) {assert(false);}\n";
     ret += "if(" + sum + " < 0) {assert(false);}\n";
 
@@ -390,8 +391,10 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
             break; \
         }
 
-#define C_POPAT(x, y){int val_1 = stack_offset.pop_back(); ret += auto_push(x<y>(val_1), stack_offset); break;}
-#define C_POPBT(x, y){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ret += auto_push(x<y>(val_1, val_2), stack_offset); break;}
+#define ASSERT_TYPE(x, y) ret += "static_assert(std::is_same_v<" + get_variable_name(x) + ", " + types::friendly(y) + ">);\n";
+
+#define C_POPAT(x, y){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += auto_push(x<y>(val_1), stack_offset); break;}
+#define C_POPBT(x, y){int val_2 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); int val_1 = stack_offset.pop_back(); ret += auto_push(x<y>(val_1, val_2), stack_offset); break;}
 
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
@@ -1026,6 +1029,7 @@ std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runt
 #include <vector>
 #include <cstdint>
 #include <typeinfo>
+#include <type_traits>
 
 using i32 = uint32_t;
 using i64 = uint64_t;
