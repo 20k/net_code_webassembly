@@ -352,7 +352,7 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(top_val);
 
-    ret += "if(" + sum + " + sizeof(" + utemp.friendly() + ") >= mem_0.size()) {assert(false);}\n";
+    ret += "if(" + sum + " + sizeof(" + utemp.friendly() + ") > mem_0.size()) {assert(false);}\n";
     ret += "if(" + sum + " < 0) {assert(false);}\n";
     ret += utemp.friendly() + " " + get_variable_name(u_1) + " = 0;\n";
     ret += "memcpy(&" + get_variable_name(u_1) + ", &mem_0[" + sum + "], sizeof(" + utemp.friendly() + "));\n";
@@ -387,8 +387,9 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(store_bytes);
 
+    ret += "printf(\"EAB %i %i\\n\", " + sum + ", mem_0.size());\n";
     ret += "static_assert(std::is_same<decltype(" + get_variable_name(store_bytes) + "), i32>::value);\n";
-    ret += "if(" + sum + " + " + std::to_string(bytes) + " >= mem_0.size()) {assert(false);}\n";
+    ret += "if(" + sum + " + " + std::to_string(bytes) + " > mem_0.size()) {assert(false);}\n";
     ret += "if(" + sum + " < 0) {assert(false);}\n";
 
     ret += "static_assert(" + std::to_string(bytes) + " <= sizeof(" + get_variable_name(store_value) + "));\n";

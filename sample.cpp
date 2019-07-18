@@ -231,8 +231,10 @@ int main() {
 
   func_2(2);*/
 
-  return call_is_prime(73239581);
+  //return call_is_prime(73239581);
   //return call_is_prime(15485863);
+
+  return capi_test();
 
   return 1;
 }

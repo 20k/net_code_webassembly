@@ -7,6 +7,7 @@
 #include "injection_helpers.hpp"
 #include "JIT.hpp"
 #include "c_backend.hpp"
+#include <SFML/System/Clock.hpp>
 
 std::optional<runtime::value> test_host_func(const types::vec<runtime::value>& vals, runtime::store& s)
 {
@@ -40,7 +41,6 @@ void print(const char* ptr)
 {
     printf("pre %s post\n", ptr);
 }
-
 
 ///ok so
 ///js isn't actually js unfortunately, its typescript, and its forcibly typescript which isn't good enough
@@ -85,6 +85,9 @@ int main()
 
     test.init(example, vals);
     //test.self_test();
+
+    wasm_binary_data exec = test;
+    exec.self_test();
 
     std::string as_c_program = get_as_c_program(test);
 

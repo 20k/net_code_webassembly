@@ -1084,7 +1084,9 @@ void wasm_binary_data::self_test()
     //types::vec<runtime::value> vals = s.invoke_by_name("is_prime", minst, {arg});
     //types::vec<runtime::value> vals = s.invoke_by_name("call_is_prime", minst, {arg});
 
-    types::vec<runtime::value> vals = s.invoke_by_name("is_prime", *m_minst, {arg});
+    //types::vec<runtime::value> vals = s.invoke_by_name("is_prime", *m_minst, {arg});
+
+    types::vec<runtime::value> vals = s.invoke_by_name("capi_test", *m_minst, {});
 
     //types::vec<runtime::value> vals = s.invoke_by_name("test_serialise", *m_minst, {});
 
