@@ -330,7 +330,7 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
     int u_1 = stack_offset.get_temporary();
     int t_1 = stack_offset.get_next();
 
-    ret += "static_assert(std::is_same<" + get_variable_name(top_val) + ", i32>::value);\n";
+    ret += "static_assert(std::is_same<decltype(" + get_variable_name(top_val) + "), i32>::value);\n";
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(top_val);
 
@@ -369,7 +369,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(store_bytes);
 
-    ret += "static_assert(std::is_same<" + get_variable_name(store_bytes) + ", i32>::value);\n";
+    ret += "static_assert(std::is_same<decltype(" + get_variable_name(store_bytes) + "), i32>::value);\n";
     ret += "if(" + sum + " + " + std::to_string(bytes) + " >= mem_0.size()) {assert(false);}\n";
     ret += "if(" + sum + " < 0) {assert(false);}\n";
 
@@ -392,7 +392,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
             break; \
         }
 
-#define ASSERT_TYPE(x, y) ret += "static_assert(std::is_same<" + get_variable_name(x) + ", " + types::friendly(y()) + ">::value);\n";
+#define ASSERT_TYPE(x, y) ret += "static_assert(std::is_same<decltype(" + get_variable_name(x) + "), " + types::friendly(y()) + ">::value);\n";
 
 #define C_POPAT(x, y, z){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += and_push(x(val_1), stack_offset, z()); break;}
 #define C_POPBT(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += and_push(x(val_1, val_2), stack_offset, z()); break;}
