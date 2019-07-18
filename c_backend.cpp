@@ -100,6 +100,17 @@ std::string function_name(runtime::moduleinst& minst, runtime::funcinst& finst, 
         func_name = it->second;
     }
 
+    for(runtime::exportinst& einst : minst.exports)
+    {
+        if(!std::holds_alternative<runtime::funcaddr>(einst.value.val))
+            continue;
+
+        runtime::funcaddr faddr = std::get<runtime::funcaddr>(einst.value.val);
+
+        if((uint32_t)faddr == (uint32_t)address)
+            return einst.name.friendly();
+    }
+
     return func_name;
 }
 
