@@ -539,7 +539,9 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
-                //add_abort(ret);
+                if(ctx.label_depth > 0)
+                    add_abort(ret);
+
                 break;
             }
 
@@ -556,7 +558,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
-                //add_abort(ret);
+                if(ctx.label_depth > 0)
+                    add_abort(ret);
 
                 break;
             }
@@ -585,7 +588,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += "} //endif";
 
-                //add_abort(ret);
+                if(ctx.label_depth > 0)
+                    add_abort(ret);
 
                 break;
             }
