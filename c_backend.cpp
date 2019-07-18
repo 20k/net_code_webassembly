@@ -180,6 +180,13 @@ struct value_stack
 
         return stk.back();
     }
+
+    int get_temporary()
+    {
+        int val = get_next();
+        pop_back();
+        return val;
+    }
 };
 
 struct c_context
@@ -294,6 +301,45 @@ void add_abort(std::string& in)
 {
     in += "if(abort_stack > 0)\n    break;\n";
 }
+
+template<typename T, typename U>
+std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack& stack_offset, runtime::moduleinst& minst)
+{
+    std::string ret;
+
+    if(s.mems.size() < 1)
+        throw std::runtime_error("No such mem idx 0");
+
+    runtime::memaddr addr = minst.memaddrs[0];
+
+    uint32_t raw_addr = (uint32_t)addr;
+
+    if(raw_addr >= (uint32_t)s.mems.size())
+        throw std::runtime_error("raw_addr >= s.mems.size()");
+
+    int top_val = stack_offset.pop_back();
+
+    runtime::value utemp;
+    utemp.set(U());
+
+    runtime::value ttemp;
+    ttemp.set(T());
+
+    int u_1 = stack_offset.get_temporary();
+    int t_1 = stack_offset.get_next();
+
+    std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(top_val);
+
+    ret += "if(" + sum + " + sizeof(" + utemp.friendly() + ")) >= mem_0.size()) {assert(false);}\n";
+    ret += utemp.friendly() + " " + get_variable_name(u_1) + " = 0;\n";
+    ret += "memcpy(&" + get_variable_name(u_1) + ", &mem_0[" + sum + "], sizeof(" + utemp.friendly() + "));\n";
+
+    ret += ttemp.friendly() + " " + get_variable_name(t_1) + " = (" + ttemp.friendly() + ")" + get_variable_name(u_1) + ";\n";
+
+    return ret;
+}
+
+#define C_MEM_LOAD(x, y) ret += c_mem_load<x, y>(s, std::get<types::memarg>(is.dat), stack_offset, minst); break;
 
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
@@ -757,6 +803,35 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 break;
             }
+
+            case 0x28:
+                C_MEM_LOAD(uint32_t, uint32_t);
+            case 0x29:
+                C_MEM_LOAD(uint64_t, uint64_t);
+            case 0x2A:
+                C_MEM_LOAD(float, float);
+            case 0x2B:
+                C_MEM_LOAD(double, double);
+            case 0x2C:
+                C_MEM_LOAD(int32_t, int8_t);
+            case 0x2D:
+                C_MEM_LOAD(uint32_t, uint8_t);
+            case 0x2E:
+                C_MEM_LOAD(int32_t, int16_t);
+            case 0x2F:
+                C_MEM_LOAD(uint32_t, uint16_t);
+            case 0x30:
+                C_MEM_LOAD(int64_t, int8_t);
+            case 0x31:
+                C_MEM_LOAD(uint64_t, uint8_t);
+            case 0x32:
+                C_MEM_LOAD(int64_t, int16_t);
+            case 0x33:
+                C_MEM_LOAD(uint64_t, uint16_t);
+            case 0x34:
+                C_MEM_LOAD(int64_t, int32_t);
+            case 0x35:
+                C_MEM_LOAD(uint64_t, uint32_t);
 
             default:
                 ret += "assert(false); //fellthrough";
