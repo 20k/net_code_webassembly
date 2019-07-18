@@ -381,6 +381,15 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 #define C_MEM_LOAD(x, y) ret += c_mem_load<x, y>(s, std::get<types::memarg>(is.dat), stack_offset, minst); break;
 #define C_MEM_STORE(x, y) ret += c_mem_store<x, y>(s, std::get<types::memarg>(is.dat), stack_offset, minst); break;
 
+#define C_PUSH_CONSTANT(xtype)\
+        { \
+            int next = stack_offset.get_next(); \
+            types::valtype type; \
+            type.set<xtype>(); \
+            ret += type.friendly() + " " + get_variable_name(next) + " = " + std::to_string(std::get<xtype>(is.dat).val) + ";\n"; \
+            break; \
+        }
+
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
     std::string ret;
@@ -929,6 +938,16 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 break;
             }
 
+
+            case 0x41:
+                C_PUSH_CONSTANT(types::i32);
+            case 0x42:
+                C_PUSH_CONSTANT(types::i64);
+            case 0x43:
+                C_PUSH_CONSTANT(types::f32);
+            case 0x44:
+                C_PUSH_CONSTANT(types::f64);
+
             default:
                 ret += "assert(false); //fellthrough";
                 break;
@@ -962,7 +981,6 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     runtime::webasm_func& wasm_func = std::get<runtime::webasm_func>(finst.funct);
     const types::vec<types::local>& local_types = wasm_func.funct.fnc.locals;
 
-    int current_stack_end = 0;
     int current_locals_end = ftype.params.size();
 
     std::string function_body = sig + " {\n";
@@ -1014,7 +1032,7 @@ using empty = void;
 
 )";
 
-    for(int i=0; i < s.mems.size(); i++)
+    for(int i=0; i < (int)s.mems.size(); i++)
     {
         runtime::meminst& inst = s.mems[i];
 
