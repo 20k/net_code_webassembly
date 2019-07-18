@@ -390,6 +390,9 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
             break; \
         }
 
+#define C_POPAT(x, y){int val_1 = stack_offset.pop_back(); ret += auto_push(x<y>(val_1), stack_offset); break;}
+#define C_POPBT(x, y){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ret += auto_push(x<y>(val_1, val_2), stack_offset); break;}
+
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
     std::string ret;
