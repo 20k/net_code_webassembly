@@ -659,9 +659,51 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 int second = stack_offset.pop_back();
                 int first = stack_offset.pop_back();
 
+                ///next = decider ? first : second;
                 ret += auto_push(get_variable_name(decider) + " ? " + get_variable_name(first) + " : " + get_variable_name(second) + ";\n", stack_offset);
                 break;
             }
+
+            ///get_local
+            case 0x20:
+            {
+                types::localidx idx = std::get<types::localidx>(is.dat);
+
+                ret += auto_push(get_local_name((uint32_t)idx) + ";\n", stack_offset);
+
+                break;
+            }
+
+            ///set_local
+            case 0x21:
+            {
+                types::localidx idx = std::get<types::localidx>(is.dat);
+
+                int top_val = stack_offset.pop_back();
+
+                ///no need to check because top_val >= activate.f.locals.size() is a compile error
+                ret += get_local_name((uint32_t)idx) + " = " + get_variable_name(top_val) + ";\n";
+
+                break;
+            }
+
+            ///tee_local
+            case 0x22:
+            {
+                types::localidx idx = std::get<types::localidx>(is.dat);
+
+                ///the pop/push here is a bit unnecessary
+                int top_val = stack_offset.pop_back();
+
+                int next_var = stack_offset.get_next();
+
+                ret += get_local_name((uint32_t)idx) + " = " + get_variable_name(top_val) + ";\n";
+                ret += get_variable_name(next_var) + " = " + get_variable_name(top_val) + ";\n";
+
+                break;
+            }
+
+
 
             default:
                 ret += "assert(false); //fellthrough";
