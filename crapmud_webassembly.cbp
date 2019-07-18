@@ -60,6 +60,7 @@
 		<Unit filename="basic_ops.hpp" />
 		<Unit filename="c_backend.cpp" />
 		<Unit filename="c_backend.hpp" />
+		<Unit filename="c_basic_ops.hpp" />
 		<Unit filename="compile.cpp" />
 		<Unit filename="compile.hpp" />
 		<Unit filename="injection_helpers.cpp" />

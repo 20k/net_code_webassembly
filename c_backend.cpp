@@ -988,6 +988,56 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0x4F:
                 C_POPBT(c_ige_u<uint32_t>, types::i32, types::i32);
 
+            case 0x50:
+                C_POPAT(c_ieqz<uint64_t>, types::i64, types::i32);
+            case 0x51:
+                C_POPBT(c_eq<uint64_t>, types::i64, types::i32);
+            case 0x52:
+                C_POPBT(c_ne<uint64_t>, types::i64, types::i32);
+            case 0x53:
+                C_POPBT(c_ilt_s<int64_t>, types::i64, types::i32);
+            case 0x54:
+                C_POPBT(c_ilt_u<uint64_t>, types::i64, types::i32);
+            case 0x55:
+                C_POPBT(c_igt_s<int64_t>, types::i64, types::i32);
+            case 0x56:
+                C_POPBT(c_igt_u<uint64_t>, types::i64, types::i32);
+            case 0x57:
+                C_POPBT(c_ile_s<int64_t>, types::i64, types::i32);
+            case 0x58:
+                C_POPBT(c_ile_u<uint64_t>, types::i64, types::i32);
+            case 0x59:
+                C_POPBT(c_ige_s<int64_t>, types::i64, types::i32);
+            case 0x5A:
+                C_POPBT(c_ige_u<uint64_t>, types::i64, types::i32);
+
+
+            case 0x5B:
+                C_POPBT(c_eq<float>, types::f32, types::i32);
+            case 0x5C:
+                C_POPBT(c_ne<float>, types::f32, types::i32);
+            case 0x5D:
+                C_POPBT(c_flt<float>, types::f32, types::i32);
+            case 0x5E:
+                C_POPBT(c_fgt<float>, types::f32, types::i32);
+            case 0x5F:
+                C_POPBT(c_fle<float>, types::f32, types::i32);
+            case 0x60:
+                C_POPBT(c_fge<float>, types::f32, types::i32);
+
+            case 0x61:
+                C_POPBT(c_eq<double>, types::f64, types::i32);
+            case 0x62:
+                C_POPBT(c_ne<double>, types::f64, types::i32);
+            case 0x63:
+                C_POPBT(c_flt<double>, types::f64, types::i32);
+            case 0x64:
+                C_POPBT(c_fgt<double>, types::f64, types::i32);
+            case 0x65:
+                C_POPBT(c_fle<double>, types::f64, types::i32);
+            case 0x66:
+                C_POPBT(c_fge<double>, types::f64, types::i32);
+
             default:
                 ret += "assert(false); //fellthrough";
                 break;
