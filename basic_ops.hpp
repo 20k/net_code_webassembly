@@ -516,7 +516,7 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, ac
     if(ea + bytes > (uint32_t)minst.dat.size())
         throw std::runtime_error("Tried to hit OOB in mem_store");
 
-    printf("EAB %i %i\n", ea, minst.dat.size());
+    //printf("EAB %i %i\n", ea, minst.dat.size());
 
     ///I believe the semantics for wrap are just integer truncation
 

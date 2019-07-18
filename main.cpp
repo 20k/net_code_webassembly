@@ -87,6 +87,8 @@ int main()
     //test.self_test();
 
     wasm_binary_data exec = test;
+
+    exec.m_minst = new runtime::moduleinst(*exec.m_minst);
     exec.self_test();
 
     std::string as_c_program = get_as_c_program(test);

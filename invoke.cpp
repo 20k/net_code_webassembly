@@ -575,7 +575,14 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
         //std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
 
-        //std::cout << instr_to_str(which) << std::endl;
+        #ifdef INSTRUCTION_TRACING
+        if(full.peek_back().has_value())
+        {
+            std::cout << "sback " << full.peek_back().value().friendly_val() << std::endl;
+        }
+
+        std::cout << instr_to_str(which) << std::endl;
+        #endif // INSTRUCTION_TRACING
 
         /*lg::log("0x");
         lg::log_hex_noline(which);

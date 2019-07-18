@@ -387,7 +387,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(store_bytes);
 
-    ret += "printf(\"EAB %i %i\\n\", " + sum + ", mem_0.size());\n";
+    //ret += "printf(\"EAB %i %i\\n\", " + sum + ", mem_0.size());\n";
     ret += "static_assert(std::is_same<decltype(" + get_variable_name(store_bytes) + "), i32>::value);\n";
     ret += "if(" + sum + " + " + std::to_string(bytes) + " > mem_0.size()) {assert(false);}\n";
     ret += "if(" + sum + " < 0) {assert(false);}\n";
@@ -512,6 +512,13 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
         size_t which = is.which;
 
         ret += "//" + instr_to_str(which) + "\n";
+
+        #ifdef INSTRUCTION_TRACING
+        if(stack_offset.peek_back() != -1)
+            ret += "std::cout << " + get_variable_name(stack_offset.peek_back()) + " << std::endl;\n";
+
+        ret += "printf(\"" + instr_to_str(which) + "\\n\");\n";
+        #endif // INSTRUCTION_TRACING
 
         switch(which)
         {
@@ -999,13 +1006,15 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 int return_value = stack_offset.get_next();
 
                 int temp_var = stack_offset.get_temporary();
+                int old_size = stack_offset.get_temporary();
 
                 ret += "i32 " + get_variable_name(return_value) + " = 0;\n";
 
                 ret += "i32 " + get_variable_name(temp_var) + " = (" + mem + ".size() / " + std::to_string(runtime::page_size) + ") + " + get_variable_name(pages_variable) + ";\n";
+                ret += "i32 " + get_variable_name(old_size) + " = " + mem + ".size() / " + std::to_string(runtime::page_size) + ";\n";
 
                 ret += "if(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + " >= " + std::to_string(runtime::sandbox_mem_cap) + "){" + get_variable_name(return_value) + " = -1;}";
-                ret += "if(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + " < " + std::to_string(runtime::sandbox_mem_cap) + "){" + mem + ".resize(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + "+1); " + get_variable_name(return_value) + " = " + get_variable_name(temp_var) + ";}";
+                ret += "if(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + " < " + std::to_string(runtime::sandbox_mem_cap) + "){" + mem + ".resize(" + get_variable_name(temp_var) + " * " + std::to_string(runtime::page_size) + "+1); " + get_variable_name(return_value) + " = " + get_variable_name(old_size) + ";}";
 
                 break;
             }
@@ -1339,6 +1348,7 @@ std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runt
 #include <assert.h>
 #include <string.h>
 #include <stdio.h> ///not necessary
+#include <iostream> ///not necessary
 
 using i32 = uint32_t;
 using i64 = uint64_t;

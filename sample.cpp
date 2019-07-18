@@ -223,6 +223,12 @@ unsigned int euclid(unsigned int a, unsigned int b) {
 }
 
 WASM_EXPORT
+unsigned int sub(unsigned int a, unsigned int b)
+{
+    return b - a;
+}
+
+WASM_EXPORT
 int main() {
   //printf("hello, world!\n");
 
