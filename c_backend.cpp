@@ -365,7 +365,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
     runtime::value ttemp;
     ttemp.set(T());
 
-    std::string sum = std::to_string((uint32_t)arg.offset) + " + " + std::to_string(store_bytes);
+    std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(store_bytes);
 
     ret += "static_assert(typeid(" + get_variable_name(store_bytes) + ") == typeid(i32));\n";
     ret += "if(" + sum + " + " + std::to_string(bytes) + " >= mem_0.size()) {assert(false);}\n";
