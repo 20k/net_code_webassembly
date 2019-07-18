@@ -330,7 +330,8 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(top_val);
 
-    ret += "if(" + sum + " + sizeof(" + utemp.friendly() + ")) >= mem_0.size()) {assert(false);}\n";
+    ret += "if(" + sum + " + sizeof(" + utemp.friendly() + ") >= mem_0.size()) {assert(false);}\n";
+    ret += "if(" + sum + " < 0) {assert(false);}\n";
     ret += utemp.friendly() + " " + get_variable_name(u_1) + " = 0;\n";
     ret += "memcpy(&" + get_variable_name(u_1) + ", &mem_0[" + sum + "], sizeof(" + utemp.friendly() + "));\n";
 
@@ -339,7 +340,33 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
     return ret;
 }
 
+template<typename T, int bytes>
+std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack& stack_offset, runtime::moduleinst& minst)
+{
+    static_assert(bytes <= sizeof(T));
+
+    std::string ret;
+
+    if(s.mems.size() < 1)
+        throw std::runtime_error("No such mem idx 0");
+
+    runtime::memaddr addr = minst.memaddrs[0];
+
+    uint32_t raw_addr = (uint32_t)addr;
+
+    if(raw_addr >= (uint32_t)s.mems.size())
+        throw std::runtime_error("raw_addr >= s.mems.size()");
+
+    int store_value = stack_offset.pop_back();
+    int store_bytes = stack_offset.pop_back();
+
+
+
+    return ret;
+}
+
 #define C_MEM_LOAD(x, y) ret += c_mem_load<x, y>(s, std::get<types::memarg>(is.dat), stack_offset, minst); break;
+#define C_MEM_STORE(x, y) ret += c_mem_store<x, y>(s, std::get<types::memarg>(is.dat), stack_offset, minst); break;
 
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
@@ -832,6 +859,27 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 C_MEM_LOAD(int64_t, int32_t);
             case 0x35:
                 C_MEM_LOAD(uint64_t, uint32_t);
+
+
+            case 0x36:
+                C_MEM_STORE(uint32_t, 4);
+            case 0x37:
+                C_MEM_STORE(uint64_t, 8);
+            case 0x38:
+                C_MEM_STORE(float, 4);
+            case 0x39:
+                C_MEM_STORE(double, 8);
+            case 0x3A:
+                C_MEM_STORE(uint32_t, 1);
+            case 0x3B:
+                C_MEM_STORE(uint32_t, 2);
+            case 0x3C:
+                C_MEM_STORE(uint64_t, 1);
+            case 0x3D:
+                C_MEM_STORE(uint64_t, 2);
+            case 0x3E:
+                C_MEM_STORE(uint64_t, 4);
+
 
             default:
                 ret += "assert(false); //fellthrough";
