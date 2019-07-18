@@ -360,7 +360,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
     int store_value = stack_offset.pop_back();
     int store_bytes = stack_offset.pop_back();
 
-
+    std::string sum = std::to_string(uint32_t arg.offset) + " + " + get_variable_name(store_val);
 
     return ret;
 }
