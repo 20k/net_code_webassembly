@@ -397,7 +397,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 #define C_POPAT(x, y, z){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += and_push(x(val_1), stack_offset, z()); break;}
 #define C_POPBT(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += and_push(x(val_1, val_2), stack_offset, z()); break;}
 
-#define C_POPBT_RAW(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += x(val_1, val_2, stack_offset, z()); break;
+#define C_POPBT_RAW(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += x(val_1, val_2, stack_offset, z()); break;}
 
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
 {
