@@ -247,7 +247,7 @@ T fcopysign(const T& v1, const T& v2)
         return v1;
 
     if(v1 < 0 && v2 < 0)
-        return v2;
+        return v1;
 
     if(v1 > 0 && v2 < 0)
         return -v1;
