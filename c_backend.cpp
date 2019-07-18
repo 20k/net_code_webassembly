@@ -245,7 +245,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
 
-    fbody += "    } //end skip point\n";
+    fbody += "    } while(0); //end skip point\n";
 
     fbody += "if(abort_stack > 0) {\n    abort_stack--;\n";
 
