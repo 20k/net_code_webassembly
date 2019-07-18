@@ -200,6 +200,20 @@ namespace runtime
             return apply([](auto concrete){return std::to_string(concrete);});
         }
 
+        std::string friendly() const
+        {
+            if(std::holds_alternative<types::i32>(v))
+                return "i32";
+            else if(std::holds_alternative<types::i64>(v))
+                return "i64";
+            else if(std::holds_alternative<types::f32>(v))
+                return "f32";
+            else if(std::holds_alternative<types::f64>(v))
+                return "f64";
+            else
+                return "empty";
+        }
+
         bool is_i32()
         {
             return std::holds_alternative<types::i32>(v);

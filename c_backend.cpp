@@ -695,15 +695,37 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 ///the pop/push here is a bit unnecessary
                 int top_val = stack_offset.pop_back();
 
-                int next_var = stack_offset.get_next();
-
                 ret += get_local_name((uint32_t)idx) + " = " + get_variable_name(top_val) + ";\n";
-                ret += get_variable_name(next_var) + " = " + get_variable_name(top_val) + ";\n";
+                ret += auto_push(get_variable_name(top_val) + ";\n", stack_offset);
 
                 break;
             }
 
+            ///get_global
+            case 0x23:
+            {
+                types::globalidx gidx = std::get<types::globalidx>(is.dat);
 
+                uint32_t idx = (uint32_t)gidx;
+
+                if(idx >= (uint32_t)minst.globaladdrs.size())
+                    throw std::runtime_error("bad idx in get_global");
+
+                runtime::globaladdr addr = minst.globaladdrs[idx];
+
+                if((uint32_t)addr >= (uint32_t)s.globals.size())
+                    throw std::runtime_error("bad addr in get_global");
+
+                runtime::globalinst& glob = s.globals[(uint32_t)addr];
+
+                runtime::value val = glob.val;
+
+                int next_var = stack_offset.get_next();
+
+                ret += val.friendly() + " " + get_variable_name(next_var) + " = " + val.friendly_val() + ";\n";
+
+                break;
+            }
 
             default:
                 ret += "assert(false); //fellthrough";
