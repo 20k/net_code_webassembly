@@ -683,8 +683,6 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += invoke_function(s, ctx, stack_offset, minst, minst.funcaddrs[idx], true);
 
-                add_abort(ret);
-
                 break;
             }
 
