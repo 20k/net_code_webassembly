@@ -15,6 +15,7 @@ std::string get_local_name(int offset)
     return "l_" + std::to_string(offset);
 }
 
+///TODO: Global variables might have side effects? unsure
 std::string get_global_name(int offset)
 {
     return "g_" + std::to_string(offset);
@@ -274,18 +275,18 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
         ///ok but what if its not us?
         ///Just pop all values on stack? AKA just break outside of this?
-        fbody += "    if(abort_stack > 0) {break;}\n";
+        //fbody += "    if(abort_stack > 0) {break;}\n";
     }
     else
     {
         if(l.btype.arity() == 0)
         {
-            fbody += "    if(abort_stack > 0) {break;}\n";
-            fbody += "    if(abort_stack == 0) {break;}\n"; ///no capture arity for me?
+            //fbody += "    if(abort_stack > 0) {break;}\n";
+            //fbody += "    if(abort_stack == 0) {break;}\n"; ///no capture arity for me?
         }
         else
         {
-            fbody += "    if(abort_stack > 0) {break;}\n";
+            //fbody += "    if(abort_stack > 0) {break;}\n";
 
             ///uuh ok what to do with return value
             ///so basically r_labelidx is going to be set to the value we want right?
@@ -295,7 +296,10 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         }
     }
 
-    fbody += "}";
+    ///reached end of block
+    fbody += "    break;\n";
+
+    fbody += "}\n";
 
     if(l.btype.arity() > 0)
     {
@@ -402,7 +406,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
             int next = stack_offset.get_next(); \
             types::valtype type; \
             type.set<xtype>(); \
-            ret += type.friendly() + " " + get_variable_name(next) + " = " + std::to_string(std::get<xtype>(is.dat).val) + ";\n"; \
+            ret += type.friendly() + " " + get_variable_name(next) + " = (" + type.friendly() + ")" + std::to_string(std::get<xtype>(is.dat).val) + ";\n"; \
             break; \
         }
 
@@ -452,7 +456,7 @@ std::string auto_push(const std::string& in, value_stack& stack_offset)
     return "auto " + get_variable_name(stack_offset.get_next()) + " = " + in;
 }
 
-std::string invoke_function(runtime::store& s, c_context& ctx, value_stack& stack_offset, runtime::moduleinst& minst, runtime::funcaddr address, bool push)
+std::string invoke_function(runtime::store& s, c_context& ctx, value_stack stack_offset, runtime::moduleinst& minst, runtime::funcaddr address)
 {
     uint32_t adr = (uint32_t)address;
 
@@ -488,16 +492,9 @@ std::string invoke_function(runtime::store& s, c_context& ctx, value_stack& stac
             to_call += ", ";
     }
 
-    to_call += ");";
+    to_call += ")";
 
-    std::string ret = to_call;
-
-    if(num_rets > 0 && push)
-    {
-        ret = and_push(to_call, stack_offset, ftype.results[0]);
-    }
-
-    return ret + "\n";
+    return to_call;
 }
 
 ///don't need to support eval with frame, do need to support eval with label
@@ -695,12 +692,37 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 if(idx >= (uint32_t)minst.funcaddrs.size())
                     throw std::runtime_error("Bad fidx in 0x10 [call]");
 
-                ret += invoke_function(s, ctx, stack_offset, minst, minst.funcaddrs[idx], true);
+                runtime::funcaddr address = minst.funcaddrs[idx];
+
+                uint32_t adr = (uint32_t)address;
+
+                if(adr >= (uint32_t)s.funcs.size())
+                    throw std::runtime_error("Adr out of bounds");
+
+                runtime::funcinst& finst = s.funcs[adr];
+
+                types::functype ftype = finst.type;
+
+                std::string func_call = invoke_function(s, ctx, stack_offset, minst, address) + ";\n";
+
+                for(int i=0; i < (int)ftype.params.size(); i++)
+                {
+                    stack_offset.pop_back();
+                }
+
+                if(ftype.results.size() > 0)
+                {
+                    ret += and_push(func_call, stack_offset, ftype.results[0]);
+                }
+                else
+                {
+                    ret += func_call;
+                }
 
                 break;
             }
 
-            ///calli
+            ///call_i
             case 0x11:
             {
                 types::typeidx found_tidx = std::get<types::typeidx>(is.dat);
@@ -743,30 +765,42 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                     ret += get_variable_name(check_variable) + " == " + std::to_string(i) + ") {\n";
 
-                    runtime::funcaddr runtime_addr = tinst.elem[i].addr.value();
-
-                    uint32_t runtime_idx = (uint32_t)runtime_addr;
-
-                    if(runtime_idx >= (uint32_t)s.funcs.size())
-                        throw std::runtime_error("Runtime idx oob (validation)");
-
-                    runtime::funcinst& finst = s.funcs[runtime_idx];
-
-                    types::functype ft_actual = finst.type;
-
-                    if(types::funcs_equal(ft_actual, ft_expect))
+                    if(tinst.elem[i].addr.has_value())
                     {
-                        if(ft_expect.results.size() > 0)
-                            ret += get_variable_name(declared_return) + " = " + invoke_function(s, ctx, stack_offset, minst, runtime_addr, false) + ";\n";
+                        runtime::funcaddr runtime_addr = tinst.elem[i].addr.value();
+
+                        uint32_t runtime_idx = (uint32_t)runtime_addr;
+
+                        if(runtime_idx >= (uint32_t)s.funcs.size())
+                            throw std::runtime_error("Runtime idx oob (validation)");
+
+                        runtime::funcinst& finst = s.funcs[runtime_idx];
+
+                        types::functype ft_actual = finst.type;
+
+                        if(types::funcs_equal(ft_actual, ft_expect))
+                        {
+                            if(ft_expect.results.size() > 0)
+                                ret += get_variable_name(declared_return) + " = " + invoke_function(s, ctx, stack_offset, minst, runtime_addr) + ";\n";
+                            else
+                                ret += invoke_function(s, ctx, stack_offset, minst, runtime_addr) + ";\n";
+                        }
                         else
-                            ret += invoke_function(s, ctx, stack_offset, minst, runtime_addr, false) + ";\n";
+                        {
+                            ret += "assert(false); //bad type\n";
+                        }
                     }
                     else
                     {
-                        ret += "assert(false);\n";
+                        ret += "assert(false); //does not exist\n";
                     }
 
                     ret += "}\n";
+                }
+
+                for(int i=0; i < (int)ft_expect.params.size(); i++)
+                {
+                    stack_offset.pop_back();
                 }
 
                 if(tinst.elem.size() > 0)
@@ -1296,6 +1330,7 @@ std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runt
 #include <math.h>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h> ///not necessary
 
 using i32 = uint32_t;
 using i64 = uint64_t;
@@ -1319,7 +1354,7 @@ using empty = void;
         uint32_t idx = (uint32_t)addr;
         runtime::globalinst& glob = s.globals[(uint32_t)addr];
 
-        res += glob.val.friendly() + " " + get_global_name(idx) + " = " + glob.val.friendly_val() + ";\n";
+        res += glob.val.friendly() + " " + get_global_name(idx) + " = (" + glob.val.friendly() + ")" + glob.val.friendly_val() + ";\n";
     }
 
     //for(runtime::funcinst& finst : s.funcs)

@@ -6,10 +6,20 @@
 #include <map>
 //#include "gameapi.hpp"
 
-#define WASM_EXPORT __attribute__ ((visibility ("default"), used)) extern "C"
+#define WASM_EXPORT __attribute__ ((visibility ("default"), used, noinline)) extern "C"
 
-extern "C" int needs_import(const char* x);
+//extern "C" int needs_import(const char* x);
 extern "C" void print(const char* x);
+
+///yeah so misnomer
+WASM_EXPORT
+int needs_import(const char* x)
+{
+    return strlen(x);
+}
+
+WASM_EXPORT
+int main();
 
 ///how on earth are function pointers going to work?
 ///obviously itll have to be only c style pointers, but even then...
@@ -132,8 +142,6 @@ int func_2(int x)
 {
     //FILE* pFile = fopen("test.txt", "w");
 
-
-
     return 2;
 }
 
@@ -152,17 +160,6 @@ int capi_test()
     str[3] = 'p';
 
     return strlen(str);
-}
-
-WASM_EXPORT
-int main() {
-  //printf("hello, world!\n");
-
-  if(!func_2(0))
-      func_2(54);
-
-  func_2(2);
-  return 1;
 }
 
 WASM_EXPORT
@@ -223,4 +220,18 @@ int call_is_prime(unsigned int x)
 WASM_EXPORT
 unsigned int euclid(unsigned int a, unsigned int b) {
     return b == 0 ? a : euclid(b, a % b);
+}
+
+WASM_EXPORT
+int main() {
+  //printf("hello, world!\n");
+
+  /*if(!func_2(0))
+      func_2(54);
+
+  func_2(2);*/
+
+  return call_is_prime(9);
+
+  return 1;
 }
