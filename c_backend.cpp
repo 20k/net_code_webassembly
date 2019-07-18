@@ -842,6 +842,15 @@ using empty = void;
 
 )";
 
+    for(int i=0; i < s.mems.size(); i++)
+    {
+        runtime::meminst& inst = s.mems[i];
+
+        uint64_t mem_size = inst.dat.size();
+
+        res += "std::vector<char> mem_" + std::to_string(i) + "(" + std::to_string(mem_size) + ");\n";
+    }
+
     for(runtime::globaladdr addr : minst.globaladdrs)
     {
         uint32_t idx = (uint32_t)addr;
