@@ -360,7 +360,15 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
     int store_value = stack_offset.pop_back();
     int store_bytes = stack_offset.pop_back();
 
+    runtime::value ttemp;
+    ttemp.set(T());
+
     std::string sum = std::to_string(uint32_t arg.offset) + " + " + get_variable_name(store_val);
+
+    ret += "if(" + sum + " + sizeof(" + ttemp.friendly() + ") >= mem_0.size()) {assert(false);}\n";
+    ret += "if(" + sum + " < 0) {assert(false);}\n";
+
+    //ret += "assert(sizeof("
 
     return ret;
 }
