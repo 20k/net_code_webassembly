@@ -328,6 +328,8 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
     int u_1 = stack_offset.get_temporary();
     int t_1 = stack_offset.get_next();
 
+    ret += "static_assert(typeid(" + get_variable_name(top_val) + ") == typeid(i32));\n";
+
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(top_val);
 
     ret += "if(" + sum + " + sizeof(" + utemp.friendly() + ") >= mem_0.size()) {assert(false);}\n";
@@ -363,12 +365,15 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
     runtime::value ttemp;
     ttemp.set(T());
 
-    std::string sum = std::to_string(uint32_t arg.offset) + " + " + get_variable_name(store_val);
+    std::string sum = std::to_string((uint32_t)arg.offset) + " + " + std::to_string(store_bytes);
 
-    ret += "if(" + sum + " + sizeof(" + ttemp.friendly() + ") >= mem_0.size()) {assert(false);}\n";
+    ret += "static_assert(typeid(" + get_variable_name(store_bytes) + ") == typeid(i32));\n";
+    ret += "if(" + sum + " + " + std::to_string(bytes) + " >= mem_0.size()) {assert(false);}\n";
     ret += "if(" + sum + " < 0) {assert(false);}\n";
 
-    //ret += "assert(sizeof("
+    ret += "static_assert(" + std::to_string(bytes) + " <= sizeof(" + get_variable_name(store_value) + "));\n";
+
+    ret += "memcpy(&mem_0[" + sum + "], (char*)&" + get_variable_name(store_value) + ", " + std::to_string(bytes) + ");\n";
 
     return ret;
 }
@@ -964,6 +969,7 @@ std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runt
     R"(
 #include <vector>
 #include <cstdint>
+#include <typeinfo>
 
 using i32 = uint32_t;
 using i64 = uint64_t;
