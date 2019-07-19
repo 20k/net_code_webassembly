@@ -2,6 +2,7 @@
 #include "runtime_types.hpp"
 #include <iostream>
 #include "types.hpp"
+#include "wasi_dummy.hpp"
 
 /*import1 env
 import2 _ZSt15get_new_handlerv

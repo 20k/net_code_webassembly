@@ -57,14 +57,17 @@ int main()
     data example;
     //example.load_from_file("optimized.wasm");
 
-    compile_result res = compile("sample.cpp");
+    /*compile_result res = compile("sample.cpp");
 
     std::cout << "ferror " << res.err << std::endl;
 
     if(res.data.size() == 0)
         return 0;
 
-    example.load_from_data(res.data);
+    //example.load_from_data(res.data);*/
+
+    example.load_from_file("test.m");
+
 
     wasm_binary_data test;
 
