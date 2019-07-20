@@ -11,6 +11,14 @@
 #define _Noreturn [[noreturn]]
 #endif // __cplusplus
 
+#define wasi_size_t uint32_t
+
+template<typename T>
+struct wasi_ptr_t
+{
+    uint32_t val;
+};
+
 _Static_assert(_Alignof(int8_t) == 1, "non-wasi data layout");
 _Static_assert(_Alignof(uint8_t) == 1, "non-wasi data layout");
 _Static_assert(_Alignof(int16_t) == 2, "non-wasi data layout");
@@ -304,22 +312,22 @@ typedef struct __wasi_prestat_t {
     __wasi_preopentype_t pr_type;
     union __wasi_prestat_u {
         struct __wasi_prestat_u_dir_t {
-            size_t pr_name_len;
+            wasi_size_t pr_name_len;
         } dir;
     } u;
 } __wasi_prestat_t;
 _Static_assert(offsetof(__wasi_prestat_t, pr_type) == 0, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     offsetof(__wasi_prestat_t, u.dir.pr_name_len) == 4, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     offsetof(__wasi_prestat_t, u.dir.pr_name_len) == 8, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     sizeof(__wasi_prestat_t) == 8, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     sizeof(__wasi_prestat_t) == 16, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     _Alignof(__wasi_prestat_t) == 4, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     _Alignof(__wasi_prestat_t) == 8, "non-wasi data layout");
 
 typedef struct __wasi_fdstat_t {
@@ -367,39 +375,39 @@ _Static_assert(sizeof(__wasi_filestat_t) == 56, "non-wasi data layout");
 _Static_assert(_Alignof(__wasi_filestat_t) == 8, "non-wasi data layout");
 
 typedef struct __wasi_ciovec_t {
-    const void *buf;
-    size_t buf_len;
+    const wasi_ptr_t<void>buf;
+    wasi_size_t buf_len;
 } __wasi_ciovec_t;
 _Static_assert(offsetof(__wasi_ciovec_t, buf) == 0, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     offsetof(__wasi_ciovec_t, buf_len) == 4, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     offsetof(__wasi_ciovec_t, buf_len) == 8, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     sizeof(__wasi_ciovec_t) == 8, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     sizeof(__wasi_ciovec_t) == 16, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     _Alignof(__wasi_ciovec_t) == 4, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     _Alignof(__wasi_ciovec_t) == 8, "non-wasi data layout");
 
 typedef struct __wasi_iovec_t {
-    void *buf;
-    size_t buf_len;
+    wasi_ptr_t<void>buf;
+    wasi_size_t buf_len;
 } __wasi_iovec_t;
 _Static_assert(offsetof(__wasi_iovec_t, buf) == 0, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     offsetof(__wasi_iovec_t, buf_len) == 4, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     offsetof(__wasi_iovec_t, buf_len) == 8, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     sizeof(__wasi_iovec_t) == 8, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     sizeof(__wasi_iovec_t) == 16, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 4 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 4 ||
     _Alignof(__wasi_iovec_t) == 4, "non-wasi data layout");
-_Static_assert(sizeof(void *) != 8 ||
+_Static_assert(sizeof(wasi_ptr_t<void>) != 8 ||
     _Alignof(__wasi_iovec_t) == 8, "non-wasi data layout");
 
 typedef struct __wasi_subscription_t {
@@ -446,45 +454,45 @@ _Static_assert(_Alignof(__wasi_subscription_t) == 8, "non-wasi data layout");
 #define __WASI_SYSCALL_NAME(name)
 
 __wasi_errno_t __wasi_args_get(
-    char **argv,
-    char *argv_buf
+    wasi_ptr_t<wasi_ptr_t<char>>argv,
+    wasi_ptr_t<char>argv_buf
 ) __WASI_SYSCALL_NAME(args_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_args_sizes_get(
-    size_t *argc,
-    size_t *argv_buf_size
+    wasi_ptr_t<wasi_size_t> argc,
+    wasi_ptr_t<wasi_size_t> argv_buf_size
 ) __WASI_SYSCALL_NAME(args_sizes_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_clock_res_get(
     __wasi_clockid_t clock_id,
-    __wasi_timestamp_t *resolution
+    wasi_ptr_t<__wasi_timestamp_t> resolution
 ) __WASI_SYSCALL_NAME(clock_res_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_clock_time_get(
     __wasi_clockid_t clock_id,
     __wasi_timestamp_t precision,
-    __wasi_timestamp_t *time
+    wasi_ptr_t<__wasi_timestamp_t> time
 ) __WASI_SYSCALL_NAME(clock_time_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_environ_get(
-    char **environ,
-    char *environ_buf
+    wasi_ptr_t<wasi_ptr_t<char>> environ,
+    wasi_ptr_t<char> environ_buf
 ) __WASI_SYSCALL_NAME(environ_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_environ_sizes_get(
-    size_t *environ_count,
-    size_t *environ_buf_size
+    wasi_ptr_t<wasi_size_t> environ_count,
+    wasi_ptr_t<wasi_size_t> environ_buf_size
 ) __WASI_SYSCALL_NAME(environ_sizes_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_prestat_get(
     __wasi_fd_t fd,
-    __wasi_prestat_t *buf
+    wasi_ptr_t<__wasi_prestat_t> buf
 ) __WASI_SYSCALL_NAME(fd_prestat_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_prestat_dir_name(
     __wasi_fd_t fd,
-    char *path,
-    size_t path_len
+    wasi_ptr_t<char> path,
+    wasi_size_t path_len
 ) __WASI_SYSCALL_NAME(fd_prestat_dir_name) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_close(
@@ -497,25 +505,25 @@ __wasi_errno_t __wasi_fd_datasync(
 
 __wasi_errno_t __wasi_fd_pread(
     __wasi_fd_t fd,
-    const __wasi_iovec_t *iovs,
-    size_t iovs_len,
+    const wasi_ptr_t<__wasi_iovec_t> iovs,
+    wasi_size_t iovs_len,
     __wasi_filesize_t offset,
-    size_t *nread
+    wasi_ptr_t<wasi_size_t> nread
 ) __WASI_SYSCALL_NAME(fd_pread) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_pwrite(
     __wasi_fd_t fd,
-    const __wasi_ciovec_t *iovs,
-    size_t iovs_len,
+    const wasi_ptr_t<__wasi_ciovec_t> iovs,
+    wasi_size_t iovs_len,
     __wasi_filesize_t offset,
-    size_t *nwritten
+    wasi_ptr_t<wasi_size_t> nwritten
 ) __WASI_SYSCALL_NAME(fd_pwrite) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_read(
     __wasi_fd_t fd,
-    const __wasi_iovec_t *iovs,
-    size_t iovs_len,
-    size_t *nread
+    const wasi_ptr_t<__wasi_iovec_t> iovs,
+    wasi_size_t iovs_len,
+    wasi_ptr_t<wasi_size_t> nread
 ) __WASI_SYSCALL_NAME(fd_read) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_renumber(
@@ -527,17 +535,17 @@ __wasi_errno_t __wasi_fd_seek(
     __wasi_fd_t fd,
     __wasi_filedelta_t offset,
     __wasi_whence_t whence,
-    __wasi_filesize_t *newoffset
+    wasi_ptr_t<__wasi_filesize_t> newoffset
 ) __WASI_SYSCALL_NAME(fd_seek) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_tell(
     __wasi_fd_t fd,
-    __wasi_filesize_t *newoffset
+    wasi_ptr_t<__wasi_filesize_t> newoffset
 ) __WASI_SYSCALL_NAME(fd_tell) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_fdstat_get(
     __wasi_fd_t fd,
-    __wasi_fdstat_t *buf
+    wasi_ptr_t<__wasi_fdstat_t> buf
 ) __WASI_SYSCALL_NAME(fd_fdstat_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_fdstat_set_flags(
@@ -557,9 +565,9 @@ __wasi_errno_t __wasi_fd_sync(
 
 __wasi_errno_t __wasi_fd_write(
     __wasi_fd_t fd,
-    const __wasi_ciovec_t *iovs,
-    size_t iovs_len,
-    size_t *nwritten
+    const wasi_ptr_t<__wasi_ciovec_t> iovs,
+    wasi_size_t iovs_len,
+    wasi_ptr_t<wasi_size_t> nwritten
 ) __WASI_SYSCALL_NAME(fd_write) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_advise(
@@ -577,61 +585,61 @@ __wasi_errno_t __wasi_fd_allocate(
 
 __wasi_errno_t __wasi_path_create_directory(
     __wasi_fd_t fd,
-    const char *path,
-    size_t path_len
+    const wasi_ptr_t<char>path,
+    wasi_size_t path_len
 ) __WASI_SYSCALL_NAME(path_create_directory) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_link(
     __wasi_fd_t old_fd,
     __wasi_lookupflags_t old_flags,
-    const char *old_path,
-    size_t old_path_len,
+    const wasi_ptr_t<char>old_path,
+    wasi_size_t old_path_len,
     __wasi_fd_t new_fd,
-    const char *new_path,
-    size_t new_path_len
+    const wasi_ptr_t<char>new_path,
+    wasi_size_t new_path_len
 ) __WASI_SYSCALL_NAME(path_link) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_open(
     __wasi_fd_t dirfd,
     __wasi_lookupflags_t dirflags,
-    const char *path,
-    size_t path_len,
+    const wasi_ptr_t<char>path,
+    wasi_size_t path_len,
     __wasi_oflags_t oflags,
     __wasi_rights_t fs_rights_base,
     __wasi_rights_t fs_rights_inheriting,
     __wasi_fdflags_t fs_flags,
-    __wasi_fd_t *fd
+    wasi_ptr_t<__wasi_fd_t> fd
 ) __WASI_SYSCALL_NAME(path_open) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_readdir(
     __wasi_fd_t fd,
-    void *buf,
-    size_t buf_len,
+    wasi_ptr_t<void>buf,
+    wasi_size_t buf_len,
     __wasi_dircookie_t cookie,
-    size_t *bufused
+    wasi_ptr_t<wasi_size_t> bufused
 ) __WASI_SYSCALL_NAME(fd_readdir) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_readlink(
     __wasi_fd_t fd,
-    const char *path,
-    size_t path_len,
-    char *buf,
-    size_t buf_len,
-    size_t *bufused
+    const wasi_ptr_t<char>path,
+    wasi_size_t path_len,
+    wasi_ptr_t<char>buf,
+    wasi_size_t buf_len,
+    wasi_ptr_t<wasi_size_t> bufused
 ) __WASI_SYSCALL_NAME(path_readlink) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_rename(
     __wasi_fd_t old_fd,
-    const char *old_path,
-    size_t old_path_len,
+    const wasi_ptr_t<char>old_path,
+    wasi_size_t old_path_len,
     __wasi_fd_t new_fd,
-    const char *new_path,
-    size_t new_path_len
+    const wasi_ptr_t<char>new_path,
+    wasi_size_t new_path_len
 ) __WASI_SYSCALL_NAME(path_rename) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_filestat_get(
     __wasi_fd_t fd,
-    __wasi_filestat_t *buf
+    wasi_ptr_t<__wasi_filestat_t> buf
 ) __WASI_SYSCALL_NAME(fd_filestat_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_fd_filestat_set_times(
@@ -649,46 +657,46 @@ __wasi_errno_t __wasi_fd_filestat_set_size(
 __wasi_errno_t __wasi_path_filestat_get(
     __wasi_fd_t fd,
     __wasi_lookupflags_t flags,
-    const char *path,
-    size_t path_len,
-    __wasi_filestat_t *buf
+    const wasi_ptr_t<char> path,
+    wasi_size_t path_len,
+    wasi_ptr_t<__wasi_filestat_t> buf
 ) __WASI_SYSCALL_NAME(path_filestat_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_filestat_set_times(
     __wasi_fd_t fd,
     __wasi_lookupflags_t flags,
-    const char *path,
-    size_t path_len,
+    const wasi_ptr_t<char> path,
+    wasi_size_t path_len,
     __wasi_timestamp_t st_atim,
     __wasi_timestamp_t st_mtim,
     __wasi_fstflags_t fstflags
 ) __WASI_SYSCALL_NAME(path_filestat_set_times) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_symlink(
-    const char *old_path,
-    size_t old_path_len,
+    const wasi_ptr_t<char> old_path,
+    wasi_size_t old_path_len,
     __wasi_fd_t fd,
-    const char *new_path,
-    size_t new_path_len
+    const wasi_ptr_t<char> new_path,
+    wasi_size_t new_path_len
 ) __WASI_SYSCALL_NAME(path_symlink) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_unlink_file(
     __wasi_fd_t fd,
-    const char *path,
-    size_t path_len
+    const wasi_ptr_t<char> path,
+    wasi_size_t path_len
 ) __WASI_SYSCALL_NAME(path_unlink_file) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_path_remove_directory(
     __wasi_fd_t fd,
-    const char *path,
-    size_t path_len
+    const wasi_ptr_t<char> path,
+    wasi_size_t path_len
 ) __WASI_SYSCALL_NAME(path_remove_directory) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_poll_oneoff(
-    const __wasi_subscription_t *in,
-    __wasi_event_t *out,
-    size_t nsubscriptions,
-    size_t *nevents
+    const wasi_ptr_t<__wasi_subscription_t> in,
+    wasi_ptr_t<__wasi_event_t> out,
+    wasi_size_t nsubscriptions,
+    wasi_ptr_t<wasi_size_t> nevents
 ) __WASI_SYSCALL_NAME(poll_oneoff) __attribute__((__warn_unused_result__));
 
 _Noreturn void __wasi_proc_exit(
@@ -700,25 +708,25 @@ __wasi_errno_t __wasi_proc_raise(
 ) __WASI_SYSCALL_NAME(proc_raise) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_random_get(
-    void *buf,
-    size_t buf_len
+    wasi_ptr_t<void> buf,
+    wasi_size_t buf_len
 ) __WASI_SYSCALL_NAME(random_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_sock_recv(
     __wasi_fd_t sock,
-    const __wasi_iovec_t *ri_data,
-    size_t ri_data_len,
+    const wasi_ptr_t<__wasi_iovec_t> ri_data,
+    wasi_size_t ri_data_len,
     __wasi_riflags_t ri_flags,
-    size_t *ro_datalen,
-    __wasi_roflags_t *ro_flags
+    wasi_ptr_t<wasi_size_t> ro_datalen,
+    wasi_ptr_t<__wasi_roflags_t> ro_flags
 ) __WASI_SYSCALL_NAME(sock_recv) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_sock_send(
     __wasi_fd_t sock,
-    const __wasi_ciovec_t *si_data,
-    size_t si_data_len,
+    const wasi_ptr_t<__wasi_ciovec_t> si_data,
+    wasi_size_t si_data_len,
     __wasi_siflags_t si_flags,
-    size_t *so_datalen
+    wasi_ptr_t<wasi_size_t> so_datalen
 ) __WASI_SYSCALL_NAME(sock_send) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_sock_shutdown(

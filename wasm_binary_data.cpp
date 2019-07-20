@@ -797,7 +797,7 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
         {
             runtime::funcaddr adr = std::get<runtime::funcaddr>(val.val);
 
-            if((uint32_t)adr >= efaddr.size())
+            if((uint32_t)adr >= s.funcs.size())
                 throw std::runtime_error("Import addr out of bounds");
 
             if(!std::holds_alternative<types::typeidx>(imp.desc.vals))

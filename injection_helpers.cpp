@@ -364,6 +364,8 @@ uint32_t gameapi_get_next_id(runtime::store* s)
     return s->interop_context.next_id++;
 }
 
+#define WASI_IMPORT(x) runtime::externval i_##x; i_##x.val = runtime::allochostsimplefunction<__wasi_##x>(s); vals["wasi_unstable"][#x] = i_##x;
+
 ///will need a serialise function function so we can pass functions across the boundary
 ///the c api for a function will take a vector of parameters and an optional return type
 ///then will have to template magic jazz hands back to c++
@@ -448,6 +450,15 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     vals["env"]["serialise_basic_function"] = serialise_function;
 
     vals["env"]["get_next_id"] = get_next;
+
+    WASI_IMPORT(fd_prestat_get);
+    WASI_IMPORT(fd_prestat_dir_name);
+    WASI_IMPORT(environ_sizes_get);
+    WASI_IMPORT(environ_get);
+    WASI_IMPORT(args_sizes_get);
+    WASI_IMPORT(args_get);
+    WASI_IMPORT(proc_exit);
+    WASI_IMPORT(fd_fdstat_get);
 
     return vals;
 }
