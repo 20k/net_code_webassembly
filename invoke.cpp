@@ -1534,6 +1534,8 @@ types::vec<runtime::value> invoke_intl(context& ctx, runtime::store& s, full_sta
         lg::log("Native function111");
         #endif // DEBUGGING
 
+        runtime::wasi_ctx::cstore = &s;
+
         const runtime::host_func& fnc = std::get<runtime::host_func>(finst.funct);
 
         types::vec<runtime::value> args = full.pop_num_vals(num_args);

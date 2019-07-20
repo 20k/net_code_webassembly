@@ -246,31 +246,37 @@ namespace runtime
         uint32_t get_memory_base_size();
     };
 
+    struct wasi_ctx
+    {
+        static inline thread_local runtime::store* cstore = nullptr;
+    };
+
     template<typename T>
     struct wasi_ptr_t
     {
         uint32_t val = 0;
-        static inline thread_local runtime::store* cstore = nullptr;
 
         constexpr static bool is_ptr = true;
 
         T* operator->()
         {
-            cstore->mems[0].dat.check(val);
-            cstore->mems[0].dat.check(val + sizeof(T));
+            assert(wasi_ctx::cstore);
 
-            assert(cstore);
-            return *(T*)&cstore->mems[0].dat[val];
+            wasi_ctx::cstore->mems[0].dat.check(val);
+            wasi_ctx::cstore->mems[0].dat.check(val + sizeof(T));
+
+            return *(T*)&wasi_ctx::cstore->mems[0].dat[val];
         }
 
         template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
         T1& operator*()
         {
-            cstore->mems[0].dat.check(val);
-            cstore->mems[0].dat.check(val + sizeof(T));
+            assert(wasi_ctx::cstore);
 
-            assert(cstore);
-            return *(T*)&cstore->mems[0].dat[val];
+            wasi_ctx::cstore->mems[0].dat.check(val);
+            wasi_ctx::cstore->mems[0].dat.check(val + sizeof(T));
+
+            return *(T*)&wasi_ctx::cstore->mems[0].dat[val];
         }
     };
 
