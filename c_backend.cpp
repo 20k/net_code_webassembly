@@ -1445,31 +1445,5 @@ using empty = void;
 
 std::string get_as_c_program(wasm_binary_data& bin)
 {
-    /*for(runtime::exportinst& einst : bin.m_minst->exports)
-    {
-        if(einst.name == "main")
-        {
-            return compile_top_level(bin.s, std::get<runtime::funcaddr>(einst.value.val), *bin.m_minst, {});
-        }
-    }
-
-    for(runtime::exportinst& einst : bin.m_minst->exports)
-    {
-        if(einst.name == "_start")
-        {
-            return compile_top_level(bin.s, std::get<runtime::funcaddr>(einst.value.val), *bin.m_minst, {});
-        }
-    }
-
-    for(runtime::exportinst& einst : bin.m_minst->exports)
-    {
-        if(einst.name == "__original_main")
-        {
-            return compile_top_level(bin.s, std::get<runtime::funcaddr>(einst.value.val), *bin.m_minst, {});
-        }
-    }
-
-    throw std::runtime_error("Did not find main");*/
-
     return compile_top_level(bin.s, *bin.m_minst);
 }
