@@ -413,12 +413,17 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 
 #define ASSERT_TYPE(x, y) ret += "static_assert(std::is_same<decltype(" + get_variable_name(x) + "), " + types::friendly(y()) + ">::value);\n";
 
+#define ASSERT_SAME_TYPES(x, y) ret += "static_assert(std::is_same<decltype(" + x + "), decltype(" + y + ")>::value);\n";
+
+#define IS_SAME(x, y) std::string("std::is_same<decltype(" + x + "), " + types::friendly(y()) + ">::value")
+#define ASSERT_VALID_TYPE(x) ret += "static_assert(" + IS_SAME(x, types::i32) + " || " + IS_SAME(x, types::i64) + " || " + IS_SAME(x, types::f32) + " || " + IS_SAME(x, types::f64) + ");\n";
+
 #define C_POPAT(x, y, z){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += and_push(x(val_1), stack_offset, z()); break;}
 #define C_POPBT(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += and_push(x(val_1, val_2), stack_offset, z()); break;}
 
 #define C_POPBT_RAW(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += x(val_1, val_2, stack_offset, z()); break;}
 
-std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx)
+std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx, bool& would_consume)
 {
     std::string ret;
 
@@ -431,7 +436,10 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
     int arity = ctx.label_arities[nidx];
 
     if(arity > 0)
-        ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
+    {
+        ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.peek_back()) + ";\n";
+        would_consume = true;
+    }
 
     ret += "abort_stack = " + std::to_string((uint32_t)lidx + 1) + ";\n";
 
@@ -523,7 +531,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
         switch(which)
         {
             case 0x00:
-                ret += "assert(false);";
+                ret += "assert(false);\n__builtin_unreachable();";
                 break;
             case 0x01:
                 break;
@@ -610,7 +618,11 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             {
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-                ret += sfjump(ctx, stack_offset, lidx);
+                bool would_consume = false;
+                ret += sfjump(ctx, stack_offset, lidx, would_consume);
+
+                if(would_consume)
+                    stack_offset.pop_back();
 
                 add_abort(ret);
 
@@ -626,7 +638,11 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 types::labelidx lidx = std::get<types::labelidx>(is.dat);
 
-                ret += sfjump(ctx, stack_offset, lidx);
+                bool would_consume = false;
+                ret += sfjump(ctx, stack_offset, lidx, would_consume);
+
+                if(would_consume)
+                    stack_offset.pop_back();
 
                 add_abort(ret);
 
@@ -644,6 +660,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 int decision_variable = stack_offset.pop_back();
 
+                bool would_consume = false;
+
                 for(int i=0; i < (int)labels.size(); i++)
                 {
                     if(i == 0)
@@ -659,7 +677,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                     types::labelidx lidx = labels[i];
 
-                    ret += sfjump(ctx, stack_offset, lidx);
+                    ret += sfjump(ctx, stack_offset, lidx, would_consume);
 
                     ret += "}";
                 }
@@ -671,11 +689,14 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 types::labelidx lidx = br_td.fin;
 
-                ret += sfjump(ctx, stack_offset, lidx);
+                ret += sfjump(ctx, stack_offset, lidx, would_consume);
 
                 ret += "}";
 
-                stack_offset.pop_back();
+                if(would_consume)
+                    stack_offset.pop_back();
+
+                //stack_offset.pop_back();
 
                 printf("Warning: Generating br_td which isn't well tested\n");
 
@@ -838,8 +859,12 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 int second = stack_offset.pop_back();
                 int first = stack_offset.pop_back();
 
+                ASSERT_SAME_TYPES(get_variable_name(first), get_variable_name(second));
+
                 ///next = decider ? first : second;
                 ret += auto_push(get_variable_name(decider) + " ? " + get_variable_name(first) + " : " + get_variable_name(second) + ";\n", stack_offset);
+                ASSERT_VALID_TYPE(get_variable_name(stack_offset.peek_back()));
+
                 break;
             }
 
@@ -849,6 +874,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 types::localidx idx = std::get<types::localidx>(is.dat);
 
                 ret += auto_push(get_local_name((uint32_t)idx) + ";\n", stack_offset);
+                ASSERT_VALID_TYPE(get_variable_name(stack_offset.peek_back()));
 
                 break;
             }
@@ -876,6 +902,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += get_local_name((uint32_t)idx) + " = " + get_variable_name(top_val) + ";\n";
                 ret += auto_push(get_variable_name(top_val) + ";\n", stack_offset);
+                ASSERT_VALID_TYPE(get_variable_name(stack_offset.peek_back()));
 
                 break;
             }
@@ -1327,13 +1354,15 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     value_stack soffset;
     function_body += define_expr(s, wasm_func.funct.fnc.e.i, ctx, soffset, return_arity, minst);
 
-    if(return_arity > 0)
+    ///the second check here is either because my code is broken with the stack and it'll bite me in the arse
+    ///or, its because something weird's going on with wasi's stack when it generates returns
+    if(return_arity > 0 && soffset.stk.size() > 0)
         return function_body + "return " + get_variable_name(soffset.pop_back()) + ";\n}\n";
     else
         return function_body + "}\n";
 }
 
-std::string compile_top_level(runtime::store& s, runtime::funcaddr address, runtime::moduleinst& minst, const types::vec<std::string>& vals)
+std::string compile_top_level(runtime::store& s, runtime::moduleinst& minst)
 {
     ///need to inject memory
 
@@ -1358,6 +1387,17 @@ using empty = void;
 
 )";
 
+    bool has_main = false;
+
+    for(runtime::exportinst& einst : minst.exports)
+    {
+        if(einst.name == "main")
+        {
+            has_main = true;
+            break;
+        }
+    }
+
     for(int i=0; i < (int)s.mems.size(); i++)
     {
         runtime::meminst& inst = s.mems[i];
@@ -1366,6 +1406,8 @@ using empty = void;
 
         res += "std::vector<char> mem_" + std::to_string(i) + "(" + std::to_string(mem_size) + ");\n";
     }
+
+    res += "\n#include \"wasi_impl.hpp\"\n";
 
     for(runtime::globaladdr addr : minst.globaladdrs)
     {
@@ -1392,13 +1434,18 @@ using empty = void;
         res += define_function(s, base, minst) + "\n\n";
     }
 
+    if(!has_main)
+    {
+        res += "int main(){proc_exit(__original_main());}\n\n";
+    }
+
     return res;
 }
 
 
 std::string get_as_c_program(wasm_binary_data& bin)
 {
-    for(runtime::exportinst& einst : bin.m_minst->exports)
+    /*for(runtime::exportinst& einst : bin.m_minst->exports)
     {
         if(einst.name == "main")
         {
@@ -1406,5 +1453,23 @@ std::string get_as_c_program(wasm_binary_data& bin)
         }
     }
 
-    throw std::runtime_error("Did not find main");
+    for(runtime::exportinst& einst : bin.m_minst->exports)
+    {
+        if(einst.name == "_start")
+        {
+            return compile_top_level(bin.s, std::get<runtime::funcaddr>(einst.value.val), *bin.m_minst, {});
+        }
+    }
+
+    for(runtime::exportinst& einst : bin.m_minst->exports)
+    {
+        if(einst.name == "__original_main")
+        {
+            return compile_top_level(bin.s, std::get<runtime::funcaddr>(einst.value.val), *bin.m_minst, {});
+        }
+    }
+
+    throw std::runtime_error("Did not find main");*/
+
+    return compile_top_level(bin.s, *bin.m_minst);
 }

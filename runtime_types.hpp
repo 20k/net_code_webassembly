@@ -265,7 +265,7 @@ namespace runtime
             wasi_ctx::cstore->mems[0].dat.check(val);
             wasi_ctx::cstore->mems[0].dat.check(val + sizeof(T));
 
-            return *(T*)&wasi_ctx::cstore->mems[0].dat[val];
+            return (T*)&wasi_ctx::cstore->mems[0].dat[val];
         }
 
         template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
@@ -488,6 +488,8 @@ namespace runtime
             count_types<double, U...>(f64_c);
 
             count_types<void*, U...>(i32_c);
+
+            ((i32_c += (int)is_wasi_ptr<U>()), ...);
 
             int iruntime_c = 0;
             count_runtime<runtime::store*, U...>(iruntime_c);

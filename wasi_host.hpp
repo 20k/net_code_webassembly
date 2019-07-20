@@ -474,7 +474,7 @@ __wasi_errno_t __wasi_clock_time_get(
 ) __WASI_SYSCALL_NAME(clock_time_get) __attribute__((__warn_unused_result__));
 
 __wasi_errno_t __wasi_environ_get(
-    wasi_ptr_t<wasi_ptr_t<char>> environ,
+    wasi_ptr_t<wasi_ptr_t<char>> env,
     wasi_ptr_t<char> environ_buf
 ) __WASI_SYSCALL_NAME(environ_get) __attribute__((__warn_unused_result__));
 
