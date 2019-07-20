@@ -247,6 +247,60 @@ namespace runtime
     };
 
     template<typename T>
+    struct wasi_ptr_t
+    {
+        uint32_t val = 0;
+        static inline thread_local runtime::store* cstore = nullptr;
+
+        constexpr static bool is_ptr = true;
+
+        T* operator->()
+        {
+            cstore->mems[0].dat.check(val);
+            cstore->mems[0].dat.check(val + sizeof(T));
+
+            assert(cstore);
+            return *(T*)&cstore->mems[0].dat[val];
+        }
+
+        template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
+        T1& operator*()
+        {
+            cstore->mems[0].dat.check(val);
+            cstore->mems[0].dat.check(val + sizeof(T));
+
+            assert(cstore);
+            return *(T*)&cstore->mems[0].dat[val];
+        }
+    };
+
+    /*template<typename T>
+    struct is_wasi_ptr
+    {
+        template<typename U>
+        static constexpr decltype(std::declval<U>()::is_ptr, bool())
+        test_ptr(int)
+        {
+            return true;
+        }
+
+        template<typename U>
+        static constexpr bool test_ptr(...)
+        {
+            return false;
+        }
+
+        static constexpr bool value = test_ptr<T>(int());
+    };*/
+
+    template<typename T, typename = int>
+    struct is_wasi_ptr : std::false_type {};
+
+    template<typename T>
+    struct is_wasi_ptr<T, decltype((void)T::is_ptr, 0)> : std::true_type{};
+
+
+    template<typename T>
     T get(const runtime::value& v, runtime::meminst& minst, T dummy)
     {
         if constexpr(std::is_same_v<T, uint32_t>)
@@ -310,10 +364,24 @@ namespace runtime
     {
         uint32_t ptr = get(v, minst, uint32_t());
 
-        if(ptr >= minst.dat.size())
+        if(ptr + sizeof(T) > minst.dat.size())
             throw std::runtime_error("Ptr out of bounds");
 
         return (T*)&minst.dat[ptr];
+    }
+
+    template<typename T>
+    wasi_ptr_t<T> get(const runtime::value& v, runtime::meminst& minst, wasi_ptr_t<T> dummy)
+    {
+        uint32_t ptr = get(v, minst, uint32_t());
+
+        if(ptr + sizeof(T) > minst.dat.size())
+            throw std::runtime_error("Ptr out of bounds");
+
+        wasi_ptr_t<T> ret;
+        ret.val = ptr;
+
+        return ret;
     }
 
     namespace detail

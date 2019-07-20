@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
+#include <type_traits>
 
 #ifdef __cplusplus
 #define _Static_assert static_assert
@@ -11,13 +12,11 @@
 #define _Noreturn [[noreturn]]
 #endif // __cplusplus
 
+#include "runtime_types.hpp"
+
 #define wasi_size_t uint32_t
 
-template<typename T>
-struct wasi_ptr_t
-{
-    uint32_t val;
-};
+using namespace runtime;
 
 _Static_assert(_Alignof(int8_t) == 1, "non-wasi data layout");
 _Static_assert(_Alignof(uint8_t) == 1, "non-wasi data layout");
