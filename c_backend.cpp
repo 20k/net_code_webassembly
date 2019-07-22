@@ -1239,6 +1239,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             ///<dest, src>
             ///so trunc_s takes the argument as a float
             ///and then converts it to an int32_t
+
+            ///macro args are source type, result type
             case 0xA7:
                 C_POPAT((c_wrap<uint32_t, 32>), types::i64, types::i32);
             case 0xA8:
@@ -1250,7 +1252,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0xAB:
                 C_POPAT((c_trunc_u<uint32_t, double>), types::f64, types::i32);
             case 0xAC:
-                C_POPAT((c_extend_s<int64_t, int32_t>), types::i32, types::i32);
+                C_POPAT((c_extend_s<int64_t, int32_t>), types::i32, types::i64);
             case 0xAD:
                 C_POPAT((c_extend_u<uint64_t, uint32_t>), types::i32, types::i64);
             case 0xAE:
@@ -1284,7 +1286,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0xBC:
                 C_POPAT((c_reinterpret<uint32_t, float>), types::f32, types::i32);
             case 0xBD:
-                C_POPAT((c_reinterpret<uint64_t, double>), types::f64, types::i32);
+                C_POPAT((c_reinterpret<uint64_t, double>), types::f64, types::i64);
             case 0xBE:
                 C_POPAT((c_reinterpret<float, uint32_t>), types::i32, types::f32);
             case 0xBF:
