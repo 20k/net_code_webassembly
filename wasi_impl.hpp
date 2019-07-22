@@ -68,6 +68,8 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
 
 __wasi_errno_t __wasi_environ_sizes_get(PTR(wasi_size_t) environ_count, PTR(wasi_size_t) environ_buf_size)
 {
+    printf("ESize\n");
+
     *environ_count = 0;
     *environ_buf_size = 0;
     return __WASI_ESUCCESS;
@@ -75,11 +77,15 @@ __wasi_errno_t __wasi_environ_sizes_get(PTR(wasi_size_t) environ_count, PTR(wasi
 
 __wasi_errno_t __wasi_environ_get(wasi_ptr_t<wasi_ptr_t<char>> env, PTR(char) environ_buf)
 {
+    printf("EGet\n");
+
     return __WASI_ESUCCESS;
 }
 
 __wasi_errno_t __wasi_args_sizes_get(PTR(wasi_size_t) argc, PTR(wasi_size_t) argv_buf_size)
 {
+    printf("SSize\n");
+
     *argc = 0;
     *argv_buf_size = 0;
     return __WASI_ESUCCESS;
@@ -87,6 +93,8 @@ __wasi_errno_t __wasi_args_sizes_get(PTR(wasi_size_t) argc, PTR(wasi_size_t) arg
 
 __wasi_errno_t __wasi_args_get(DPTR(char) argv, PTR(char) argv_buf)
 {
+    printf("SGet\n");
+
     return __WASI_ESUCCESS;
 }
 
@@ -99,6 +107,8 @@ void __wasi_proc_exit(__wasi_exitcode_t rval)
 
 __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
 {
+    printf("FdStat\n");
+
     __wasi_fdstat_t val;
     val.fs_filetype = __WASI_FILETYPE_UNKNOWN;
     val.fs_flags = __WASI_FDFLAG_SYNC;
@@ -110,12 +120,29 @@ __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
     return __WASI_ESUCCESS;
 }
 
+__wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
+{
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_whence_t whence, PTR(__wasi_filesize_t) newoffset)
+{
+    return __WASI_EACCES;
+}
+
+__wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t> iovs, uint32_t iovs_len, wasi_ptr_t<uint32_t> nwritten)
+{
+    *nwritten = 0;
+    return __WASI_EACCES;
+}
+
 #ifndef HOST
 
 #define EXPORT_0(x) uint32_t x(){return __wasi_##x;}
 #define EXPORT_1(x, t1) uint32_t x(t1 v1){return __wasi_##x(v1);}
 #define EXPORT_2(x, t1, t2) uint32_t x(t1 v1, t2 v2){return __wasi_##x(v1, v2);}
 #define EXPORT_3(x, t1, t2, t3) uint32_t x(t1 v1, t2 v2, t3 v3){return __wasi_##x(v1, v2, v3);}
+#define EXPORT_4(x, t1, t2, t3, t4) uint32_t x(t1 v1, t2 v2, t3 v3, t4 v4){return __wasi_##x(v1, v2, v3, v4);}
 
 #define VEXPORT_1(x, t1) void x(t1 v1){return __wasi_##x(v1);}
 
@@ -127,6 +154,9 @@ EXPORT_2(args_sizes_get, wasi_ptr_raw, wasi_ptr_raw);
 EXPORT_2(args_get, wasi_ptr_raw, wasi_ptr_raw);
 VEXPORT_1(proc_exit, __wasi_exitcode_t);
 EXPORT_2(fd_fdstat_get, __wasi_fd_t, wasi_ptr_raw);
+EXPORT_1(fd_close, __wasi_fd_t);
+EXPORT_4(fd_seek, __wasi_fd_t, __wasi_filedelta_t, __wasi_whence_t, wasi_ptr_raw);
+EXPORT_4(fd_write, __wasi_fd_t, wasi_ptr_raw, uint32_t, wasi_ptr_raw);
 
 #endif // HOST
 

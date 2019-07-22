@@ -392,58 +392,38 @@ namespace runtime
 
     namespace detail
     {
-        template<typename check>
-        void count_types(int& cnt)
-        {
-
-        }
-
-        template<typename check, typename U, typename... T>
-        void count_types(int& cnt)
-        {
-            if constexpr(std::is_same<check, U>() || (std::is_pointer_v<check> && std::is_pointer_v<U>))
-            {
-                cnt++;
-
-                count_types<check, T...>(cnt);
-            }
-            else
-            {
-                count_types<check, T...>(cnt);
-            }
-        }
-
-        template<typename check>
-        constexpr void count_runtime(int& cnt)
-        {
-
-        }
-
-        template<typename check, typename U, typename... T>
-        inline
-        constexpr void count_runtime(int& cnt)
-        {
-            if constexpr(std::is_same<std::remove_pointer_t<check>, std::remove_pointer_t<U>>())
-            {
-                cnt++;
-
-                count_runtime<check, T...>(cnt);
-            }
-            else
-            {
-                count_runtime<check, T...>(cnt);
-            }
-        }
-
         template<typename T, typename... U>
         inline
         constexpr bool has_runtime(T(*func)(U... args))
         {
             int iruntime_c = 0;
 
-            count_runtime<runtime::store*, U...>(iruntime_c);
+            ((iruntime_c += (int)std::is_same_v<U, runtime::store*>), ...);
 
             return iruntime_c > 0;
+        }
+
+        template<typename T>
+        void type_push(types::vec<types::valtype>& in)
+        {
+            types::valtype type;
+
+            if(std::is_same_v<T, void>)
+                return;
+
+            if(std::is_same_v<T, runtime::store*>)
+                return;
+
+            if(is_wasi_ptr<T>())
+            {
+                type.set<types::i32>();
+            }
+            else
+            {
+                type.set<T>();
+            }
+
+            in.push_back(type);
         }
 
         template<typename T, typename... U>
@@ -452,110 +432,9 @@ namespace runtime
         {
             types::functype ret;
 
-            types::valtype i32;
-            types::valtype i64;
-            types::valtype f32;
-            types::valtype f64;
+            ((type_push<U>(ret.params)), ...);
 
-            i32.set<types::i32>();
-            i64.set<types::i64>();
-            f32.set<types::f32>();
-            f64.set<types::f64>();
-
-            int i32_c = 0;
-            int i64_c = 0;
-            int f32_c = 0;
-            int f64_c = 0;
-
-            int i32_r = 0;
-            int i64_r = 0;
-            int f32_r = 0;
-            int f64_r = 0;
-
-            count_types<bool, U...>(i32_c);
-            count_types<uint8_t, U...>(i32_c);
-            count_types<int8_t, U...>(i32_c);
-            count_types<uint16_t, U...>(i32_c);
-            count_types<int16_t, U...>(i32_c);
-            count_types<uint32_t, U...>(i32_c);
-            count_types<int32_t, U...>(i32_c);
-
-            count_types<uint64_t, U...>(i64_c);
-            count_types<int64_t, U...>(i64_c);
-
-            count_types<float, U...>(f32_c);
-
-            count_types<double, U...>(f64_c);
-
-            count_types<void*, U...>(i32_c);
-
-            ((i32_c += (int)is_wasi_ptr<U>()), ...);
-
-            int iruntime_c = 0;
-            count_runtime<runtime::store*, U...>(iruntime_c);
-
-            i32_c -= iruntime_c;
-
-
-            count_types<bool, T>(i32_r);
-            count_types<uint8_t, T>(i32_r);
-            count_types<int8_t, T>(i32_r);
-            count_types<uint16_t, T>(i32_r);
-            count_types<int16_t, T>(i32_r);
-            count_types<uint32_t, T>(i32_r);
-            count_types<int32_t, T>(i32_r);
-
-            count_types<uint64_t, T>(i64_r);
-            count_types<int64_t, T>(i64_r);
-
-            count_types<float, T>(f32_r);
-
-            count_types<double, T>(f64_r);
-
-            ///returning pointers is uuh
-            ///yup
-            ///going to be an interesting one
-
-            for(int i=0; i < i32_c; i++)
-            {
-                ret.params.push_back(i32);
-            }
-
-            for(int i=0; i < i64_c; i++)
-            {
-                ret.params.push_back(i64);
-            }
-
-            for(int i=0; i < f32_c; i++)
-            {
-                ret.params.push_back(f32);
-            }
-
-            for(int i=0; i < f64_c; i++)
-            {
-                ret.params.push_back(f64);
-            }
-
-
-            for(int i=0; i < i32_r; i++)
-            {
-                ret.results.push_back(i32);
-            }
-
-            for(int i=0; i < i64_r; i++)
-            {
-                ret.results.push_back(i64);
-            }
-
-            for(int i=0; i < f32_r; i++)
-            {
-                ret.results.push_back(f32);
-            }
-
-            for(int i=0; i < f64_r; i++)
-            {
-                ret.results.push_back(f64);
-            }
+            type_push<T>(ret.results);
 
             return ret;
         }

@@ -445,21 +445,70 @@ namespace types
         template<typename T>
         void set()
         {
-            if constexpr(std::is_same<T, types::i32>::value)
+            if constexpr(std::is_same_v<T, types::i32>)
             {
                 which = 0x7F;
             }
-            else if constexpr(std::is_same<T, types::i64>::value)
+            else if constexpr(std::is_same_v<T, types::i64>)
             {
                 which = 0x7E;
             }
-            else if constexpr(std::is_same<T, types::f32>::value)
+            else if constexpr(std::is_same_v<T, types::f32>)
             {
                 which = 0x7D;
             }
-            else if constexpr(std::is_same<T, types::f64>::value)
+            else if constexpr(std::is_same_v<T, types::f64>)
             {
                 which = 0x7C;
+            }
+            else if constexpr(std::is_same_v<T, bool>)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same_v<T, uint8_t>)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same_v<T, int8_t>)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same_v<T, uint16_t>)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same_v<T, int16_t>)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same_v<T, uint32_t>)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same_v<T, int32_t>)
+            {
+                which = 0x7F;
+            }
+            else if constexpr(std::is_same_v<T, uint64_t>)
+            {
+                which = 0x7E;
+            }
+            else if constexpr(std::is_same_v<T, int64_t>)
+            {
+                which = 0x7E;
+            }
+            else if constexpr(std::is_same_v<T, float>)
+            {
+                which = 0x7D;
+            }
+            else if constexpr(std::is_same_v<T, double>)
+            {
+                which = 0x7C;
+            }
+            else if constexpr(std::is_pointer_v<T>)
+            {
+                ///32bit
+                which = 0x7F;
             }
         }
     };

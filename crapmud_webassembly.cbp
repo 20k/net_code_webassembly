@@ -85,7 +85,6 @@
 		<Unit filename="wasi_dummy.hpp" />
 		<Unit filename="wasi_host.hpp" />
 		<Unit filename="wasi_impl.hpp" />
-		<Unit filename="wasi_shared.hpp" />
 		<Unit filename="wasm_binary_data.cpp" />
 		<Unit filename="wasm_binary_data.hpp" />
 		<Unit filename="wasm_interop_context.cpp" />
