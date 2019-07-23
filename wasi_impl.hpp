@@ -91,9 +91,6 @@ preopened file_sandbox;
 
 __wasi_errno_t __wasi_clock_res_get(__wasi_clockid_t clock_id, wasi_ptr_t<__wasi_timestamp_t> resolution)
 {
-    /*(double) std::chrono::high_resolution_clock::period::num
-             / std::chrono::high_resolution_clock::period::den;*/
-
     if(clock_id == __WASI_CLOCK_MONOTONIC)
     {
         uint64_t res = std::chrono::steady_clock::period::num * 1000 * 1000 / std::chrono::steady_clock::period::den;
