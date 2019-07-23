@@ -109,8 +109,11 @@ std::string function_name(runtime::moduleinst& minst, runtime::funcinst& finst, 
         runtime::funcaddr faddr = std::get<runtime::funcaddr>(einst.value.val);
 
         if((uint32_t)faddr == (uint32_t)address)
-            return einst.name.friendly();
+            return "ea" + einst.name.friendly();
     }
+
+    if(func_name == "main")
+        return "i_main";
 
     return func_name;
 }
@@ -1391,7 +1394,7 @@ using empty = void;
 
 )";
 
-    bool has_main = false;
+    /*bool has_main = false;
 
     for(runtime::exportinst& einst : minst.exports)
     {
@@ -1400,7 +1403,7 @@ using empty = void;
             has_main = true;
             break;
         }
-    }
+    }*/
 
     for(int i=0; i < (int)s.mems.size(); i++)
     {
@@ -1438,9 +1441,11 @@ using empty = void;
         res += define_function(s, base, minst) + "\n\n";
     }
 
-    if(!has_main)
+    //if(!has_main)
     {
-        res += "int main(){proc_exit(__original_main());}\n\n";
+        //res += "int main(){proc_exit(ea_start());}\n\n";
+
+        res += "int main(){ea_start(); return 1;}\n\n";
     }
 
     return res;

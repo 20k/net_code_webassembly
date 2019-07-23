@@ -54,16 +54,87 @@ struct wasi_ptr_t
 
 using wasi_ptr_raw = uint32_t;
 
+#include <map>
+#include <filesystem>
+
+/*struct file_desc
+{
+
+};
+
+struct fd_table
+{
+    __wasi_fd_t glob = 2;
+
+    std::map<__wasi_fd_t, file_desc> files;
+
+    __wasi_fd_t open()
+    {
+        files[glob++] = file_desc();
+
+        return glob-1;
+    }
+
+    bool is_open(__wasi_fd_t fd)
+    {
+        return files.find(fd) != files.end();
+    }
+
+    void close(__wasi_fd_t fd)
+    {
+        files.erase(fd);
+    }
+};*/
+
+struct preopened
+{
+    std::vector<std::filesystem::path> paths;
+
+    preopened()
+    {
+        paths.push_back(std::filesystem::path("./sandbox"));
+    }
+};
+
+/*fd_table global_table;
+
+void boot_fds()
+{
+    global_table.open();
+}*/
+
+preopened file_sandbox;
+
 __wasi_errno_t __wasi_fd_prestat_get(__wasi_fd_t fd, PTR(__wasi_prestat_t) buf)
 {
     printf("Fd? %i\n", fd);
-    return __WASI_EACCES;
+
+    if(file_sandbox.paths.size() == 0)
+        return __WASI_EBADF;
+
+    ///some baffling platform stuff
+    if(file_sandbox.paths.size() == 1 && fd == 3)
+    {
+        __wasi_prestat_t ret;
+        ret.pr_type = __WASI_PREOPENTYPE_DIR;
+
+        __wasi_prestat_t::__wasi_prestat_u::__wasi_prestat_u_dir_t dird;
+        dird.pr_name_len = file_sandbox.paths[0].string().length();
+
+        ret.u.dir = dird;
+
+        *buf = ret;
+
+        return __WASI_ESUCCESS;
+    }
+
+    return __WASI_EBADF;
 }
 
 __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_size_t path_len)
 {
     printf("FdDirName %i\n", fd);
-    return __WASI_EACCES;
+    return __WASI_EBADF;
 }
 
 __wasi_errno_t __wasi_environ_sizes_get(PTR(wasi_size_t) environ_count, PTR(wasi_size_t) environ_buf_size)
@@ -122,18 +193,24 @@ __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
 
 __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
 {
+    printf("Close\n");
+
     return __WASI_ESUCCESS;
 }
 
 __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_whence_t whence, PTR(__wasi_filesize_t) newoffset)
 {
-    return __WASI_EACCES;
+    printf("Seek\n");
+
+    return __WASI_EBADF;
 }
 
 __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t> iovs, wasi_size_t iovs_len, wasi_ptr_t<uint32_t> nwritten)
 {
+    printf("Write\n");
+
     *nwritten = 0;
-    return __WASI_EACCES;
+    return __WASI_EBADF;
 }
 
 #ifndef HOST
