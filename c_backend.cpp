@@ -234,6 +234,8 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     if(l.btype.arity() > 0)
     {
         destination_stack_val = stack_offset.peek_back();
+
+        printf("Label with arity\n");
     }
 
     ctx.label_arities.push_back(l.btype.arity());
@@ -605,6 +607,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 l.btype = sbd.btype;
                 l.continuation = 1;
 
+                //assert(l.btype.arity() == 0);
+
                 if(l.btype.arity() > 0)
                     ret += sbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0\n";
 
@@ -646,6 +650,8 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 label l;
                 l.btype = dbd.btype;
                 l.continuation = 3;
+
+                //assert(l.btype.arity() == 0);
 
                 int branch_variable = stack_offset.pop_back();
 
@@ -841,11 +847,21 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 int declared_return = -1;
 
+                auto backup_stack = stack_offset;
+
+                ///error, we're overwriting a value
+                for(int i=0; i < (int)ft_expect.params.size(); i++)
+                {
+                    stack_offset.pop_back();
+                }
+
                 if(ft_expect.results.size() > 0)
                 {
                     declared_return = stack_offset.get_next();;
                     ret += ft_expect.results[0].friendly() + " " + get_variable_name(declared_return) + " = 0;\n";
                 }
+
+                //ret += "printf(\"Pre calli\");\n";
 
                 for(int i=0; i < (int)tinst.elem.size(); i++)
                 {
@@ -855,6 +871,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                         ret += "else if(";
 
                     ret += get_variable_name(check_variable) + " == " + std::to_string(i) + ") {\n";
+                    //ret += "printf(\"hit calli\\n\");\n";
 
                     if(tinst.elem[i].addr.has_value())
                     {
@@ -872,9 +889,9 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                         if(types::funcs_equal(ft_actual, ft_expect))
                         {
                             if(ft_expect.results.size() > 0)
-                                ret += get_variable_name(declared_return) + " = " + invoke_function(s, ctx, stack_offset, minst, runtime_addr) + ";\n";
+                                ret += get_variable_name(declared_return) + " = " + invoke_function(s, ctx, backup_stack, minst, runtime_addr) + ";\n";
                             else
-                                ret += invoke_function(s, ctx, stack_offset, minst, runtime_addr) + ";\n";
+                                ret += invoke_function(s, ctx, backup_stack, minst, runtime_addr) + ";\n";
                         }
                         else
                         {
@@ -887,11 +904,6 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                     }
 
                     ret += "}\n";
-                }
-
-                for(int i=0; i < (int)ft_expect.params.size(); i++)
-                {
-                    stack_offset.pop_back();
                 }
 
                 if(tinst.elem.size() > 0)
