@@ -12,11 +12,13 @@
 #define _Noreturn [[noreturn]]
 #endif // __cplusplus
 
+#ifndef CLIENT
 #include "runtime_types.hpp"
+using namespace runtime;
+#endif // HOST
 
 #define wasi_size_t uint32_t
 
-using namespace runtime;
 
 _Static_assert(_Alignof(int8_t) == 1, "non-wasi data layout");
 _Static_assert(_Alignof(uint8_t) == 1, "non-wasi data layout");

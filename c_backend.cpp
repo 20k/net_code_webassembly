@@ -412,6 +412,8 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
     ret += "memcpy(&" + get_variable_name(u_1) + ", &mem_0[" + sum + "], sizeof(" + utype + "));\n";
 
     ret += ttemp.friendly() + " " + get_variable_name(t_1) + " = (" + ttemp.friendly() + ")" + get_variable_name(u_1) + ";\n";
+    //ret += "std::cout << \"Loaded \" << " + get_variable_name(t_1) + " <<  \" to \"  << " + sum + " << \" of \" << " + std::to_string(sizeof(U)) + " << std::endl;\n";
+
 
     return ret;
 }
@@ -449,6 +451,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
     ret += "static_assert(" + std::to_string(bytes) + " <= sizeof(" + get_variable_name(store_value) + "));\n";
 
     ret += "memcpy(&mem_0[" + sum + "], (char*)&" + get_variable_name(store_value) + ", " + std::to_string(bytes) + ");\n";
+    //ret += "std::cout << \"Stored \" << " + get_variable_name(store_value) + " <<  \" to \"  << " + sum + " << \" of \" << " + std::to_string(bytes) + " << std::endl;\n";
 
     return ret;
 }
@@ -1017,10 +1020,6 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 if((uint32_t)addr >= (uint32_t)s.globals.size())
                     throw std::runtime_error("bad addr in set_global");
-
-                runtime::globalinst& glob = s.globals[(uint32_t)addr];
-
-                runtime::value val = glob.val;
 
                 int set_var = stack_offset.pop_back();
 

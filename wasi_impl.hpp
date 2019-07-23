@@ -17,7 +17,6 @@
 #define _Alignof alignof
 #include <type_traits>
 
-#include "core.h"
 
 template<typename T>
 struct wasi_ptr_t
@@ -63,6 +62,9 @@ struct wasi_ptr_t
         return *(T*)&mem_0[val + idx * sizeof(T)];
     }
 };
+
+#define CLIENT
+#include "wasi_host.hpp"
 
 #define PTR(x) wasi_ptr_t<x>
 #define DPTR(x) wasi_ptr_t<wasi_ptr_t<x>>
@@ -132,6 +134,8 @@ __wasi_errno_t __wasi_fd_prestat_get(__wasi_fd_t fd, PTR(__wasi_prestat_t) buf)
     ///some baffling platform stuff
     if(file_sandbox.paths.size() == 1 && fd == 3)
     {
+        std::cout << "VALLY " << buf.val << std::endl;
+
         __wasi_prestat_t ret;
         ret.pr_type = __WASI_PREOPENTYPE_DIR;
 
@@ -156,7 +160,7 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
     {
         std::string cname = file_sandbox.paths[0].string();
 
-        for(int i=0; i < cname.size(); i++)
+        for(int i=0; i < cname.size() && i < path_len; i++)
         {
             path[i] = cname[i];
         }
@@ -286,8 +290,6 @@ __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_
 __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t> iovs, wasi_size_t iovs_len, wasi_ptr_t<uint32_t> nwritten)
 {
     printf("Write %i\n", fd);
-
-    return __WASI_EBADF;
 
     ///stdin
     if(fd == 0)

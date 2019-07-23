@@ -460,6 +460,8 @@ void mem_load(runtime::store& s, const types::memarg& arg, full_stack& full, act
 
     T ret = (T)str;
 
+    //std::cout << "Loaded " << ret << " to " << ea << " of " << sizeof(U) << std::endl;
+
     runtime::value rval;
     rval.set(ret);
 
@@ -529,6 +531,8 @@ void mem_store(runtime::store& s, const types::memarg& arg, full_stack& full, ac
                   //    throw std::runtime_error("Bad size");
 
                   memcpy(&minst.dat[ea], (char*)&concrete, bytes);
+
+                  //std::cout << "Stored " << concrete << " to " << ea << " of " << bytes << std::endl;
 
                   #ifdef DEBUGGING
                   lg::log("Stored ", (uint32_t)concrete, " to ", (uint32_t)ea);
