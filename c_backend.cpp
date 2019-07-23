@@ -752,10 +752,12 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 ret += sfjump(ctx, stack_offset, lidx, would_consume);
 
-                ret += "}";
+                ret += "}\n";
 
                 if(would_consume)
                     stack_offset.pop_back();
+
+                add_abort(ret);
 
                 //stack_offset.pop_back();
 

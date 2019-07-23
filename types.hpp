@@ -616,7 +616,7 @@ namespace types
                 s += params[i].friendly() + ", ";
             }
 
-            s += + "R: ";
+            s += "R: ";
 
             for(int i=0; i < results.size(); i++)
             {
