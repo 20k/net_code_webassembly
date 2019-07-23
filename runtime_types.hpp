@@ -258,7 +258,17 @@ namespace runtime
 
         constexpr static bool is_ptr = true;
 
-        T* operator->()
+        wasi_ptr_t()
+        {
+
+        }
+
+        wasi_ptr_t(uint32_t in)
+        {
+            val = in;
+        }
+
+        T* operator->() const
         {
             assert(wasi_ctx::cstore);
 
@@ -269,7 +279,7 @@ namespace runtime
         }
 
         template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
-        T1& operator*()
+        T1& operator*() const
         {
             assert(wasi_ctx::cstore);
 
@@ -280,7 +290,7 @@ namespace runtime
         }
 
         template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
-        T1& operator[](int idx)
+        T1& operator[](int idx) const
         {
             assert(val + idx * sizeof(T) + sizeof(T) <= wasi_ctx::cstore->mems[0].dat.size());
             assert(val + idx >= 0);

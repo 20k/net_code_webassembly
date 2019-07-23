@@ -31,7 +31,15 @@ struct wasi_ptr_t
         val = in;
     }
 
-    T* operator->()
+    template<typename = std::enable_if<std::is_same_v<T, void>>>
+    wasi_ptr_t(const T* in)
+    {
+        assert(mem_0.size() > 0);
+
+        val = (const char*)in - (const char*)&mem_0[0];
+    }
+
+    T* operator->() const
     {
         assert(val + sizeof(T) <= mem_0.size());
 
@@ -39,14 +47,15 @@ struct wasi_ptr_t
     }
 
     template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
-    T1& operator*()
+    T1& operator*() const
     {
         assert(val + sizeof(T) <= mem_0.size());
 
         return *(T*)&mem_0[val];
     }
 
-    T& operator[](int idx)
+    template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
+    T1& operator[](int idx) const
     {
         assert(val + idx * sizeof(T) + sizeof(T) <= mem_0.size());
         assert(val + idx >= 0);
@@ -276,7 +285,44 @@ __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_
 
 __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t> iovs, wasi_size_t iovs_len, wasi_ptr_t<uint32_t> nwritten)
 {
-    printf("Write\n");
+    printf("Write %i\n", fd);
+
+    ///stdin
+    if(fd == 0)
+    {
+
+    }
+
+    ///stdout
+    if(fd == 1)
+    {
+        int written = 0;
+
+        for(int i=0; i < (int)iovs_len; i++)
+        {
+            __wasi_ciovec_t single = iovs[i];
+
+            const wasi_ptr_t<void> buf = single.buf;
+
+            wasi_ptr_t<char> tchr(0);
+            tchr.val = buf.val;
+
+            for(int kk=0; kk < single.buf_len; kk++)
+            {
+                putchar(tchr[kk]);
+                written++;
+            }
+        }
+
+        *nwritten = written;
+        return __WASI_ESUCCESS;
+    }
+
+    ///stderr
+    if(fd == 2)
+    {
+
+    }
 
     *nwritten = 0;
     return __WASI_EBADF;
