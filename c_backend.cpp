@@ -325,6 +325,56 @@ void add_abort(std::string& in)
     in += "if(abort_stack > 0)\n    break;\n";
 }
 
+std::string real_type(uint8_t)
+{
+    return "uint8_t";
+}
+
+std::string real_type(int8_t)
+{
+    return "int8_t";
+}
+
+std::string real_type(uint16_t)
+{
+    return "uint16_t";
+}
+
+std::string real_type(int16_t)
+{
+    return "int16_t";
+}
+
+std::string real_type(uint32_t)
+{
+    return "uint32_t";
+}
+
+std::string real_type(int32_t)
+{
+    return "int32_t";
+}
+
+std::string real_type(uint64_t)
+{
+    return "uint64_t";
+}
+
+std::string real_type(int64_t)
+{
+    return "int64_t";
+}
+
+std::string real_type(float)
+{
+    return "float";
+}
+
+std::string real_type(double)
+{
+    return "double";
+}
+
 template<typename T, typename U>
 std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack& stack_offset, runtime::moduleinst& minst)
 {
@@ -342,8 +392,10 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
 
     int top_val = stack_offset.pop_back();
 
-    runtime::value utemp;
-    utemp.set(U());
+    runtime::value wasm_utype;
+    wasm_utype.set(U());
+
+    std::string utype = real_type(U());
 
     runtime::value ttemp;
     ttemp.set(T());
@@ -355,10 +407,10 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
 
     std::string sum = std::to_string((uint32_t)arg.offset) + " + " + get_variable_name(top_val);
 
-    ret += "if(" + sum + " + sizeof(" + utemp.friendly() + ") > mem_0.size()) {assert(false);}\n";
+    ret += "if(" + sum + " + sizeof(" + utype + ") > mem_0.size()) {assert(false);}\n";
     ret += "if(" + sum + " < 0) {assert(false);}\n";
-    ret += utemp.friendly() + " " + get_variable_name(u_1) + " = 0;\n";
-    ret += "memcpy(&" + get_variable_name(u_1) + ", &mem_0[" + sum + "], sizeof(" + utemp.friendly() + "));\n";
+    ret += utype + " " + get_variable_name(u_1) + " = 0;\n";
+    ret += "memcpy(&" + get_variable_name(u_1) + ", &mem_0[" + sum + "], sizeof(" + utype + "));\n";
 
     ret += ttemp.friendly() + " " + get_variable_name(t_1) + " = (" + ttemp.friendly() + ")" + get_variable_name(u_1) + ";\n";
 
