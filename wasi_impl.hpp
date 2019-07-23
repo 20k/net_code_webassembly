@@ -198,11 +198,23 @@ struct preopened
         assert(has_fd(fd));
     }
 
+    ///TODO:
     size_t get_size_fd(uint32_t fd)
     {
         assert(has_fd(fd));
 
         return 0;
+    }
+
+    ///TODO:
+    bool resize_fd(uint32_t fd, size_t new_size)
+    {
+        assert(has_fd(fd));
+
+        ///CHECK SANDBOX SIZE
+        ///CHECK DISK SPACE
+
+        return false;
     }
 };
 
@@ -453,6 +465,20 @@ __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat
     ret.st_ctim = 0; ///TODO: CTIM
 
     *buf = ret;
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_size)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_FILESTAT_SET_SIZE))
+        return __WASI_ENOTCAPABLE;
+
+    if(!file_sandbox.resize_fd(fd, st_size))
+        return __WASI_EFBIG;
 
     return __WASI_ESUCCESS;
 }
