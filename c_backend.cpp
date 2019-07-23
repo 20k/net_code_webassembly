@@ -394,9 +394,6 @@ std::string c_mem_load(runtime::store& s, const types::memarg& arg, value_stack&
 
     int top_val = stack_offset.pop_back();
 
-    runtime::value wasm_utype;
-    wasm_utype.set(U());
-
     std::string utype = real_type(U());
 
     runtime::value ttemp;
