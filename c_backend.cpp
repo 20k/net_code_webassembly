@@ -73,6 +73,56 @@ struct value_stack
     }
 };
 
+std::string real_type(uint8_t)
+{
+    return "uint8_t";
+}
+
+std::string real_type(int8_t)
+{
+    return "int8_t";
+}
+
+std::string real_type(uint16_t)
+{
+    return "uint16_t";
+}
+
+std::string real_type(int16_t)
+{
+    return "int16_t";
+}
+
+std::string real_type(uint32_t)
+{
+    return "uint32_t";
+}
+
+std::string real_type(int32_t)
+{
+    return "int32_t";
+}
+
+std::string real_type(uint64_t)
+{
+    return "uint64_t";
+}
+
+std::string real_type(int64_t)
+{
+    return "int64_t";
+}
+
+std::string real_type(float)
+{
+    return "float";
+}
+
+std::string real_type(double)
+{
+    return "double";
+}
+
 #include "c_basic_ops.hpp"
 
 std::string join_commawise(const std::vector<std::string>& in)
@@ -325,56 +375,6 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 void add_abort(std::string& in)
 {
     in += "if(abort_stack > 0)\n    break;\n";
-}
-
-std::string real_type(uint8_t)
-{
-    return "uint8_t";
-}
-
-std::string real_type(int8_t)
-{
-    return "int8_t";
-}
-
-std::string real_type(uint16_t)
-{
-    return "uint16_t";
-}
-
-std::string real_type(int16_t)
-{
-    return "int16_t";
-}
-
-std::string real_type(uint32_t)
-{
-    return "uint32_t";
-}
-
-std::string real_type(int32_t)
-{
-    return "int32_t";
-}
-
-std::string real_type(uint64_t)
-{
-    return "uint64_t";
-}
-
-std::string real_type(int64_t)
-{
-    return "int64_t";
-}
-
-std::string real_type(float)
-{
-    return "float";
-}
-
-std::string real_type(double)
-{
-    return "double";
 }
 
 template<typename T, typename U>

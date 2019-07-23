@@ -239,7 +239,7 @@ std::string c_wrap(int v1)
 template<typename T, typename U>
 std::string all_cv(int v1)
 {
-    return "(" + types::friendly(T()) + ")" + GET(v1) + ";\n";
+    return "(" + real_type(T()) + ")(" + real_type(U()) + ")" + get_variable_name(v1) + ";\n";
 }
 
 #define C_ALIAS(x) \
