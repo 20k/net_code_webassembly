@@ -109,6 +109,54 @@ __wasi_errno_t __wasi_clock_res_get(__wasi_clockid_t clock_id, wasi_ptr_t<__wasi
         return __WASI_ESUCCESS;
     }
 
+    #if 0
+    ///ok this is wrong
+    ///process cputime is literal cpu executed time, its a profiling thing it seems
+    if(clock_id == __WASI_CLOCK_PROCESS_CPUTIME_ID)
+    {
+        uint64_t res = std::chrono::high_resolution_clock::period::num * 1000 * 1000 / std::chrono::high_resolution_clock::period::den;
+
+        *resolution = res;
+
+        return __WASI_ESUCCESS;
+    }
+    #endif // 0
+
+    return __WASI_EINVAL;
+}
+
+__wasi_errno_t __wasi_clock_time_get(__wasi_clockid_t clock_id, __wasi_timestamp_t precision, wasi_ptr_t<__wasi_timestamp_t> ttme)
+{
+    if(clock_id == __WASI_CLOCK_MONOTONIC)
+    {
+        size_t ts_nano = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+
+        *ttme = ts_nano;
+
+        return __WASI_ESUCCESS;
+    }
+
+    if(clock_id == __WASI_CLOCK_REALTIME)
+    {
+        size_t ts_nano = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+        *ttme = ts_nano;
+
+        return __WASI_ESUCCESS;
+    }
+
+    #if 0
+    ///see clock_res_get
+    if(clock_id == __WASI_CLOCK_PROCESS_CPUTIME_ID)
+    {
+        size_t ts_nano = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+        *ttme = ts_nano;
+
+        return __WASI_ESUCCESS;
+    }
+    #endif // 0
+
     return __WASI_EINVAL;
 }
 
