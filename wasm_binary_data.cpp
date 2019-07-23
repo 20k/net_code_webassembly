@@ -537,7 +537,7 @@ struct module
                 section_start = sections::startsec(head);
                 serialise(section_start, p, false);
 
-                std::cout << "warning: imported start untested\n";
+                std::cout << "warning: imported start untested - turns out this is also widely unsupported\n";
             }
             else if(head.id == 9)
             {
