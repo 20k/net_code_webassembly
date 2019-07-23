@@ -1301,6 +1301,35 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0x98:
                 C_POPBT(c_fcopysign<float>, types::f32, types::f32);
 
+            case 0x99:
+                C_POPAT(c_absf<double>, types::f64, types::f64);
+            case 0x9A:
+                C_POPAT(c_fneg<double>, types::f64, types::f64);
+            case 0x9B:
+                C_POPAT(c_fceil<double>, types::f64, types::f64);
+            case 0x9C:
+                C_POPAT(c_ffloor<double>, types::f64, types::f64);
+            case 0x9D:
+                C_POPAT(c_ftrunc<double>, types::f64, types::f64);
+            case 0x9E:
+                C_POPAT(c_fnearest<double>, types::f64, types::f64);
+            case 0x9F:
+                C_POPAT(c_fsqrt<double>, types::f64, types::f64);
+            case 0xA0:
+                C_POPBT(c_add<double>, types::f64, types::f64);
+            case 0xA1:
+                C_POPBT(c_sub<double>, types::f64, types::f64);
+            case 0xA2:
+                C_POPBT(c_mul<double>, types::f64, types::f64);
+            case 0xA3:
+                C_POPBT(c_fdiv<double>, types::f64, types::f64);
+            case 0xA4:
+                C_POPBT(c_fmin<double>, types::f64, types::f64);
+            case 0xA5:
+                C_POPBT(c_fmax<double>, types::f64, types::f64);
+            case 0xA6:
+                C_POPBT(c_fcopysign<double>, types::f64, types::f64);
+
             ///these functions are all template parameter format
             ///<dest, src>
             ///so trunc_s takes the argument as a float
