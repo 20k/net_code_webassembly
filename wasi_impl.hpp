@@ -134,8 +134,6 @@ __wasi_errno_t __wasi_fd_prestat_get(__wasi_fd_t fd, PTR(__wasi_prestat_t) buf)
     ///some baffling platform stuff
     if(file_sandbox.paths.size() == 1 && fd == 3)
     {
-        std::cout << "VALLY " << buf.val << std::endl;
-
         __wasi_prestat_t ret;
         ret.pr_type = __WASI_PREOPENTYPE_DIR;
 
@@ -291,14 +289,7 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
 {
     printf("Write %i\n", fd);
 
-    ///stdin
-    if(fd == 0)
-    {
-
-    }
-
-    ///stdout
-    if(fd == 1)
+    auto do_op = [&](auto func)
     {
         int written = 0;
 
@@ -313,19 +304,32 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
 
             for(int kk=0; kk < single.buf_len; kk++)
             {
-                putchar(tchr[kk]);
+                func(tchr[kk]);
                 written++;
             }
         }
 
-        *nwritten = written;
+        return written;
+    };
+
+    ///stdin
+    if(fd == 0)
+    {
+
+    }
+
+    ///stdout
+    if(fd == 1)
+    {
+        *nwritten = do_op([](char in){return fputc(in, stdout);});
         return __WASI_ESUCCESS;
     }
 
     ///stderr
     if(fd == 2)
     {
-
+        *nwritten = do_op([](char in){return fputc(in, stderr);});
+        return __WASI_ESUCCESS;
     }
 
     *nwritten = 0;
