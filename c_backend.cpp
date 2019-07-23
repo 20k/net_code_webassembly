@@ -878,7 +878,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                         }
                         else
                         {
-                            ret += "assert(false); //bad type\n";
+                            ret += "assert(false); //bad type Got: " + ft_actual.as_string() + " Expected " + ft_expect.as_string() + "\n";
                         }
                     }
                     else
@@ -988,7 +988,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 break;
             }
 
-            ///get_global
+            ///set_global
             case 0x24:
             {
                 types::globalidx gidx = std::get<types::globalidx>(is.dat);
@@ -1009,7 +1009,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
                 int set_var = stack_offset.pop_back();
 
-                get_global_name((uint32_t)addr) + " = " + get_variable_name(set_var) + ";\n";
+                ret += get_global_name((uint32_t)addr) + " = " + get_variable_name(set_var) + ";\n";
 
                 break;
             }

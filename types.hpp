@@ -606,6 +606,25 @@ namespace types
     {
         vec<valtype> params;
         vec<valtype> results;
+
+        std::string as_string()
+        {
+            std::string s = "P: ";
+
+            for(int i=0; i < params.size(); i++)
+            {
+                s += params[i].friendly() + ", ";
+            }
+
+            s += + "R: ";
+
+            for(int i=0; i < results.size(); i++)
+            {
+                s += results[i].friendly() + ", ";
+            }
+
+            return s;
+        }
     };
 
     inline
