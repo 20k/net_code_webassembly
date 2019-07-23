@@ -975,12 +975,19 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
         if(dend > (uint32_t)mem_inst.dat.size())
             throw std::runtime_error("Bad data segment end");
 
+        runtime::preserved_data_segment preserved;
+        preserved.do_i = do_i;
+        preserved.dend = dend;
+        preserved.bytes = data_seg.b;
+
         for(uint32_t j=0; j < (uint32_t)data_seg.b.size(); j++)
         {
             uint8_t byte = data_seg.b[j];
 
             mem_inst.dat[do_i + j] = byte;
         }
+
+        inst.data_segment.push_back(preserved);
     }
 
     inst.typel = m.section_type.types;

@@ -1463,6 +1463,22 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
         return function_body + "}\n";
 }
 
+std::string init_data_segment(runtime::moduleinst& minst)
+{
+    std::string ret = "void init_data_segment() { ";
+
+    for(runtime::preserved_data_segment& data : minst.data_segment)
+    {
+        for(uint32_t i=0; i < (uint32_t)data.bytes.size(); i++)
+        {
+            ret += "assert(" + std::to_string(i + data.do_i) + " < mem_0.size()); ";
+            ret += "mem_0[" + std::to_string(i + data.do_i) + "] = " + std::to_string(data.bytes[i]) + ";";
+        }
+    }
+
+    return ret + "\n}";
+}
+
 std::string compile_top_level(runtime::store& s, runtime::moduleinst& minst)
 {
     ///need to inject memory
@@ -1537,11 +1553,13 @@ using empty = void;
         res += define_function(s, base, minst) + "\n\n";
     }
 
+    res += init_data_segment(minst) + "\n\n";
+
     //if(!has_main)
     {
         //res += "int main(){proc_exit(ea_start());}\n\n";
 
-        res += "int main(){ea_start(); return 1;}\n\n";
+        res += "int main(){init_data_segment(); ea_start(); return 1;}\n\n";
     }
 
     return res;

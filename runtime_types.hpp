@@ -664,6 +664,14 @@ namespace runtime
         return filter_type<globaladdr>(vals);
     }
 
+    struct preserved_data_segment
+    {
+        uint32_t do_i = 0;
+        uint32_t dend = 0;
+
+        types::vec<uint8_t> bytes;
+    };
+
     ///so this is constructed from our module
     ///which is the section representation we constructed earlier
     struct moduleinst
@@ -678,6 +686,8 @@ namespace runtime
         std::map<funcaddr, std::string> funcnames;
 
         types::vec<exportinst> exports;
+
+        types::vec<preserved_data_segment> data_segment;
     };
 
     constexpr size_t page_size = 64*1024;
