@@ -611,14 +611,14 @@ namespace types
         {
             std::string s = "P: ";
 
-            for(int i=0; i < params.size(); i++)
+            for(int i=0; i < (int)params.size(); i++)
             {
                 s += params[i].friendly() + ", ";
             }
 
             s += "R: ";
 
-            for(int i=0; i < results.size(); i++)
+            for(int i=0; i < (int)results.size(); i++)
             {
                 s += results[i].friendly() + ", ";
             }

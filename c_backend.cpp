@@ -1484,7 +1484,7 @@ std::string validate(runtime::store& s, runtime::moduleinst& minst)
 
     runtime::meminst& memory_inst = s.mems[(uint32_t)minst.memaddrs[0]];
 
-    for(int i=0; i < memory_inst.dat.size(); i++)
+    for(int i=0; i < (int)memory_inst.dat.size(); i++)
     {
         ret += "assert(" + std::to_string(memory_inst.dat[i]) + " == mem_0[" + std::to_string(i) + "]);";
     }

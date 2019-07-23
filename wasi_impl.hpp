@@ -158,7 +158,7 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
     {
         std::string cname = file_sandbox.paths[0].string();
 
-        for(int i=0; i < cname.size() && i < path_len; i++)
+        for(size_t i=0; i < cname.size() && i < path_len; i++)
         {
             path[i] = cname[i];
         }
@@ -200,7 +200,7 @@ __wasi_errno_t __wasi_args_get(DPTR(char) argv, PTR(char) argv_buf)
 
     const char* name = "sbox";
 
-    for(int i=0; i < strlen(name); i++)
+    for(size_t i=0; i < strlen(name); i++)
     {
         argv_buf[i] = name[i];
     }
@@ -296,7 +296,7 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
     {
         int written = 0;
 
-        for(int i=0; i < (int)iovs_len; i++)
+        for(size_t i=0; i < iovs_len; i++)
         {
             __wasi_ciovec_t single = iovs[i];
 
@@ -305,7 +305,7 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
             wasi_ptr_t<char> tchr(0);
             tchr.val = buf.val;
 
-            for(int kk=0; kk < single.buf_len; kk++)
+            for(size_t kk=0; kk < single.buf_len; kk++)
             {
                 func(tchr[kk]);
             }
