@@ -575,7 +575,7 @@ void eval_expr(context& ctx, runtime::store& s, const types::vec<types::instr>& 
 
         //std::cout << "0x" << std::hex << (uint32_t)which << std::dec << " i: " << instr_to_str(which) << std::endl;
 
-        //#define INSTRUCTION_TRACING
+        #define INSTRUCTION_TRACING
         #ifdef INSTRUCTION_TRACING
         if(full.peek_back().has_value())
         {

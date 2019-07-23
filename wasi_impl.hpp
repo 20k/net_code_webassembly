@@ -287,6 +287,8 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
 {
     printf("Write %i\n", fd);
 
+    return __WASI_EBADF;
+
     ///stdin
     if(fd == 0)
     {

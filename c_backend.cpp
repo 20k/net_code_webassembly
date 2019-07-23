@@ -1479,6 +1479,20 @@ std::string init_data_segment(runtime::moduleinst& minst)
     return ret + "\n}";
 }
 
+std::string validate(runtime::store& s, runtime::moduleinst& minst)
+{
+    std::string ret = "void validate() {";
+
+    runtime::meminst& memory_inst = s.mems[(uint32_t)minst.memaddrs[0]];
+
+    for(int i=0; i < memory_inst.dat.size(); i++)
+    {
+        ret += "assert(" + std::to_string(memory_inst.dat[i]) + " == mem_0[" + std::to_string(i) + "]);";
+    }
+
+    return ret + "}";
+}
+
 std::string compile_top_level(runtime::store& s, runtime::moduleinst& minst)
 {
     ///need to inject memory
@@ -1523,7 +1537,7 @@ using empty = void;
 
         uint64_t mem_size = inst.dat.size();
 
-        res += "std::vector<char> mem_" + std::to_string(i) + "(" + std::to_string(mem_size) + ");\n";
+        res += "std::vector<uint8_t> mem_" + std::to_string(i) + "(" + std::to_string(mem_size) + ");\n";
     }
 
     res += "\n#include \"wasi_impl.hpp\"\n";
@@ -1554,6 +1568,8 @@ using empty = void;
     }
 
     res += init_data_segment(minst) + "\n\n";
+
+    //res += validate(s, minst);
 
     //if(!has_main)
     {
