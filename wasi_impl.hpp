@@ -483,6 +483,46 @@ __wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_
     return __WASI_ESUCCESS;
 }
 
+__wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_FILESTAT_SET_TIMES))
+        return __WASI_ENOTCAPABLE;
+
+    return __WASI_ENOTCAPABLE;
+    //return __WASI_ESUCCESS;
+}
+
+//fd_pread
+//fd_pwrite
+//fd_read
+//fd_write
+//fd_readdir
+//fd_renumber
+//fd_seek
+//fd_sync
+//fd_tell
+//fd_write - update impl
+//path_create_directory
+//path_filestat_get
+//path_filestat_set_times
+//path_link
+//path_open
+//path_readlink
+//path_remove_directory
+//path_rename
+//path_symlink
+//path_unlink_file
+//poll_oneoff
+//proc_raise
+//random_get
+//sched_yield
+//sock_recv
+//sock_send
+//sock_shutdown
+
 __wasi_errno_t __wasi_environ_sizes_get(PTR(wasi_size_t) environ_count, PTR(wasi_size_t) environ_buf_size)
 {
     printf("ESize\n");
@@ -614,7 +654,6 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
 
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
-
 
     return __WASI_EBADF;
 }
