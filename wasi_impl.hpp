@@ -178,6 +178,13 @@ struct preopened
 
         files.erase(files.find(fd));
     }
+
+    bool can_fd(uint32_t fd, __wasi_rights_t right)
+    {
+        assert(has_fd(fd));
+
+        return (files[fd].fs_rights_base & right) > 0;
+    }
 };
 
 preopened file_sandbox;
@@ -386,6 +393,12 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
 __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_whence_t whence, PTR(__wasi_filesize_t) newoffset)
 {
     printf("Seek\n");
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_SEEK))
+        return __WASI_ENOTCAPABLE;
 
     return __WASI_EBADF;
 }
