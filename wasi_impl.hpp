@@ -75,17 +75,110 @@ using wasi_ptr_raw = uint32_t;
 
 #include <map>
 #include <filesystem>
+#include <set>
+
+struct file_desc
+{
+    bool is_preopen = false;
+
+    __wasi_fd_t fd = 0;
+    std::string relative_path = ".";
+    __wasi_rights_t fs_rights_base = 0;
+    __wasi_rights_t fs_rights_inheriting = 0;
+    __wasi_fdflags_t fs_flags = 0;
+    __wasi_filetype_t fs_filetype = 0;
+};
 
 struct preopened
 {
-    std::vector<std::filesystem::path> paths;
+    std::map<__wasi_fd_t, file_desc> files;
+
+    std::set<int> used_fds;
+
+    int next_fd = 4;
+
+    int get_next_fd()
+    {
+        used_fds.insert(next_fd);
+        return next_fd++;
+    }
+
+    file_desc make_preopen(const std::string& path)
+    {
+        file_desc desc;
+        desc.fd = 3;
+        desc.relative_path = std::filesystem::path(path).string();
+        desc.fs_rights_base =   __WASI_RIGHT_FD_DATASYNC |
+                                __WASI_RIGHT_FD_READ |
+                                __WASI_RIGHT_FD_SEEK |
+                                __WASI_RIGHT_FD_FDSTAT_SET_FLAGS |
+                                __WASI_RIGHT_FD_SYNC |
+                                __WASI_RIGHT_FD_TELL |
+                                __WASI_RIGHT_FD_WRITE |
+                                __WASI_RIGHT_FD_ADVISE |
+                                __WASI_RIGHT_FD_ALLOCATE |
+                                __WASI_RIGHT_PATH_CREATE_DIRECTORY |
+                                __WASI_RIGHT_PATH_CREATE_FILE |
+                                __WASI_RIGHT_PATH_OPEN |
+                                __WASI_RIGHT_FD_READDIR |
+                                __WASI_RIGHT_PATH_READLINK |
+                                __WASI_RIGHT_PATH_FILESTAT_GET |
+                                __WASI_RIGHT_PATH_FILESTAT_SET_SIZE |
+                                __WASI_RIGHT_PATH_FILESTAT_SET_TIMES |
+                                __WASI_RIGHT_FD_FILESTAT_GET |
+                                __WASI_RIGHT_FD_FILESTAT_SET_SIZE |
+                                __WASI_RIGHT_FD_FILESTAT_SET_TIMES |
+                                __WASI_RIGHT_PATH_UNLINK_FILE |
+                                __WASI_RIGHT_PATH_REMOVE_DIRECTORY |
+                                __WASI_RIGHT_POLL_FD_READWRITE;
+
+        desc.fs_rights_inheriting = desc.fs_rights_base;
+
+        desc.fs_flags = __WASI_FDFLAG_SYNC;
+        desc.fs_filetype = __WASI_FILETYPE_DIRECTORY;
+        desc.is_preopen = true;
+
+        return desc;
+    }
 
     preopened()
     {
-        paths.push_back(std::filesystem::path("./sandbox"));
+        used_fds.insert(0);
+        used_fds.insert(1);
+        used_fds.insert(2);
+        used_fds.insert(3);
+
+        file_desc pre = make_preopen("./sandbox");
+
+        files[pre.fd] = pre;
+    }
+
+    bool is_preopen(uint32_t fd)
+    {
+        assert(has_fd(fd));
+
+        return files[fd].is_preopen;
+    }
+
+    bool has_fd(uint32_t fd)
+    {
+        return files.find(fd) != files.end();
+    }
+
+    std::string get_path(uint32_t fd)
+    {
+        assert(has_fd(fd));
+
+        return files[fd].relative_path;
+    }
+
+    void close_fd(uint32_t fd)
+    {
+        assert(has_fd(fd));
+
+        files.erase(files.find(fd));
     }
 };
-
 
 preopened file_sandbox;
 
@@ -164,17 +257,16 @@ __wasi_errno_t __wasi_fd_prestat_get(__wasi_fd_t fd, PTR(__wasi_prestat_t) buf)
 {
     printf("Fd? %i\n", fd);
 
-    if(file_sandbox.paths.size() == 0)
+    if(file_sandbox.files.size() == 0)
         return __WASI_EBADF;
 
-    ///some baffling platform stuff
-    if(file_sandbox.paths.size() == 1 && fd == 3)
+    if(file_sandbox.has_fd(fd) && file_sandbox.is_preopen(fd))
     {
         __wasi_prestat_t ret;
         ret.pr_type = __WASI_PREOPENTYPE_DIR;
 
         __wasi_prestat_t::__wasi_prestat_u::__wasi_prestat_u_dir_t dird;
-        dird.pr_name_len = file_sandbox.paths[0].string().length();
+        dird.pr_name_len = file_sandbox.files[fd].relative_path.length();
 
         ret.u.dir = dird;
 
@@ -190,9 +282,9 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
 {
     printf("FdDirName %i %i\n", fd, path_len);
 
-    if(file_sandbox.paths.size() == 1 && fd == 3)
+    if(file_sandbox.has_fd(fd) && file_sandbox.is_preopen(fd))
     {
-        std::string cname = file_sandbox.paths[0].string();
+        std::string cname = file_sandbox.files[fd].relative_path;
 
         for(size_t i=0; i < cname.size() && i < path_len; i++)
         {
@@ -257,52 +349,21 @@ __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
 {
     printf("FdStat\n");
 
-    if(file_sandbox.paths.size() == 1 && fd == 3)
-    {
-        printf("Yaystat\n");
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
 
-        __wasi_fdstat_t preval;
+    printf("Yaystat\n");
 
-        preval.fs_filetype = __WASI_FILETYPE_DIRECTORY;
-        preval.fs_flags = __WASI_FDFLAG_SYNC;
-        preval.fs_rights_base = __WASI_RIGHT_FD_DATASYNC |
-                                __WASI_RIGHT_FD_READ |
-                                __WASI_RIGHT_FD_SEEK |
-                                __WASI_RIGHT_FD_FDSTAT_SET_FLAGS |
-                                __WASI_RIGHT_FD_SYNC |
-                                __WASI_RIGHT_FD_TELL |
-                                __WASI_RIGHT_FD_WRITE |
-                                __WASI_RIGHT_FD_ADVISE |
-                                __WASI_RIGHT_FD_ALLOCATE |
-                                __WASI_RIGHT_PATH_CREATE_DIRECTORY |
-                                __WASI_RIGHT_PATH_CREATE_FILE |
-                                __WASI_RIGHT_PATH_OPEN |
-                                __WASI_RIGHT_FD_READDIR |
-                                __WASI_RIGHT_PATH_READLINK |
-                                __WASI_RIGHT_PATH_FILESTAT_GET |
-                                __WASI_RIGHT_PATH_FILESTAT_SET_SIZE |
-                                __WASI_RIGHT_PATH_FILESTAT_SET_TIMES |
-                                __WASI_RIGHT_FD_FILESTAT_GET |
-                                __WASI_RIGHT_FD_FILESTAT_SET_SIZE |
-                                __WASI_RIGHT_FD_FILESTAT_SET_TIMES |
-                                __WASI_RIGHT_PATH_UNLINK_FILE |
-                                __WASI_RIGHT_PATH_REMOVE_DIRECTORY |
-                                __WASI_RIGHT_POLL_FD_READWRITE;
+    const file_desc& desc = file_sandbox.files[fd];
 
-        preval.fs_rights_inheriting = preval.fs_rights_base;
+    __wasi_fdstat_t preval;
 
-        *buf = preval;
+    preval.fs_filetype = desc.fs_filetype;
+    preval.fs_flags = desc.fs_flags;
+    preval.fs_rights_base = desc.fs_rights_base;
+    preval.fs_rights_inheriting = desc.fs_rights_inheriting;
 
-        return __WASI_ESUCCESS;
-    }
-
-    __wasi_fdstat_t val;
-    val.fs_filetype = __WASI_FILETYPE_UNKNOWN;
-    val.fs_flags = __WASI_FDFLAG_SYNC;
-    val.fs_rights_base = 0;
-    val.fs_rights_inheriting = 0;
-
-    *buf = val;
+    *buf = preval;
 
     return __WASI_ESUCCESS;
 }
@@ -313,6 +374,11 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
 
     if(fd == 0 || fd == 1 || fd == 2)
         return __WASI_EBADF;
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    file_sandbox.close_fd(fd);
 
     return __WASI_ESUCCESS;
 }
@@ -373,6 +439,11 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
     }
 
     *nwritten = 0;
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+
     return __WASI_EBADF;
 }
 
