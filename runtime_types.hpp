@@ -682,6 +682,13 @@ namespace runtime
         types::vec<uint8_t> bytes;
     };
 
+    struct func_descriptor
+    {
+        types::typeidx tidx;
+        std::string name;
+        std::string module;
+    };
+
     ///so this is constructed from our module
     ///which is the section representation we constructed earlier
     struct moduleinst
@@ -693,8 +700,7 @@ namespace runtime
         types::vec<memaddr> memaddrs;
         types::vec<globaladdr> globaladdrs;
 
-        std::map<funcaddr, std::string> funcnames;
-        std::map<funcaddr, std::string> funcmodules;
+        std::map<funcaddr, func_descriptor> funcdescs;
 
         types::vec<exportinst> exports;
 

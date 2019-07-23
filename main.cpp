@@ -87,8 +87,8 @@ int main()
     vals["env"]["print"] = tprint;
 
     test.init(example, vals);
-    test.self_test();
-    return 0;
+    //test.self_test();
+    //return 0;
 
     wasm_binary_data exec = test;
 

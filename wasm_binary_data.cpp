@@ -847,8 +847,15 @@ runtime::moduleinst build_from_module(module& m, runtime::store& s, const std::m
                 throw std::runtime_error(error);
             }
 
-            inst.funcmodules[adr] = n1.friendly();
-            inst.funcnames[adr] = n2.friendly();
+            /*inst.funcmodules[adr] = n1.friendly();
+            inst.funcnames[adr] = n2.friendly();*/
+
+            runtime::func_descriptor fdesc;
+            fdesc.module = n1.friendly();
+            fdesc.name = n2.friendly();
+            fdesc.tidx = tidx;
+
+            inst.funcdescs[adr] = fdesc;
 
             satisfied_imports++;
         }

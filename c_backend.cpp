@@ -146,9 +146,9 @@ std::string function_name(runtime::moduleinst& minst, runtime::funcinst& finst, 
 {
     std::string func_name = "f_" + std::to_string((uint32_t)address);
 
-    if(auto it = minst.funcnames.find(address); it != minst.funcnames.end())
+    if(auto it = minst.funcdescs.find(address); it != minst.funcdescs.end())
     {
-        func_name = it->second;
+        func_name = it->second.name;
     }
 
     for(runtime::exportinst& einst : minst.exports)
@@ -1492,6 +1492,53 @@ std::string validate(runtime::store& s, runtime::moduleinst& minst)
     return ret + "}";
 }
 
+std::string shim_wasi(runtime::moduleinst& minst)
+{
+    std::string ret;
+
+    for(runtime::funcaddr addr : minst.funcaddrs)
+    {
+        auto module_it = minst.funcdescs.find(addr);
+
+        if(module_it == minst.funcdescs.end())
+            continue;
+
+        if(module_it->second.module != "wasi_unstable")
+            continue;
+
+        runtime::func_descriptor fdesc = module_it->second;
+
+        std::string func_name = fdesc.name;
+
+        assert((uint32_t)fdesc.tidx < minst.typel.size());
+
+        types::functype ftype = minst.typel[(uint32_t)fdesc.tidx];
+
+        std::string func_return = ftype.results.size() > 0 ? ftype.results[0].friendly() : "void";
+
+        std::vector<std::string> args;
+        std::vector<std::string> arg_names;
+
+        for(int aidx = 0; aidx < (int)ftype.params.size(); aidx++)
+        {
+            types::valtype type = ftype.params[aidx];
+
+            args.push_back(type.friendly() + " " + get_local_name(aidx));
+            arg_names.push_back(get_local_name(aidx));
+        }
+
+        std::string decl = func_return + " " + func_name + "(" + join_commawise(args) + ")\n";
+
+        decl += "{\n";
+
+        decl += "return __wasi_" + func_name + "(" + join_commawise(arg_names) + ");\n}\n\n";
+
+        ret += decl;
+    }
+
+    return ret;
+}
+
 std::string compile_top_level(runtime::store& s, runtime::moduleinst& minst)
 {
     ///need to inject memory
@@ -1558,6 +1605,8 @@ using empty = void;
     {
         res += declare_function(s, base, minst) + ";\n\n";
     }
+
+    res += shim_wasi(minst);
 
     base.val = 0;
 
