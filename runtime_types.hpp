@@ -278,6 +278,15 @@ namespace runtime
 
             return *(T*)&wasi_ctx::cstore->mems[0].dat[val];
         }
+
+        template<typename T1 = T, typename = std::enable_if<!std::is_same_v<T, void>>>
+        T1& operator[](int idx)
+        {
+            assert(val + idx * sizeof(T) + sizeof(T) <= wasi_ctx::cstore->mems[0].dat.size());
+            assert(val + idx >= 0);
+
+            return *(T*)&wasi_ctx::cstore->mems[0].dat[val + idx * sizeof(T)];
+        }
     };
 
     /*template<typename T>

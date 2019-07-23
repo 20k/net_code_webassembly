@@ -45,6 +45,14 @@ struct wasi_ptr_t
 
         return *(T*)&mem_0[val];
     }
+
+    T& operator[](int idx)
+    {
+        assert(val + idx * sizeof(T) + sizeof(T) <= mem_0.size());
+        assert(val + idx >= 0);
+
+        return *(T*)&mem_0[val + idx * sizeof(T)];
+    }
 };
 
 #define PTR(x) wasi_ptr_t<x>
@@ -157,14 +165,23 @@ __wasi_errno_t __wasi_args_sizes_get(PTR(wasi_size_t) argc, PTR(wasi_size_t) arg
 {
     printf("SSize\n");
 
-    *argc = 0;
-    *argv_buf_size = 0;
+    *argc = 1;
+    *argv_buf_size = strlen("sbox");
     return __WASI_ESUCCESS;
 }
 
 __wasi_errno_t __wasi_args_get(DPTR(char) argv, PTR(char) argv_buf)
 {
     printf("SGet\n");
+
+    const char* name = "sbox";
+
+    for(int i=0; i < strlen(name); i++)
+    {
+        argv_buf[0] = name[i];
+    }
+
+    argv->val = argv_buf.val;
 
     return __WASI_ESUCCESS;
 }
