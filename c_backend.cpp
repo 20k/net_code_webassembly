@@ -519,6 +519,9 @@ std::string auto_push(const std::string& in, value_stack& stack_offset)
     return "auto " + get_variable_name(stack_offset.get_next()) + " = " + in;
 }
 
+///place a watch on an address
+///eg 5136
+
 std::string invoke_function(runtime::store& s, c_context& ctx, value_stack stack_offset, runtime::moduleinst& minst, runtime::funcaddr address)
 {
     uint32_t adr = (uint32_t)address;
@@ -575,6 +578,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 
         ret += "//" + instr_to_str(which) + "\n";
 
+        //#define INSTRUCTION_TRACING
         #ifdef INSTRUCTION_TRACING
         if(stack_offset.peek_back() != -1)
             ret += "std::cout << " + get_variable_name(stack_offset.peek_back()) + " << std::endl;\n";

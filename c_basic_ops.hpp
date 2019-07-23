@@ -205,13 +205,13 @@ DOP(c_ishr_s, >>);
 template<typename T>
 std::string c_irotl(int v1, int v2)
 {
-    return "(" + GET(v1) + " << " + GET(v2) + ")|(" + GET(v1) + " >> " + std::to_string(sizeof(T)*8) + " - " + GET(v2) + ")" + ";\n";
+    return "(" + GET(v1) + " << " + GET(v2) + ")|(" + GET(v1) + " >> (" + std::to_string(sizeof(T)*8) + " - " + GET(v2) + "))" + ";\n";
 }
 
 template<typename T>
 std::string c_irotr(int v1, int v2)
 {
-    return "(" + GET(v1) + " >> " + GET(v2) + ")|(" + GET(v1) + " << " + std::to_string(sizeof(T)*8) + " - " + GET(v2) + ")" + ";\n";
+    return "(" + GET(v1) + " >> " + GET(v2) + ")|(" + GET(v1) + " << (" + std::to_string(sizeof(T)*8) + " - " + GET(v2) + "))" + ";\n";
 }
 
 DEXT1(c_iclz, __builtin_clz);
