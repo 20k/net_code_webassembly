@@ -76,35 +76,6 @@ using wasi_ptr_raw = uint32_t;
 #include <map>
 #include <filesystem>
 
-/*struct file_desc
-{
-
-};
-
-struct fd_table
-{
-    __wasi_fd_t glob = 2;
-
-    std::map<__wasi_fd_t, file_desc> files;
-
-    __wasi_fd_t open()
-    {
-        files[glob++] = file_desc();
-
-        return glob-1;
-    }
-
-    bool is_open(__wasi_fd_t fd)
-    {
-        return files.find(fd) != files.end();
-    }
-
-    void close(__wasi_fd_t fd)
-    {
-        files.erase(fd);
-    }
-};*/
-
 struct preopened
 {
     std::vector<std::filesystem::path> paths;
@@ -115,14 +86,34 @@ struct preopened
     }
 };
 
-/*fd_table global_table;
-
-void boot_fds()
-{
-    global_table.open();
-}*/
 
 preopened file_sandbox;
+
+__wasi_errno_t __wasi_clock_res_get(__wasi_clockid_t clock_id, wasi_ptr_t<__wasi_timestamp_t> resolution)
+{
+    /*(double) std::chrono::high_resolution_clock::period::num
+             / std::chrono::high_resolution_clock::period::den;*/
+
+    if(clock_id == __WASI_CLOCK_MONOTONIC)
+    {
+        uint64_t res = std::chrono::steady_clock::period::num * 1000 * 1000 / std::chrono::steady_clock::period::den;
+
+        *resolution = res;
+
+        return __WASI_ESUCCESS;
+    }
+
+    if(clock_id == __WASI_CLOCK_REALTIME)
+    {
+        uint64_t res = std::chrono::system_clock::period::num * 1000 * 1000 / std::chrono::system_clock::period::den;
+
+        *resolution = res;
+
+        return __WASI_ESUCCESS;
+    }
+
+    return __WASI_EINVAL;
+}
 
 __wasi_errno_t __wasi_fd_prestat_get(__wasi_fd_t fd, PTR(__wasi_prestat_t) buf)
 {

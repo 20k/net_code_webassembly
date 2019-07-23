@@ -1555,6 +1555,7 @@ std::string compile_top_level(runtime::store& s, runtime::moduleinst& minst)
 #include <string.h>
 #include <stdio.h> ///not necessary
 #include <iostream> ///not necessary
+#include <chrono>
 
 using i32 = uint32_t;
 using i64 = uint64_t;
