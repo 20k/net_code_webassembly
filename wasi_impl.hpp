@@ -275,6 +275,9 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
 {
     printf("Close\n");
 
+    if(fd == 0 || fd == 1 || fd == 2)
+        return __WASI_EBADF;
+
     return __WASI_ESUCCESS;
 }
 
