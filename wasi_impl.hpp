@@ -197,6 +197,13 @@ struct preopened
     {
         assert(has_fd(fd));
     }
+
+    size_t get_size_fd(uint32_t fd)
+    {
+        assert(has_fd(fd));
+
+        return 0;
+    }
 };
 
 preopened file_sandbox;
@@ -419,6 +426,33 @@ __wasi_errno_t __wasi_fd_fdstat_set_rights(__wasi_fd_t fd, __wasi_rights_t fs_ri
             CLEARBIT(my_desc.fs_rights_inheriting, i);
         }
     }
+
+    return __WASI_ESUCCESS;
+}
+
+#undef CLEARBIT
+
+__wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat_t> buf)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_FILESTAT_GET))
+        return __WASI_ENOTCAPABLE;
+
+    const file_desc& fle = file_sandbox.files[fd];
+
+    __wasi_filestat_t ret;
+    ret.st_dev = 0;
+    ret.st_ino = 0; ///ERROR NEED TO DO INODES
+    ret.st_filetype = fle.fs_filetype;
+    ret.st_nlink = 0;
+    ret.st_size = file_sandbox.get_size_fd(fd);
+    ret.st_atim = 0; ///TODO: ATIM
+    ret.st_mtim = 0; ///TODO: MTIM
+    ret.st_ctim = 0; ///TODO: CTIM
+
+    *buf = ret;
 
     return __WASI_ESUCCESS;
 }
