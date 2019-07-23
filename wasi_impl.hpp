@@ -141,7 +141,20 @@ __wasi_errno_t __wasi_fd_prestat_get(__wasi_fd_t fd, PTR(__wasi_prestat_t) buf)
 
 __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_size_t path_len)
 {
-    printf("FdDirName %i\n", fd);
+    printf("FdDirName %i %i\n", fd, path_len);
+
+    if(file_sandbox.paths.size() == 1 && fd == 3)
+    {
+        std::string cname = file_sandbox.paths[0].string();
+
+        for(int i=0; i < cname.size(); i++)
+        {
+            path[i] = cname[i];
+        }
+
+        return __WASI_ESUCCESS;
+    }
+
     return __WASI_EBADF;
 }
 
@@ -178,10 +191,10 @@ __wasi_errno_t __wasi_args_get(DPTR(char) argv, PTR(char) argv_buf)
 
     for(int i=0; i < strlen(name); i++)
     {
-        argv_buf[0] = name[i];
+        argv_buf[i] = name[i];
     }
 
-    argv->val = argv_buf.val;
+    (*argv).val = argv_buf.val;
 
     return __WASI_ESUCCESS;
 }
@@ -196,6 +209,45 @@ void __wasi_proc_exit(__wasi_exitcode_t rval)
 __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
 {
     printf("FdStat\n");
+
+    if(file_sandbox.paths.size() == 1 && fd == 3)
+    {
+        printf("Yaystat\n");
+
+        __wasi_fdstat_t preval;
+
+        preval.fs_filetype = __WASI_FILETYPE_DIRECTORY;
+        preval.fs_flags = __WASI_FDFLAG_SYNC;
+        preval.fs_rights_base = __WASI_RIGHT_FD_DATASYNC |
+                                __WASI_RIGHT_FD_READ |
+                                __WASI_RIGHT_FD_SEEK |
+                                __WASI_RIGHT_FD_FDSTAT_SET_FLAGS |
+                                __WASI_RIGHT_FD_SYNC |
+                                __WASI_RIGHT_FD_TELL |
+                                __WASI_RIGHT_FD_WRITE |
+                                __WASI_RIGHT_FD_ADVISE |
+                                __WASI_RIGHT_FD_ALLOCATE |
+                                __WASI_RIGHT_PATH_CREATE_DIRECTORY |
+                                __WASI_RIGHT_PATH_CREATE_FILE |
+                                __WASI_RIGHT_PATH_OPEN |
+                                __WASI_RIGHT_FD_READDIR |
+                                __WASI_RIGHT_PATH_READLINK |
+                                __WASI_RIGHT_PATH_FILESTAT_GET |
+                                __WASI_RIGHT_PATH_FILESTAT_SET_SIZE |
+                                __WASI_RIGHT_PATH_FILESTAT_SET_TIMES |
+                                __WASI_RIGHT_FD_FILESTAT_GET |
+                                __WASI_RIGHT_FD_FILESTAT_SET_SIZE |
+                                __WASI_RIGHT_FD_FILESTAT_SET_TIMES |
+                                __WASI_RIGHT_PATH_UNLINK_FILE |
+                                __WASI_RIGHT_PATH_REMOVE_DIRECTORY |
+                                __WASI_RIGHT_POLL_FD_READWRITE;
+
+        preval.fs_rights_inheriting = preval.fs_rights_base;
+
+        *buf = preval;
+
+        return __WASI_ESUCCESS;
+    }
 
     __wasi_fdstat_t val;
     val.fs_filetype = __WASI_FILETYPE_UNKNOWN;
