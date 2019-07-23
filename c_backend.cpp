@@ -1387,6 +1387,8 @@ using f32 = float;
 using f64 = double;
 using empty = void;
 
+#define inf INFINITY
+
 )";
 
     bool has_main = false;
