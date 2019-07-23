@@ -694,6 +694,7 @@ namespace runtime
         types::vec<globaladdr> globaladdrs;
 
         std::map<funcaddr, std::string> funcnames;
+        std::map<funcaddr, std::string> funcmodules;
 
         types::vec<exportinst> exports;
 
