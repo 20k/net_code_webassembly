@@ -160,7 +160,7 @@ struct preopened
         return files[fd].is_preopen;
     }
 
-    bool has_fd(uint32_t fd)
+    bool has_fd(uint32_t fd) const
     {
         return files.find(fd) != files.end();
     }
@@ -184,6 +184,18 @@ struct preopened
         assert(has_fd(fd));
 
         return (files[fd].fs_rights_base & right) > 0;
+    }
+
+    void set_flags(uint32_t fd, __wasi_fdflags_t flags)
+    {
+        assert(has_fd(fd));
+
+        files[fd].fs_flags = flags;
+    }
+
+    void datasync(uint32_t fd)
+    {
+        assert(has_fd(fd));
     }
 };
 
@@ -304,6 +316,113 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
     return __WASI_EBADF;
 }
 
+__wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len, __wasi_advice_t advice)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_ADVISE))
+        return __WASI_ENOTCAPABLE;
+
+    return __WASI_ESUCCESS;
+}
+
+//__wasi_errno_t __wasi_fd_allocate()
+
+__wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_DATASYNC))
+        return __WASI_ENOTCAPABLE;
+
+    file_sandbox.datasync(fd);
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
+{
+    printf("FdStat\n");
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    printf("Yaystat\n");
+
+    const file_desc& desc = file_sandbox.files[fd];
+
+    __wasi_fdstat_t preval;
+
+    preval.fs_filetype = desc.fs_filetype;
+    preval.fs_flags = desc.fs_flags;
+    preval.fs_rights_base = desc.fs_rights_base;
+    preval.fs_rights_inheriting = desc.fs_rights_inheriting;
+
+    *buf = preval;
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_fdstat_set_flags(__wasi_fd_t fd, __wasi_fdflags_t flags)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_FDSTAT_SET_FLAGS))
+        return __WASI_ENOTCAPABLE;
+
+    file_sandbox.set_flags(fd, flags);
+
+    return __WASI_ESUCCESS;
+}
+
+#define CLEARBIT(x, y) x &= ~(1ULL << (uint64_t)y)
+
+__wasi_errno_t __wasi_fd_fdstat_set_rights(__wasi_fd_t fd, __wasi_rights_t fs_rights_base, __wasi_rights_t fs_rights_inheriting)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    const file_desc& my_desc_c = file_sandbox.files[fd];
+
+    for(int i=0; i < (int)sizeof(__wasi_rights_t) * 8; i++)
+    {
+        int their_requested_base = (fs_rights_base >> i) & 1;
+        int their_requested_inherit = (fs_rights_inheriting >> i) & 1;
+
+        int my_cur_base = (my_desc_c.fs_rights_base >> i) & 1;
+        int my_cur_inherit = (my_desc_c.fs_rights_inheriting >> i) & 1;
+
+        if(my_cur_base == 0 && their_requested_base == 1)
+            return __WASI_ENOTCAPABLE;
+
+        if(my_cur_inherit == 0 && their_requested_inherit == 1)
+            return __WASI_ENOTCAPABLE;
+    }
+
+    file_desc& my_desc = file_sandbox.files[fd];
+
+    for(int i=0; i < (int)sizeof(__wasi_rights_t) * 8; i++)
+    {
+        int their_requested_base = (fs_rights_base >> i) & 1;
+        int their_requested_inherit = (fs_rights_inheriting >> i) & 1;
+
+        ///can only be used to strip rights
+        if(their_requested_base == 0)
+        {
+            CLEARBIT(my_desc.fs_rights_base, i);
+        }
+
+        if(their_requested_inherit == 0)
+        {
+            CLEARBIT(my_desc.fs_rights_inheriting, i);
+        }
+    }
+
+    return __WASI_ESUCCESS;
+}
+
 __wasi_errno_t __wasi_environ_sizes_get(PTR(wasi_size_t) environ_count, PTR(wasi_size_t) environ_buf_size)
 {
     printf("ESize\n");
@@ -352,29 +471,6 @@ void __wasi_proc_exit(__wasi_exitcode_t rval)
     exit((int)rval);
 }
 
-__wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
-{
-    printf("FdStat\n");
-
-    if(!file_sandbox.has_fd(fd))
-        return __WASI_EBADF;
-
-    printf("Yaystat\n");
-
-    const file_desc& desc = file_sandbox.files[fd];
-
-    __wasi_fdstat_t preval;
-
-    preval.fs_filetype = desc.fs_filetype;
-    preval.fs_flags = desc.fs_flags;
-    preval.fs_rights_base = desc.fs_rights_base;
-    preval.fs_rights_inheriting = desc.fs_rights_inheriting;
-
-    *buf = preval;
-
-    return __WASI_ESUCCESS;
-}
-
 __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
 {
     printf("Close\n");
@@ -383,6 +479,9 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
         return __WASI_EBADF;
 
     if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(file_sandbox.is_preopen(fd))
         return __WASI_EBADF;
 
     file_sandbox.close_fd(fd);
