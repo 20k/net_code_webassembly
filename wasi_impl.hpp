@@ -76,6 +76,7 @@ using wasi_ptr_raw = uint32_t;
 #include <map>
 #include <filesystem>
 #include <set>
+#include <thread>
 
 struct file_desc
 {
@@ -517,11 +518,84 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //path_unlink_file
 //poll_oneoff
 //proc_raise
-//random_get
-//sched_yield
 //sock_recv
 //sock_send
 //sock_shutdown
+
+#include <random>
+
+uint8_t get_next_random_byte()
+{
+    static std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> eng;
+
+    return eng();
+}
+
+#define HALT_ON(x) if(sig == x) assert(false);
+
+__wasi_errno_t __wasi_proc_raise(__wasi_signal_t sig)
+{
+    HALT_ON(__WASI_SIGABRT);
+    HALT_ON(__WASI_SIGALRM); ///is this really necessary in the spec
+    HALT_ON(__WASI_SIGBUS);
+    HALT_ON(__WASI_SIGCONT);
+    HALT_ON(__WASI_SIGFPE);
+    HALT_ON(__WASI_SIGHUP);
+    HALT_ON(__WASI_SIGILL);
+    HALT_ON(__WASI_SIGINT);
+    HALT_ON(__WASI_SIGKILL);
+    HALT_ON(__WASI_SIGPIPE);
+    HALT_ON(__WASI_SIGQUIT);
+    HALT_ON(__WASI_SIGSEGV);
+    HALT_ON(__WASI_SIGSTOP);
+    HALT_ON(__WASI_SIGSYS);
+    HALT_ON(__WASI_SIGTERM);
+    HALT_ON(__WASI_SIGTRAP);
+    HALT_ON(__WASI_SIGTSTP);
+    HALT_ON(__WASI_SIGTTIN);
+    HALT_ON(__WASI_SIGTTOU);
+    HALT_ON(__WASI_SIGUSR1);
+    HALT_ON(__WASI_SIGUSR2);
+    HALT_ON(__WASI_SIGVTALRM);
+    HALT_ON(__WASI_SIGXCPU);
+    HALT_ON(__WASI_SIGXFSZ);
+
+    if(sig == __WASI_SIGCHLD)
+    {
+        return __WASI_ESUCCESS;
+    }
+    if(sig == __WASI_SIGCONT)
+    {
+        ///do nothing because i'm not sure there's a way for signals
+        ///to actually be supplied asynchronously
+        return __WASI_ESUCCESS;
+    }
+    if(sig == __WASI_SIGURG)
+    {
+        return __WASI_ESUCCESS;
+    }
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_random_get(wasi_ptr_t<void> buf, uint32_t buf_len)
+{
+    wasi_ptr_t<char> cbuf(0);
+    cbuf.val = buf.val;
+
+    for(uint64_t i=0; i < (uint64_t)buf_len; i++)
+    {
+        cbuf[i] = get_next_random_byte();
+    }
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_sched_yield()
+{
+    std::this_thread::yield();
+    return __WASI_ESUCCESS;
+}
 
 __wasi_errno_t __wasi_environ_sizes_get(PTR(wasi_size_t) environ_count, PTR(wasi_size_t) environ_buf_size)
 {
