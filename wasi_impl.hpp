@@ -86,7 +86,6 @@ using wasi_ptr_raw = uint32_t;
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 struct file_desc
 {
     bool is_preopen = false;
@@ -223,6 +222,8 @@ __wasi_errno_t errno_to_wasi(errno_t err)
 #define open _open
 #define close _close
 #define ftruncate _chsize
+#define fdatasync _commit
+#define fsync _commit
 
 #define O_RDONLY _O_RDONLY
 #define O_WRONLY _O_WRONLY
@@ -569,9 +570,28 @@ struct preopened
         files[fd].fs_flags = flags;
     }
 
-    void datasync(uint32_t fd)
+    __wasi_errno_t datasync(uint32_t fd)
     {
         assert(has_fd(fd));
+
+        int res = fdatasync(files[fd].portable_fd);
+
+        if(res != 0)
+            return WASI_ERRNO();
+
+        return __WASI_ESUCCESS;
+    }
+
+    __wasi_errno_t sync(uint32_t fd)
+    {
+        assert(has_fd(fd));
+
+        int res = fsync(files[fd].portable_fd);
+
+        if(res != 0)
+            return WASI_ERRNO();
+
+        return __WASI_ESUCCESS;
     }
 
     ///TODO:
@@ -802,7 +822,27 @@ __wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_DATASYNC))
         return __WASI_ENOTCAPABLE;
 
-    file_sandbox.datasync(fd);
+    __wasi_errno_t err = file_sandbox.datasync(fd);
+
+    if(err)
+        return err;
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_sync(__wasi_fd_t fd)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_SYNC))
+        return __WASI_ENOTCAPABLE;
+
+    __wasi_errno_t err = file_sandbox.sync(fd);
+
+    if(err)
+        return err;
+
     return __WASI_ESUCCESS;
 }
 
@@ -943,16 +983,15 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
     //return __WASI_ESUCCESS;
 }
 
+///0/1/2 fds need to be merged into fd_write and fd_read
+
 //fd_pread
 //fd_pwrite
-//fd_read
-//fd_write
 //fd_readdir
 //fd_renumber
 //fd_seek
 //fd_sync
 //fd_tell
-//fd_write - update impl
 //path_create_directory
 //path_filestat_get
 //path_filestat_set_times
