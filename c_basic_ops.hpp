@@ -236,8 +236,6 @@ std::string c_wrap(int v1)
     static_assert(N == 32);
 
     return coerce<T>("") + get_variable_name(v1) + ";\n";
-
-    //return GET(v1) + " % ((" + types::friendly(T()) + ")pow(2, " + std::to_string(N) + "));\n";
 }
 
 template<typename T, typename U>
