@@ -78,17 +78,128 @@ using wasi_ptr_raw = uint32_t;
 #include <set>
 #include <thread>
 
+#define NO_OLDNAMES
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 struct file_desc
 {
     bool is_preopen = false;
 
+    ///so. as far as I can tell, std::filesystem doesn't really do locking
+    ///like, you can't "open" a file which is a right shame
     __wasi_fd_t fd = 0;
+    int64_t portable_fd = 0;
     std::string relative_path = ".";
     __wasi_rights_t fs_rights_base = 0;
     __wasi_rights_t fs_rights_inheriting = 0;
     __wasi_fdflags_t fs_flags = 0;
     __wasi_filetype_t fs_filetype = 0;
 };
+
+
+#ifdef _WIN32
+#include <io.h>
+#include <windows.h>
+#define stat __stat64
+#define fstat _fstat64
+#define fileno _fileno
+
+#define	_S_IFBLK	0x3000
+
+#define S_IFMT      _S_IFMT
+#define S_IFDIR     _S_IFDIR
+#define S_IFCHR     _S_IFCHR
+#define S_IFREG     _S_IFREG
+#define S_IREAD     _S_IREAD
+#define S_IWRITE    _S_IWRITE
+#define S_IEXEC     _S_IEXEC
+#define	S_IFIFO		_S_IFIFO
+#define	S_IFBLK		_S_IFBLK
+
+#define	S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
+#define	S_ISFIFO(m)	(((m) & S_IFMT) == S_IFIFO)
+#define	S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
+#define	S_ISBLK(m)	(((m) & S_IFMT) == S_IFBLK)
+#define	S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
+
+#define open _open
+
+#define O_RDONLY _O_RDONLY
+#define O_WRONLY _O_WRONLY
+#define O_RDWR _O_RDWR
+#define O_APPEND _O_APPEND
+#define O_CREAT _O_CREAT
+#define O_TRUNC _O_TRUNC
+#define O_EXCL _O_EXCL
+#define O_TEXT _O_TEXT
+#define O_BINARY _O_BINARY
+#define O_RAW _O_BINARY
+#define O_TEMPORARY _O_TEMPORARY
+#define O_NOINHERIT _O_NOINHERIT
+#define O_SEQUENTIAL _O_SEQUENTIAL
+#define O_RANDOM _O_RANDOM
+#define O_ACCMODE _O_ACCMODE
+
+__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
+{
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+
+    BY_HANDLE_FILE_INFORMATION fhandle = {};
+
+    if(hFile == INVALID_HANDLE_VALUE)
+        return __WASI_EACCES;
+
+    GetFileInformationByHandle(hFile, &fhandle);
+
+    int nHandle = _open_osfhandle((long long)hFile, _O_RDONLY | _O_BINARY);
+
+    if(nHandle == -1)
+    {
+        ::CloseHandle(hFile);
+        return __WASI_EACCES;
+    }
+
+    out.portable_fd = nHandle;
+    out.fs_filetype = __WASI_FILETYPE_REGULAR_FILE;
+
+    if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
+        out.fs_filetype = __WASI_FILETYPE_DIRECTORY;
+
+    return __WASI_ESUCCESS;
+}
+
+#else
+///needs to be tested on real linux
+__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
+{
+    out.portable_fd = open(path.c_str(), O_BINARY);
+
+    if(out.portable_fd == -1)
+        return __WASI_EACCESS;
+
+    struct stat st;
+    fstat(out.portable_fd, &st);
+
+    out.fs_filetype = __WASI_FILETYPE_UNKNOWN;
+
+    if(S_ISREG(st.st_mode))
+        out.fs_filetype = __WASI_FILETYPE_REGULAR_FILE;
+    if(S_ISDIR(st.st_mode))
+        out.fs_filetype = __WASI_FILETYPE_DIRECTORY;
+    if(S_ISFIFO(st.st_mode))
+        out.fs_filetype = __WASI_FILETYPE_UNKNOWN;
+    if(S_ISCHR(st.st_mode))
+        out.fs_filetype = __WASI_FILETYPE_CHARACTER_DEVICE;
+    if(S_ISBLK(st.st_mode))
+        out.fs_filetype = __WASI_FILETYPE_BLOCK_DEVICE;
+
+    return __WASI_ESUCCESS;
+}
+#endif // _WIN32
 
 struct preopened
 {
@@ -136,10 +247,83 @@ struct preopened
         desc.fs_rights_inheriting = desc.fs_rights_base;
 
         desc.fs_flags = __WASI_FDFLAG_SYNC;
-        desc.fs_filetype = __WASI_FILETYPE_DIRECTORY;
         desc.is_preopen = true;
 
+        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc);
+
+        assert(err == __WASI_ESUCCESS);
+
+        assert(desc.portable_fd != -1);
+        assert(desc.fs_filetype == __WASI_FILETYPE_DIRECTORY);
+
         return desc;
+    }
+
+    __wasi_errno_t make_file(__wasi_fd_t base, const std::string& path, file_desc& out)
+    {
+        if(!has_fd(base))
+            return __WASI_EBADF;
+
+        if(files[base].fs_filetype != __WASI_FILETYPE_DIRECTORY)
+            return __WASI_ENOTDIR;
+
+        std::filesystem::path theirs = path;
+        std::filesystem::path mine = files[base].relative_path;
+
+        std::filesystem::path their_requested_full = mine/theirs;
+
+        std::filesystem::path rel = their_requested_full.std::filesystem::path::lexically_relative(std::filesystem::path(files[3].relative_path));
+
+        std::filesystem::path fin = (std::filesystem::path(files[3].relative_path) / their_requested_full).lexically_normal();
+
+        std::string relative_path = rel.string();
+
+        if(relative_path.size() > 0 && relative_path[0] == '.' && relative_path != ".")
+            return __WASI_EACCES;
+
+        ///should be sandbox/something
+        std::string final_path = fin.string();
+
+        file_desc desc;
+        desc.relative_path = final_path;
+        desc.fs_rights_base =   __WASI_RIGHT_FD_DATASYNC |
+                                __WASI_RIGHT_FD_READ |
+                                __WASI_RIGHT_FD_SEEK |
+                                __WASI_RIGHT_FD_FDSTAT_SET_FLAGS |
+                                __WASI_RIGHT_FD_SYNC |
+                                __WASI_RIGHT_FD_TELL |
+                                __WASI_RIGHT_FD_WRITE |
+                                __WASI_RIGHT_FD_ADVISE |
+                                __WASI_RIGHT_FD_ALLOCATE |
+                                __WASI_RIGHT_PATH_CREATE_DIRECTORY |
+                                __WASI_RIGHT_PATH_CREATE_FILE |
+                                __WASI_RIGHT_PATH_OPEN |
+                                __WASI_RIGHT_FD_READDIR |
+                                __WASI_RIGHT_PATH_READLINK |
+                                __WASI_RIGHT_PATH_FILESTAT_GET |
+                                __WASI_RIGHT_PATH_FILESTAT_SET_SIZE |
+                                __WASI_RIGHT_PATH_FILESTAT_SET_TIMES |
+                                __WASI_RIGHT_FD_FILESTAT_GET |
+                                __WASI_RIGHT_FD_FILESTAT_SET_SIZE |
+                                __WASI_RIGHT_FD_FILESTAT_SET_TIMES |
+                                __WASI_RIGHT_PATH_UNLINK_FILE |
+                                __WASI_RIGHT_PATH_REMOVE_DIRECTORY |
+                                __WASI_RIGHT_POLL_FD_READWRITE;
+
+        desc.fs_rights_inheriting = desc.fs_rights_base;
+
+        desc.fs_flags = __WASI_FDFLAG_SYNC;
+        desc.is_preopen = false;
+
+        desc.fd = get_next_fd();
+
+        __wasi_errno_t err = get_read_fd_wrapper(path, desc);
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+
+        out = desc;
+        return __WASI_ESUCCESS;
     }
 
     preopened()
@@ -149,7 +333,7 @@ struct preopened
         used_fds.insert(2);
         used_fds.insert(3);
 
-        file_desc pre = make_preopen("./sandbox");
+        file_desc pre = make_preopen("sandbox");
 
         files[pre.fd] = pre;
     }
@@ -520,6 +704,8 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //sock_recv
 //sock_send
 //sock_shutdown
+
+///implement path_open first
 
 #include <random>
 
