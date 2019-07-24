@@ -478,6 +478,7 @@ std::string c_mem_store(runtime::store& s, const types::memarg& arg, value_stack
 #define C_POPAT(x, y, z){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += and_push(x(val_1), stack_offset, z()); break;}
 #define C_POPBT(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += and_push(x(val_1, val_2), stack_offset, z()); break;}
 
+#define C_POPAT_RAW(x, y, z){int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ret += x(val_1, stack_offset); break;}
 #define C_POPBT_RAW(x, y, z){int val_2 = stack_offset.pop_back(); int val_1 = stack_offset.pop_back(); ASSERT_TYPE(val_1, y); ASSERT_TYPE(val_2, y); ret += x(val_1, val_2, stack_offset, z()); break;}
 
 std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx lidx, bool& would_consume)
@@ -586,14 +587,14 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
         if(stack_offset.peek_back() != -1)
         {
             std::string vname = get_variable_name(stack_offset.peek_back());
-            ret += "fwrite((std::to_string(" + vname + ") + \"\\n\").c_str(), std::to_string(" + vname + ").size() + 1, 1, my_file);\n";
+            //ret += "fwrite((std::to_string(" + vname + ") + \"\\n\").c_str(), std::to_string(" + vname + ").size() + 1, 1, my_file);\n";
+            ret += "std::cout << (" + get_variable_name(stack_offset.peek_back()) + ") << std::endl;\n";
         }
 
-            //ret += "std::cout << std::to_string(" + get_variable_name(stack_offset.peek_back()) + ") << std::endl;\n";
 
-        //ret += "printf(\"" + instr_to_str(which) + "\\n\");\n";
-        std::string inst = instr_to_str(which);
-        ret += "fwrite(\"" + inst + "\\n\", " + std::to_string(inst.size()+1) + ", 1, my_file);\n";
+        ret += "printf(\"" + instr_to_str(which) + "\\n\");\n";
+        //std::string inst = instr_to_str(which);
+        //ret += "fwrite(\"" + inst + "\\n\", " + std::to_string(inst.size()+1) + ", 1, my_file);\n";
         #endif // INSTRUCTION_TRACING
 
         switch(which)
@@ -1389,13 +1390,13 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
             case 0xBB:
                 C_POPAT((c_promote<double, float>), types::f32, types::f64);
             case 0xBC:
-                C_POPAT((c_reinterpret<uint32_t, float>), types::f32, types::i32);
+                C_POPAT_RAW((c_reinterpret<uint32_t, float>), types::f32, types::i32);
             case 0xBD:
-                C_POPAT((c_reinterpret<uint64_t, double>), types::f64, types::i64);
+                C_POPAT_RAW((c_reinterpret<uint64_t, double>), types::f64, types::i64);
             case 0xBE:
-                C_POPAT((c_reinterpret<float, uint32_t>), types::i32, types::f32);
+                C_POPAT_RAW((c_reinterpret<float, uint32_t>), types::i32, types::f32);
             case 0xBF:
-                C_POPAT((c_reinterpret<double, uint64_t>), types::i64, types::f64);
+                C_POPAT_RAW((c_reinterpret<double, uint64_t>), types::i64, types::f64);
 
 
             default:

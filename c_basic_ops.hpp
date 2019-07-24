@@ -259,9 +259,21 @@ C_ALIAS(c_convert_u);
 C_ALIAS(c_convert_s);
 
 template<typename T, typename U>
-std::string c_reinterpret(int v1)
+std::string c_reinterpret(int v1, value_stack& stack_offset)
 {
-    return "*(" + types::friendly(T()) + "*)&" + get_variable_name(v1) + ";\n";
+    static_assert(sizeof(T) == sizeof(U));
+
+    int next = stack_offset.get_next();
+
+    std::string ret;
+
+    ret += types::friendly(T()) + " " + get_variable_name(next) + " = 0;\n";
+    ret += "static_assert(sizeof(" + get_variable_name(next) + ") == sizeof(" + get_variable_name(v1) + "));\n";
+    ret += "memcpy((char*)&" + get_variable_name(next) + ", (char*)&" + get_variable_name(v1) + ", sizeof(" + get_variable_name(v1) + "));\n";
+
+    return ret;
+
+    //return "*(" + types::friendly(T()) + "*)&" + get_variable_name(v1) + ";\n";
 }
 
 /*

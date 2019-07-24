@@ -81,6 +81,13 @@ int main()
     ///typeidx goes to functype
     ///runtime::funcinst then has functype type, and then a custom ptr
 
+    ///Ok optimisation level is changing stuff, so basically the verdict is that the impl difference is UB
+    ///yay..
+    ///l1 x86_64-w64-mingw32-g++.exe -Wall -fexceptions -std=c++17 -Wno-attributes -O2  -c ./out.cpp -o out.o
+    ///l2 x86_64-w64-mingw32-g++.exe  -o sampler.exe out.o  -s
+    ///l3 g++ out.cpp -o test_wasm -Wno-attributes -std=c++17
+
+
     std::map<std::string, std::map<std::string, runtime::externval>> vals = get_env_helpers(test.s);
 
     vals["env"]["needs_import"] = tv;
