@@ -158,16 +158,17 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     if((open_flags & __WASI_O_EXCL) > 0)
         dwCreationDisposition = CREATE_NEW;
 
-    if((open_flags & __WASI_O_TRUNC))
+    if((open_flags & __WASI_O_TRUNC) > 0)
         dwCreationDisposition = TRUNCATE_EXISTING;
 
     HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
-    BY_HANDLE_FILE_INFORMATION fhandle = {};
+    printf("H2\n");
 
     if(hFile == INVALID_HANDLE_VALUE)
         return __WASI_EACCES;
 
+    BY_HANDLE_FILE_INFORMATION fhandle = {};
     GetFileInformationByHandle(hFile, &fhandle);
 
     int nHandle = _open_osfhandle((intptr_t)hFile, 0);
@@ -397,6 +398,14 @@ struct preopened
         files[pre.fd] = pre;
     }
 
+    ~preopened()
+    {
+        for(auto& i : files)
+        {
+            close(i.second.portable_fd);
+        }
+    }
+
     bool is_preopen(uint32_t fd)
     {
         assert(has_fd(fd));
@@ -419,6 +428,8 @@ struct preopened
     void close_fd(uint32_t fd)
     {
         assert(has_fd(fd));
+
+        close(files[fd].portable_fd);
 
         files.erase(files.find(fd));
     }
