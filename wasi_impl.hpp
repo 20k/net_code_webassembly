@@ -102,6 +102,7 @@ struct file_desc
     __wasi_filetype_t fs_filetype = 0;
 };
 
+#include <climits>
 
 #ifdef _WIN32
 #include <io.h>
@@ -190,13 +191,19 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
 #define read _read
 
 #else
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 ///needs to be tested on real linux
 __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
 {
-    out.portable_fd = open(path.c_str(), O_BINARY);
+    out.portable_fd = open(path.c_str(), 0);
 
     if(out.portable_fd == -1)
-        return __WASI_EACCESS;
+        return __WASI_EACCES;
 
     struct stat st;
     fstat(out.portable_fd, &st);
