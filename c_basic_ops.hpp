@@ -274,8 +274,6 @@ std::string c_reinterpret(int v1, value_stack& stack_offset)
     ret += "memcpy((char*)&" + get_variable_name(next) + ", (char*)&" + get_variable_name(v1) + ", sizeof(" + get_variable_name(v1) + "));\n";
 
     return ret;
-
-    //return "*(" + types::friendly(T()) + "*)&" + get_variable_name(v1) + ";\n";
 }
 
 /*
