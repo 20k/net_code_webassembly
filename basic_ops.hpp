@@ -414,7 +414,12 @@ template<typename T, typename U>
 inline
 T reinterpret(const U& in)
 {
-    return *(T*)&in;
+    static_assert(sizeof(T) == sizeof(U));
+
+    T ret = 0;
+    memcpy((char*)&ret, (char*)&in, sizeof(in));
+
+    return ret;
 }
 
 template<typename T>
