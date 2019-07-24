@@ -104,6 +104,97 @@ struct file_desc
 
 #include <climits>
 
+#define WERR(x) if(x == err) return __WASI_##x;
+
+#include <errno.h>
+
+__wasi_errno_t errno_to_wasi(errno_t err)
+{
+    if(err == 0)
+        return __WASI_ESUCCESS;
+
+    WERR(E2BIG);
+    WERR(EACCES);
+    WERR(EADDRINUSE);
+    WERR(EADDRNOTAVAIL);
+    WERR(EAFNOSUPPORT);
+    WERR(EAGAIN);
+    WERR(EALREADY);
+    WERR(EBADF);
+    WERR(EBADMSG);
+    WERR(EBUSY);
+    WERR(ECANCELED);
+    WERR(ECHILD);
+    WERR(ECONNABORTED);
+    WERR(ECONNREFUSED);
+    WERR(ECONNRESET);
+    WERR(EDEADLK);
+    WERR(EDESTADDRREQ);
+    WERR(EDOM);
+    //WERR(EDQUOT);
+    WERR(EEXIST);
+    WERR(EFAULT);
+    WERR(EFBIG);
+    WERR(EHOSTUNREACH);
+    WERR(EIDRM);
+    WERR(EILSEQ);
+    WERR(EINPROGRESS);
+    WERR(EINTR);
+    WERR(EINVAL);
+    WERR(EIO);
+    WERR(EISCONN);
+    WERR(EISDIR);
+    WERR(ELOOP);
+    WERR(EMFILE);
+    WERR(EMLINK);
+    WERR(EMSGSIZE);
+    //WERR(EMULTIHOP);
+    WERR(ENAMETOOLONG);
+    WERR(ENETDOWN);
+    WERR(ENETRESET);
+    WERR(ENETUNREACH);
+    WERR(ENFILE);
+    WERR(ENOBUFS);
+    WERR(ENODEV);
+    WERR(ENOENT);
+    WERR(ENOEXEC);
+    WERR(ENOLCK);
+    WERR(ENOLINK);
+    WERR(ENOMEM);
+    WERR(ENOMSG);
+    WERR(ENOPROTOOPT);
+    WERR(ENOSPC);
+    WERR(ENOSYS);
+    WERR(ENOTCONN);
+    WERR(ENOTDIR);
+    WERR(ENOTEMPTY);
+    WERR(ENOTRECOVERABLE);
+    WERR(ENOTSOCK);
+    WERR(ENOTSUP);
+    WERR(ENOTTY);
+    WERR(ENXIO);
+    WERR(EOVERFLOW);
+    WERR(EOWNERDEAD);
+    WERR(EPERM);
+    WERR(EPIPE);
+    WERR(EPROTO);
+    WERR(EPROTONOSUPPORT);
+    WERR(EPROTOTYPE);
+    WERR(ERANGE);
+    WERR(EROFS);
+    WERR(ESPIPE);
+    WERR(ESRCH);
+    //WERR(ESTALE);
+    WERR(ETIMEDOUT);
+    WERR(ETXTBSY);
+    WERR(EXDEV);
+
+    return __WASI_ENOTCAPABLE;
+}
+
+#define WASI_ERRNO() errno_to_wasi(errno)
+
+
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
@@ -131,6 +222,7 @@ struct file_desc
 
 #define open _open
 #define close _close
+#define ftruncate _chsize
 
 #define O_RDONLY _O_RDONLY
 #define O_WRONLY _O_WRONLY
@@ -183,7 +275,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     printf("H2\n");
 
     if(hFile == INVALID_HANDLE_VALUE)
-        return __WASI_EACCES;
+        return WASI_ERRNO();
 
     BY_HANDLE_FILE_INFORMATION fhandle = {};
     GetFileInformationByHandle(hFile, &fhandle);
@@ -192,8 +284,10 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
     if(nHandle == -1)
     {
+        __wasi_errno_t err = WASI_ERRNO();
+
         ::CloseHandle(hFile);
-        return __WASI_EACCES;
+        return err;
     }
 
     out.portable_fd = nHandle;
@@ -218,21 +312,15 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     {
         close(nHandle);
 
-        return __WASI_ENOENT;
+        return __WASI_ENOTDIR;
     }
 
     if(emulate_truncate)
     {
         errno_t err = _chsize_s(nHandle, 0);
 
-        if(err == EACCES)
-            return __WASI_EACCES;
-        if(err == EBADF)
-            return __WASI_EBADF;
-        if(err == ENOSPC)
-            return __WASI_ENOSPC;
-        if(err == EINVAL)
-            return __WASI_EINVAL;
+        if(err)
+            return errno_to_wasi(err);
 
         if(err != 0)
             return __WASI_ENOTCAPABLE;
@@ -270,7 +358,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     out.portable_fd = open(path.c_str(), flags);
 
     if(out.portable_fd == -1)
-        return __WASI_EACCES;
+        return WASI_ERRNO();
 
     struct stat st;
     fstat(out.portable_fd, &st);
@@ -498,14 +586,22 @@ struct preopened
     }
 
     ///TODO:
-    bool resize_fd(uint32_t fd, size_t new_size)
+    __wasi_errno_t resize_fd(uint32_t fd, size_t new_size)
     {
         assert(has_fd(fd));
 
         ///CHECK SANDBOX SIZE
         ///CHECK DISK SPACE
 
-        return false;
+        ///ftruncate64?
+        int success = ftruncate(files[fd].portable_fd, new_size);
+
+        if(success != 0)
+        {
+
+        }
+
+        return __WASI_ESUCCESS;
     }
 
     __wasi_errno_t write_fd(uint32_t fd, wasi_ptr_t<char> data, wasi_size_t len, size_t& out_bytes)
@@ -530,7 +626,7 @@ struct preopened
             int next = write(desc.portable_fd, &data[processed], len - processed);
 
             if(next == -1)
-                return __WASI_EBADF;
+                return WASI_ERRNO();
 
             processed += next;
             out_bytes = processed;
@@ -561,7 +657,7 @@ struct preopened
             int next = read(desc.portable_fd, &data[processed], len - processed);
 
             if(next == -1)
-                return __WASI_EBADF;
+                return WASI_ERRNO();
 
             processed += next;
             out_bytes = processed;
