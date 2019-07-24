@@ -161,6 +161,23 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     if((open_flags & __WASI_O_TRUNC) > 0)
         dwCreationDisposition = TRUNCATE_EXISTING;
 
+    bool emulate_truncate = false;
+
+    if((open_flags & __WASI_O_TRUNC) > 0 && (open_flags & __WASI_O_CREAT) > 0)
+    {
+        emulate_truncate = true;
+    }
+
+    if(emulate_truncate)
+    {
+        if((open_flags & __WASI_O_EXCL) == 0)
+            dwCreationDisposition = CREATE_ALWAYS;
+        else
+            dwCreationDisposition = CREATE_NEW;
+    }
+
+    std::cout << "CREAT " << dwCreationDisposition << " NAME? " << path << std::endl;
+
     HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     printf("H2\n");
@@ -202,6 +219,23 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
         close(nHandle);
 
         return __WASI_ENOENT;
+    }
+
+    if(emulate_truncate)
+    {
+        errno_t err = _chsize_s(nHandle, 0);
+
+        if(err == EACCES)
+            return __WASI_EACCES;
+        if(err == EBADF)
+            return __WASI_EBADF;
+        if(err == ENOSPC)
+            return __WASI_ENOSPC;
+        if(err == EINVAL)
+            return __WASI_EINVAL;
+
+        if(err != 0)
+            return __WASI_ENOTCAPABLE;
     }
 
     return __WASI_ESUCCESS;
@@ -331,7 +365,7 @@ struct preopened
 
         std::filesystem::path rel = their_requested_full.std::filesystem::path::lexically_relative(std::filesystem::path(files[3].relative_path));
 
-        std::filesystem::path fin = (std::filesystem::path(files[3].relative_path) / their_requested_full).lexically_normal();
+        std::filesystem::path fin = std::filesystem::path(their_requested_full).lexically_normal();
 
         std::string relative_path = rel.string();
 
@@ -374,7 +408,9 @@ struct preopened
 
         desc.fd = get_next_fd();
 
-        __wasi_errno_t err = get_read_fd_wrapper(path, desc, open_flags);
+        std::cout << "Flags? " << open_flags << std::endl;
+
+        __wasi_errno_t err = get_read_fd_wrapper(final_path, desc, open_flags);
 
         if(err != __WASI_ESUCCESS)
             return err;
