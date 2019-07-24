@@ -59,7 +59,7 @@ struct wasi_ptr_t
     T1& operator[](int idx) const
     {
         assert(val + idx * sizeof(T) + sizeof(T) <= mem_0.size());
-        assert(val + idx >= 0);
+        assert(val + idx * sizeof(T) >= 0);
 
         return *(T*)&mem_0[val + idx * sizeof(T)];
     }
@@ -966,7 +966,7 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
 
     for(size_t i=0; i < path_len; i++)
     {
-        pth += path[i];
+        pth += std::string(1, path[i]);
     }
 
     file_desc out;

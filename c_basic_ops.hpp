@@ -233,7 +233,9 @@ DEXT1(c_fnearest, nearbyint);
 template<typename T, int N>
 std::string c_wrap(int v1)
 {
-    return GET(v1) + " % ((" + types::friendly(T()) + ")pow(2, " + std::to_string(N) + "));\n";
+    return GET(v1) + " & 0xFFFFFFFF;\n";
+
+    //return GET(v1) + " % ((" + types::friendly(T()) + ")pow(2, " + std::to_string(N) + "));\n";
 }
 
 template<typename T, typename U>
