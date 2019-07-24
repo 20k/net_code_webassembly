@@ -130,6 +130,7 @@ struct file_desc
 #define	S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 
 #define open _open
+#define close _close
 
 #define O_RDONLY _O_RDONLY
 #define O_WRONLY _O_WRONLY
@@ -147,9 +148,20 @@ struct file_desc
 #define O_RANDOM _O_RANDOM
 #define O_ACCMODE _O_ACCMODE
 
-__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
+__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
 {
-    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    DWORD dwCreationDisposition = OPEN_EXISTING;
+
+    if((open_flags & __WASI_O_CREAT) > 0)
+        dwCreationDisposition = CREATE_ALWAYS;
+
+    if((open_flags & __WASI_O_EXCL) > 0)
+        dwCreationDisposition = CREATE_NEW;
+
+    if((open_flags & __WASI_O_TRUNC))
+        dwCreationDisposition = TRUNCATE_EXISTING;
+
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     BY_HANDLE_FILE_INFORMATION fhandle = {};
 
@@ -172,7 +184,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
     if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
         out.fs_filetype = __WASI_FILETYPE_DIRECTORY;
 
-    {
+    /*{
         struct stat st;
         fstat(out.portable_fd, &st);
 
@@ -182,6 +194,13 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
         {
             std::cout << "IS DIR\n";
         }
+    }*/
+
+    if(out.fs_filetype != __WASI_FILETYPE_DIRECTORY && ((open_flags & __WASI_O_DIRECTORY) > 0))
+    {
+        close(nHandle);
+
+        return __WASI_ENOENT;
     }
 
     return __WASI_ESUCCESS;
@@ -197,10 +216,23 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
 #include <fcntl.h>
 #include <unistd.h>
 
-///needs to be tested on real linux
-__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
+__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
 {
-    out.portable_fd = open(path.c_str(), 0);
+    int flags = 0;
+
+    if((open_flags & __WASI_O_CREAT) > 0)
+        flags |= O_CREAT;
+
+    if((open_flags & __WASI_O_EXCL) > 0)
+        flags |= O_EXCL;
+
+    if((open_flags & __WASI_O_TRUNC) > 0)
+        flags |= O_TRUNC;
+
+    if((open_flags & __WASI_O_DIRECTORY) > 0)
+        flags |= O_DIRECTORY;
+
+    out.portable_fd = open(path.c_str(), flags);
 
     if(out.portable_fd == -1)
         return __WASI_EACCES;
@@ -273,7 +305,7 @@ struct preopened
         desc.fs_flags = __WASI_FDFLAG_SYNC;
         desc.is_preopen = true;
 
-        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc);
+        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, 0);
 
         assert(err == __WASI_ESUCCESS);
 
@@ -283,7 +315,7 @@ struct preopened
         return desc;
     }
 
-    __wasi_errno_t make_file(__wasi_fd_t base, const std::string& path, file_desc& out)
+    __wasi_errno_t make_file(__wasi_fd_t base, const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
     {
         if(!has_fd(base))
             return __WASI_EBADF;
@@ -341,7 +373,7 @@ struct preopened
 
         desc.fd = get_next_fd();
 
-        __wasi_errno_t err = get_read_fd_wrapper(path, desc);
+        __wasi_errno_t err = get_read_fd_wrapper(path, desc, open_flags);
 
         if(err != __WASI_ESUCCESS)
             return err;
@@ -977,7 +1009,7 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
     }
 
     file_desc out;
-    __wasi_errno_t err = file_sandbox.make_file(dirfd, pth, out);
+    __wasi_errno_t err = file_sandbox.make_file(dirfd, pth, out, oflags);
 
     if(err != __WASI_ESUCCESS)
         return err;
