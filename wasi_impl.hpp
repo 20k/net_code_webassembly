@@ -517,7 +517,6 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //path_symlink
 //path_unlink_file
 //poll_oneoff
-//proc_raise
 //sock_recv
 //sock_send
 //sock_shutdown
