@@ -584,9 +584,16 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
         //#define INSTRUCTION_TRACING
         #ifdef INSTRUCTION_TRACING
         if(stack_offset.peek_back() != -1)
-            ret += "std::cout << " + get_variable_name(stack_offset.peek_back()) + " << std::endl;\n";
+        {
+            std::string vname = get_variable_name(stack_offset.peek_back());
+            ret += "fwrite((std::to_string(" + vname + ") + \"\\n\").c_str(), std::to_string(" + vname + ").size() + 1, 1, my_file);\n";
+        }
 
-        ret += "printf(\"" + instr_to_str(which) + "\\n\");\n";
+            //ret += "std::cout << std::to_string(" + get_variable_name(stack_offset.peek_back()) + ") << std::endl;\n";
+
+        //ret += "printf(\"" + instr_to_str(which) + "\\n\");\n";
+        std::string inst = instr_to_str(which);
+        ret += "fwrite(\"" + inst + "\\n\", " + std::to_string(inst.size()+1) + ", 1, my_file);\n";
         #endif // INSTRUCTION_TRACING
 
         switch(which)
@@ -1563,9 +1570,14 @@ using f32 = float;
 using f64 = double;
 using empty = void;
 
+
 #define inf INFINITY
 
 )";
+
+//FILE* my_file = nullptr;
+//my_file = fopen(\"out.txt\", \"wb\");
+
 
     /*bool has_main = false;
 
@@ -1624,7 +1636,7 @@ using empty = void;
     {
         //res += "int main(){proc_exit(ea_start());}\n\n";
 
-        res += "int main(){init_data_segment(); ea_start(); return 1;}\n\n";
+        res += "int main(){setbuf(stdout, nullptr);init_data_segment(); ea_start(); return 1;}\n\n";
     }
 
     return res;
