@@ -146,7 +146,7 @@ struct file_desc
 
 __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
 {
-    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     BY_HANDLE_FILE_INFORMATION fhandle = {};
 
@@ -155,7 +155,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
 
     GetFileInformationByHandle(hFile, &fhandle);
 
-    int nHandle = _open_osfhandle((long long)hFile, _O_RDONLY | _O_BINARY);
+    int nHandle = _open_osfhandle((intptr_t)hFile, 0);
 
     if(nHandle == -1)
     {
@@ -169,8 +169,23 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out)
     if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
         out.fs_filetype = __WASI_FILETYPE_DIRECTORY;
 
+    {
+        struct stat st;
+        fstat(out.portable_fd, &st);
+
+        std::cout << "FMODE " << std::to_string(st.st_mode) << std::endl;
+
+        if((st.st_mode & S_IFDIR) > 0)
+        {
+            std::cout << "IS DIR\n";
+        }
+    }
+
     return __WASI_ESUCCESS;
 }
+
+#define write _write
+#define read _read
 
 #else
 ///needs to be tested on real linux
@@ -323,6 +338,9 @@ struct preopened
             return err;
 
         out = desc;
+
+        files[out.fd] = desc;
+
         return __WASI_ESUCCESS;
     }
 
@@ -400,6 +418,68 @@ struct preopened
         ///CHECK DISK SPACE
 
         return false;
+    }
+
+    __wasi_errno_t write_fd(uint32_t fd, wasi_ptr_t<char> data, wasi_size_t len, size_t& out_bytes)
+    {
+        assert(has_fd(fd));
+
+        if(len <= 0)
+            return __WASI_ESUCCESS;
+
+        data[0];
+        data[len-1];
+
+        size_t processed = 0;
+
+        file_desc& desc = files[fd];
+
+        if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE)
+            return __WASI_EBADF;
+
+        while(processed < len)
+        {
+            int next = write(desc.portable_fd, &data[processed], len - processed);
+
+            if(next == -1)
+                return __WASI_EBADF;
+
+            processed += next;
+            out_bytes = processed;
+        }
+
+        return __WASI_ESUCCESS;
+    }
+
+    __wasi_errno_t read_fd(uint32_t fd, wasi_ptr_t<char> data, wasi_size_t len, size_t& out_bytes)
+    {
+        assert(has_fd(fd));
+
+        if(len <= 0)
+            return __WASI_ESUCCESS;
+
+        data[0];
+        data[len-1];
+
+        size_t processed = 0;
+
+        file_desc& desc = files[fd];
+
+        if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE)
+            return __WASI_EBADF;
+
+        while(processed < len)
+        {
+            int next = read(desc.portable_fd, &data[processed], len - processed);
+
+            if(next == -1)
+                return __WASI_EBADF;
+
+            processed += next;
+            out_bytes = processed;
+        }
+
+        return __WASI_ESUCCESS;
     }
 };
 
@@ -489,7 +569,7 @@ __wasi_errno_t __wasi_fd_prestat_get(__wasi_fd_t fd, PTR(__wasi_prestat_t) buf)
         ret.pr_type = __WASI_PREOPENTYPE_DIR;
 
         __wasi_prestat_t::__wasi_prestat_u::__wasi_prestat_u_dir_t dird;
-        dird.pr_name_len = file_sandbox.files[fd].relative_path.length();
+        dird.pr_name_len = file_sandbox.files[fd].relative_path.length() + 1;
 
         ret.u.dir = dird;
 
@@ -513,6 +593,8 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
         {
             path[i] = cname[i];
         }
+
+        path[path_len-1] = 0;
 
         return __WASI_ESUCCESS;
     }
@@ -861,6 +943,86 @@ __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_
     return __WASI_EBADF;
 }
 
+__wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
+                                __wasi_lookupflags_t dirflags,
+                                const wasi_ptr_t<char>path,
+                                wasi_size_t path_len,
+                                __wasi_oflags_t oflags,
+                                __wasi_rights_t fs_rights_base,
+                                __wasi_rights_t fs_rights_inheriting,
+                                __wasi_fdflags_t fs_flags,
+                                wasi_ptr_t<__wasi_fd_t> fd)
+{
+    assert(file_sandbox.has_fd(dirfd));
+
+    printf("Openasdfasdf\n");
+
+    if(path_len == 0)
+        return __WASI_EACCES;
+
+    std::string pth;
+
+    for(size_t i=0; i < path_len; i++)
+    {
+        pth += path[i];
+    }
+
+    file_desc out;
+    __wasi_errno_t err = file_sandbox.make_file(dirfd, pth, out);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
+    *fd = out.fd;
+
+    return __WASI_ESUCCESS;
+}
+
+
+__wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> iovs, wasi_size_t iovs_len, wasi_ptr_t<uint32_t> nread)
+{
+    printf("Read %i\n", fd);
+
+    ///stdin
+    if(fd == 0)
+    {
+
+    }
+
+    ///stdout
+    if(fd == 1)
+        return __WASI_EBADF;
+
+    ///stderr
+    if(fd == 2)
+        return __WASI_EBADF;
+
+    *nread = 0;
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    for(size_t i=0; i < iovs_len; i++)
+    {
+        __wasi_iovec_t single = iovs[i];
+
+        const wasi_ptr_t<void> buf = single.buf;
+
+        wasi_ptr_t<char> tchr(0);
+        tchr.val = buf.val;
+
+        size_t out_bytes = 0;
+        __wasi_errno_t err = file_sandbox.read_fd(fd, tchr, single.buf_len, out_bytes);
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+
+        *nread += out_bytes;
+    }
+
+    return __WASI_ESUCCESS;
+}
+
 __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t> iovs, wasi_size_t iovs_len, wasi_ptr_t<uint32_t> nwritten)
 {
     printf("Write %i\n", fd);
@@ -892,7 +1054,7 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
     ///stdin
     if(fd == 0)
     {
-
+        return __WASI_EBADF;
     }
 
     ///stdout
@@ -914,7 +1076,25 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
-    return __WASI_EBADF;
+    for(size_t i=0; i < iovs_len; i++)
+    {
+        __wasi_ciovec_t single = iovs[i];
+
+        const wasi_ptr_t<void> buf = single.buf;
+
+        wasi_ptr_t<char> tchr(0);
+        tchr.val = buf.val;
+
+        size_t out_bytes = 0;
+        __wasi_errno_t err = file_sandbox.write_fd(fd, tchr, single.buf_len, out_bytes);
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+
+        *nwritten += out_bytes;
+    }
+
+    return __WASI_ESUCCESS;
 }
 
 #endif // WASI_IMPL_HPP_INCLUDED

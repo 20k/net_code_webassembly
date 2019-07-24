@@ -462,6 +462,9 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     WASI_IMPORT(fd_close);
     WASI_IMPORT(fd_seek);
     WASI_IMPORT(fd_write);
+    WASI_IMPORT(path_open);
+    WASI_IMPORT(fd_fdstat_set_flags);
+    WASI_IMPORT(fd_read);
 
     return vals;
 }
