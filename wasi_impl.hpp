@@ -36,6 +36,8 @@ struct wasi_ptr_t
         assert(mem_0.size() > 0);
 
         val = (const char*)in - (const char*)&mem_0[0];
+
+        assert(val < mem_0.size());
     }
 
     T* operator->() const
