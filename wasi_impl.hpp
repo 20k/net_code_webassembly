@@ -990,7 +990,6 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //fd_readdir
 //fd_renumber
 //fd_seek
-//fd_sync
 //fd_tell
 //path_create_directory
 //path_filestat_get
