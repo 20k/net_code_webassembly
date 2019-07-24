@@ -365,7 +365,9 @@ template<typename T, int N>
 inline
 T wrap(const T& in)
 {
-    return in % (T)pow(2, N);
+    return in;
+
+    //return in % (T)pow(2, N);
 }
 
 template<typename T, typename U>
