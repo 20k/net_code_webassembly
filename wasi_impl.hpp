@@ -321,9 +321,6 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
         if(err)
             return errno_to_wasi(err);
-
-        if(err != 0)
-            return __WASI_ENOTCAPABLE;
     }
 
     return __WASI_ESUCCESS;
@@ -597,9 +594,7 @@ struct preopened
         int success = ftruncate(files[fd].portable_fd, new_size);
 
         if(success != 0)
-        {
-
-        }
+            return WASI_ERRNO();
 
         return __WASI_ESUCCESS;
     }
@@ -928,8 +923,10 @@ __wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_FILESTAT_SET_SIZE))
         return __WASI_ENOTCAPABLE;
 
-    if(!file_sandbox.resize_fd(fd, st_size))
-        return __WASI_EFBIG;
+    __wasi_errno_t err = file_sandbox.resize_fd(fd, st_size);
+
+    if(err)
+        return err;
 
     return __WASI_ESUCCESS;
 }
