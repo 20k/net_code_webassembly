@@ -1464,7 +1464,7 @@ __wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, const wasi_ptr_t<char> pa
     return __WASI_ESUCCESS;
 }
 
-__wasi_errno_t __wasi_path_remove_directory(__wasi_fd_t fd, const wasi_ptr_t<char> path, uint32_t path_len)
+__wasi_errno_t __wasi_path_remove_directory(__wasi_fd_t fd, const wasi_ptr_t<char> path, wasi_size_t path_len)
 {
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
