@@ -365,9 +365,10 @@ template<typename T, int N>
 inline
 T wrap(const T& in)
 {
-    return in;
+    static_assert(N == 32);
+    static_assert(std::is_same_v<T, uint32_t>);
 
-    //return in % (T)pow(2, N);
+    return in;
 }
 
 template<typename T, typename U>
