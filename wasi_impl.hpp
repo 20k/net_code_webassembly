@@ -1171,10 +1171,7 @@ __wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_
 
     __wasi_errno_t err = file_sandbox.resize_fd(fd, st_size);
 
-    if(err != __WASI_ESUCCESS)
-        return err;
-
-    return __WASI_ESUCCESS;
+    return err;
 }
 
 ///TODO: This
