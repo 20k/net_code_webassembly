@@ -1201,10 +1201,7 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //path_link
 //path_open
 //path_readlink
-//path_remove_directory
-//path_rename
 //path_symlink
-//path_unlink_file
 //poll_oneoff
 //sock_recv
 //sock_send
