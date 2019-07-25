@@ -369,7 +369,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
     if((open_flags & __WASI_O_DIRECTORY) > 0)
     {
-        share_flags = FILE_SHARE_DELETE | FILE_SHARE_WRITE | FILE_SHARE_READ;
+        share_flags = FILE_SHARE_WRITE | FILE_SHARE_READ;
     }
 
     std::cout << "CREAT " << dwCreationDisposition << " NAME? " << path << std::endl;
@@ -556,7 +556,7 @@ struct preopened
         desc.fs_flags = __WASI_FDFLAG_SYNC;
         desc.is_preopen = true;
 
-        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, 0);
+        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, __WASI_O_DIRECTORY);
 
         assert(err == __WASI_ESUCCESS);
 
