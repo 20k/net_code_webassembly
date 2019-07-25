@@ -365,9 +365,16 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
             dwCreationDisposition = CREATE_NEW;
     }
 
+    int share_flags = 0;
+
+    if((open_flags & __WASI_O_DIRECTORY) > 0)
+    {
+        share_flags = FILE_SHARE_DELETE | FILE_SHARE_WRITE | FILE_SHARE_READ;
+    }
+
     std::cout << "CREAT " << dwCreationDisposition << " NAME? " << path << std::endl;
 
-    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, share_flags, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if(hFile == INVALID_HANDLE_VALUE)
         return WASI_ERRNO();
@@ -1298,8 +1305,9 @@ __wasi_errno_t __wasi_args_get(DPTR(char) argv, PTR(char) argv_buf)
     printf("SGet\n");
 
     const char* name = "sbox";
+    size_t len = strlen(name);
 
-    for(size_t i=0; i < strlen(name); i++)
+    for(size_t i=0; i < len; i++)
     {
         argv_buf[i] = name[i];
     }
@@ -1414,7 +1422,7 @@ __wasi_errno_t __wasi_path_rename(__wasi_fd_t old_fd,
     std::filesystem::path p1 = std::filesystem::path(v1.relative_path) / std::filesystem::path(make_str(old_path, old_path_len));
     std::filesystem::path p2 = std::filesystem::path(v2.relative_path) / std::filesystem::path(make_str(new_path, new_path_len));
 
-    printf("NOPE\n");
+    printf("here\n");
 
     if(!file_sandbox.path_in_sandbox(p1) || !file_sandbox.path_in_sandbox(p2))
         return __WASI_EACCES;
@@ -1423,10 +1431,12 @@ __wasi_errno_t __wasi_path_rename(__wasi_fd_t old_fd,
 
     printf("Try rename\n");
 
+    //std::cout << "from " << p1.string() << " to " << p2.string() << std::endl;
+
     if(rval != 0)
         return WASI_ERRNO();
 
-    std::cout << "Renamed " << p1 << " to " << p2 << std::endl;
+    //std::cout << "Renamed " << p1 << " to " << p2 << std::endl;
 
     return __WASI_ESUCCESS;
 }
