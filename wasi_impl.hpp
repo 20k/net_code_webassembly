@@ -654,6 +654,54 @@ struct preopened
 
         file_desc pre = make_preopen("sandbox");
 
+        {
+            file_desc std_fs;
+            std_fs.portable_fd = 0;
+            std_fs.fd = 0;
+            std_fs.relative_path = "";
+            std_fs.fs_rights_base = __WASI_RIGHT_FD_READ;
+            std_fs.fs_rights_inheriting = std_fs.fs_rights_base;
+            std_fs.fs_flags = __WASI_FDFLAG_SYNC;
+
+            cfstat_info st;
+            cfstat(std_fs.portable_fd, &st);
+
+            std_fs.fs_filetype = st.type;
+            files[std_fs.fd] = std_fs;
+        }
+
+        {
+            file_desc std_fs;
+            std_fs.portable_fd = 1;
+            std_fs.fd = 1;
+            std_fs.relative_path = "";
+            std_fs.fs_rights_base = __WASI_RIGHT_FD_WRITE;
+            std_fs.fs_rights_inheriting = std_fs.fs_rights_base;
+            std_fs.fs_flags = __WASI_FDFLAG_SYNC;
+
+            cfstat_info st;
+            cfstat(std_fs.portable_fd, &st);
+
+            std_fs.fs_filetype = st.type;
+            files[std_fs.fd] = std_fs;
+        }
+
+        {
+            file_desc std_fs;
+            std_fs.portable_fd = 2;
+            std_fs.fd = 2;
+            std_fs.relative_path = "";
+            std_fs.fs_rights_base = __WASI_RIGHT_FD_WRITE;
+            std_fs.fs_rights_inheriting = std_fs.fs_rights_base;
+            std_fs.fs_flags = __WASI_FDFLAG_SYNC;
+
+            cfstat_info st;
+            cfstat(std_fs.portable_fd, &st);
+
+            std_fs.fs_filetype = st.type;
+            files[std_fs.fd] = std_fs;
+        }
+
         files[pre.fd] = pre;
     }
 
@@ -770,7 +818,7 @@ struct preopened
 
         file_desc& desc = files[fd];
 
-        if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE)
+        if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE && desc.fs_filetype != __WASI_FILETYPE_CHARACTER_DEVICE)
             return __WASI_EBADF;
 
         while(processed < len)
@@ -801,7 +849,7 @@ struct preopened
 
         file_desc& desc = files[fd];
 
-        if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE)
+        if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE && desc.fs_filetype != __WASI_FILETYPE_CHARACTER_DEVICE)
             return __WASI_EBADF;
 
         while(processed < len)
@@ -1387,20 +1435,6 @@ __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> i
 {
     printf("Read %i\n", fd);
 
-    ///stdin
-    if(fd == 0)
-    {
-
-    }
-
-    ///stdout
-    if(fd == 1)
-        return __WASI_EBADF;
-
-    ///stderr
-    if(fd == 2)
-        return __WASI_EBADF;
-
     *nread = 0;
 
     if(!file_sandbox.has_fd(fd))
@@ -1430,50 +1464,6 @@ __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> i
 __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t> iovs, wasi_size_t iovs_len, wasi_ptr_t<uint32_t> nwritten)
 {
     printf("Write %i\n", fd);
-
-    auto do_op = [&](auto func)
-    {
-        int written = 0;
-
-        for(size_t i=0; i < iovs_len; i++)
-        {
-            __wasi_ciovec_t single = iovs[i];
-
-            const wasi_ptr_t<void> buf = single.buf;
-
-            wasi_ptr_t<char> tchr(0);
-            tchr.val = buf.val;
-
-            for(size_t kk=0; kk < single.buf_len; kk++)
-            {
-                func(tchr[kk]);
-            }
-
-            written += single.buf_len;
-        }
-
-        return written;
-    };
-
-    ///stdin
-    if(fd == 0)
-    {
-        return __WASI_EBADF;
-    }
-
-    ///stdout
-    if(fd == 1)
-    {
-        *nwritten = do_op([](char in){return fputc(in, stdout);});
-        return __WASI_ESUCCESS;
-    }
-
-    ///stderr
-    if(fd == 2)
-    {
-        *nwritten = do_op([](char in){return fputc(in, stderr);});
-        return __WASI_ESUCCESS;
-    }
 
     *nwritten = 0;
 
