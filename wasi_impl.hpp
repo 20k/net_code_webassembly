@@ -1423,6 +1423,14 @@ __wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, const wasi_ptr_t<char> pa
     if(!file_sandbox.path_in_sandbox(p1))
         return __WASI_EACCES;
 
+    if(!std::filesystem::is_regular_file(p1))
+    {
+        if(std::filesystem::is_directory(p1))
+            return __WASI_EISDIR;
+
+        return __WASI_EINVAL;
+    }
+
     int res = unlink(p1.string().c_str());
 
     printf("Doing res %i\n", res);
@@ -1450,6 +1458,9 @@ __wasi_errno_t __wasi_path_remove_directory(__wasi_fd_t fd, const wasi_ptr_t<cha
 
     if(!file_sandbox.path_in_sandbox(p1))
         return __WASI_EACCES;
+
+    if(!std::filesystem::is_directory(p1))
+        return __WASI_EINVAL;
 
     int res = remove(p1.string().c_str());
 
