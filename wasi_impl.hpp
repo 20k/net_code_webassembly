@@ -310,8 +310,10 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
 
     ///pipe = socket or anon/named pipe
-    //if(fret == FILE_TYPE_PIPE)
-    //    buf->type == __WASI_FILETYPE_
+    if(fret == FILE_TYPE_PIPE)
+    {
+        buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
+    }
 
     if(fret == FILE_TYPE_UNKNOWN)
     {
@@ -454,7 +456,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
     if(S_ISDIR(st.st_mode))
         buf->type = __WASI_FILETYPE_DIRECTORY;
     if(S_ISFIFO(st.st_mode))
-        buf->type = __WASI_FILETYPE_UNKNOWN;
+        buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
     if(S_ISCHR(st.st_mode))
         buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
     if(S_ISBLK(st.st_mode))
