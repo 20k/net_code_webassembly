@@ -1397,10 +1397,50 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
     return __WASI_ESUCCESS;
 }
 
-__wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, wasi_ptr_t<char> path, wasi_size_t path_len)
+__wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, const wasi_ptr_t<char> path, wasi_size_t path_len)
+{
+    printf("Start unlink\n");
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    printf("Unlink?\n");
+
+    ///? TODO: Which permissions should this use?
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_PATH_UNLINK_FILE))
+        return __WASI_ENOTCAPABLE;
+
+    printf("Is capable unlink\n");
+
+    std::string their_path = make_str(path, path_len);
+
+    const file_desc& v1 = file_sandbox.files[fd];
+
+    std::filesystem::path p1 = std::filesystem::path(v1.relative_path) / std::filesystem::path(their_path);
+
+    printf("Checking access\n");
+
+    if(!file_sandbox.path_in_sandbox(p1))
+        return __WASI_EACCES;
+
+    int res = unlink(p1.string().c_str());
+
+    printf("Doing res %i\n", res);
+
+    if(res != 0)
+        return WASI_ERRNO();
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_path_remove_directory(__wasi_fd_t fd, const wasi_ptr_t<char> path, uint32_t path_len)
 {
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
+
+    ///? TODO: Which permissions should this use?
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_PATH_REMOVE_DIRECTORY))
+        return __WASI_ENOTCAPABLE;
 
     std::string their_path = make_str(path, path_len);
 
@@ -1411,7 +1451,7 @@ __wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, wasi_ptr_t<char> path, wa
     if(!file_sandbox.path_in_sandbox(p1))
         return __WASI_EACCES;
 
-    int res = unlink(their_path.c_str());
+    int res = remove(p1.string().c_str());
 
     if(res != 0)
         return WASI_ERRNO();
@@ -1433,6 +1473,12 @@ __wasi_errno_t __wasi_path_rename(__wasi_fd_t old_fd,
 
     if(!file_sandbox.has_fd(new_fd))
         return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(old_fd, __WASI_RIGHT_PATH_RENAME_SOURCE))
+        return __WASI_ENOTCAPABLE;
+
+    if(!file_sandbox.can_fd(new_fd, __WASI_RIGHT_PATH_RENAME_TARGET))
+        return __WASI_ENOTCAPABLE;
 
     const file_desc& v1 = file_sandbox.files[old_fd];
     const file_desc& v2 = file_sandbox.files[new_fd];
@@ -1468,6 +1514,9 @@ __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> i
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_READ))
+        return __WASI_ENOTCAPABLE;
+
     for(size_t i=0; i < iovs_len; i++)
     {
         __wasi_iovec_t single = iovs[i];
@@ -1497,6 +1546,9 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
 
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_WRITE))
+        return __WASI_ENOTCAPABLE;
 
     for(size_t i=0; i < iovs_len; i++)
     {
