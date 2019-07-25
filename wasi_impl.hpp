@@ -1008,7 +1008,7 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
     return __WASI_EBADF;
 }
 
-///TODO: Do I need to implement this?
+///not supported on windows at all, could support linux
 __wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len, __wasi_advice_t advice)
 {
     if(!file_sandbox.has_fd(fd))
@@ -1020,6 +1020,7 @@ __wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi
     return __WASI_ESUCCESS;
 }
 
+///allocate may be unimplementable on windows effectively
 //__wasi_errno_t __wasi_fd_allocate()
 
 __wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
