@@ -210,6 +210,7 @@ intptr_t get_std_inouterr_platform_handle(int std_fd);
 struct cfstat_info
 {
     __wasi_filetype_t type = __WASI_FILETYPE_UNKNOWN;
+    uint64_t file_size = 0;
 };
 
 __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
@@ -392,6 +393,8 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
 
         if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
             buf->type = __WASI_FILETYPE_DIRECTORY;
+
+        buf->file_size = (((uint64_t)fhandle.nFileSizeHigh) << 32) | ((uint64_t)fhandle.nFileSizeLow);
     }
 
     return __WASI_ESUCCESS;
@@ -528,6 +531,8 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
     if(S_ISBLK(st.st_mode))
         buf->type = __WASI_FILETYPE_BLOCK_DEVICE;
+
+    buf->file_size = st.st_size;
 
     return __WASI_ESUCCESS;
 }
@@ -824,11 +829,14 @@ struct preopened
         return files[fd].relative_path;
     }
 
-    void close_fd(uint32_t fd)
+    __wasi_errno_t close_fd(uint32_t fd)
     {
         assert(has_fd(fd));
 
-        close(files[fd].portable_fd);
+        int err = close(files[fd].portable_fd);
+
+        if(err != 0)
+            return WASI_ERRNO();
 
         files.erase(files.find(fd));
     }
@@ -871,12 +879,21 @@ struct preopened
         return __WASI_ESUCCESS;
     }
 
-    ///TODO:
-    size_t get_size_fd(uint32_t fd)
+    __wasi_errno_t get_size_fd(uint32_t fd, int64_t* out)
     {
         assert(has_fd(fd));
 
-        return 0;
+        cfstat_info cf;
+        __wasi_errno_t err = cfstat(files[fd].portable_fd, &cf);
+
+        *out = 0;
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+
+        *out = cf.file_size;
+
+        return __WASI_ESUCCESS;
     }
 
     ///TODO:
@@ -1228,12 +1245,18 @@ __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat
 
     const file_desc& fle = file_sandbox.files[fd];
 
+    cfstat_info cf;
+    __wasi_errno_t err = cfstat(file_sandbox.files[fd].portable_fd, &cf);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
     __wasi_filestat_t ret;
     ret.st_dev = 0;
     ret.st_ino = 0; ///ERROR NEED TO DO INODES
     ret.st_filetype = fle.fs_filetype;
     ret.st_nlink = 0;
-    ret.st_size = file_sandbox.get_size_fd(fd);
+    ret.st_size = cf.file_size;
     ret.st_atim = 0; ///TODO: ATIM
     ret.st_mtim = 0; ///TODO: MTIM
     ret.st_ctim = 0; ///TODO: CTIM
@@ -1422,9 +1445,7 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
     if(file_sandbox.is_preopen(fd))
         return __WASI_EBADF;
 
-    file_sandbox.close_fd(fd);
-
-    return __WASI_ESUCCESS;
+    return file_sandbox.close_fd(fd);
 }
 
 __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_whence_t whence, PTR(__wasi_filesize_t) newoffset)
