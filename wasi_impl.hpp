@@ -107,7 +107,7 @@ struct file_desc
 
 #include <errno.h>
 
-__wasi_errno_t errno_to_wasi(errno_t err)
+__wasi_errno_t errno_to_wasi(int err)
 {
     if(err == 0)
         return __WASI_ESUCCESS;
@@ -193,6 +193,15 @@ __wasi_errno_t errno_to_wasi(errno_t err)
 
 #define WASI_ERRNO() errno_to_wasi(errno)
 
+intptr_t get_std_inouterr_platform_handle(int std_fd);
+
+///actually working fstat info
+struct cfstat_info
+{
+    __wasi_filetype_t type = __WASI_FILETYPE_UNKNOWN;
+};
+
+__wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
 
 #ifdef _WIN32
 #include <io.h>
@@ -243,6 +252,89 @@ __wasi_errno_t errno_to_wasi(errno_t err)
 
 ///handle based rename is SetFileInformationByHandle
 
+intptr_t get_std_inouterr_platform_handle(int which)
+{
+    assert(which == 0 || which == 1 || which == 2);
+
+    if(which == 0)
+    {
+        return (intptr_t)GetStdHandle(STD_INPUT_HANDLE);
+    }
+
+    if(which == 1)
+    {
+        return (intptr_t)GetStdHandle(STD_OUTPUT_HANDLE);
+    }
+
+    if(which == 2)
+    {
+        return (intptr_t)GetStdHandle(STD_ERROR_HANDLE);
+    }
+
+    assert(false);
+    return -1;
+}
+
+__wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
+{
+    assert(buf != nullptr);
+
+    if(fd < 0)
+        return __WASI_EBADF;
+
+    intptr_t handle = 0;
+
+    if(fd == 0 || fd == 1 || fd == 2)
+    {
+        handle = get_std_inouterr_platform_handle(fd);
+
+        if(handle == -1)
+            return __WASI_EBADF;
+    }
+    else
+    {
+        handle = _get_osfhandle(fd);
+
+        if(handle == -1)
+            return WASI_ERRNO();
+
+        if(handle == -2)
+            return __WASI_EBADF;
+    }
+
+    buf->type = __WASI_FILETYPE_UNKNOWN;
+
+    DWORD fret = GetFileType((HANDLE)handle);
+
+    if(fret == FILE_TYPE_CHAR)
+        buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
+
+    ///pipe = socket or anon/named pipe
+    //if(fret == FILE_TYPE_PIPE)
+    //    buf->type == __WASI_FILETYPE_
+
+    if(fret == FILE_TYPE_UNKNOWN)
+    {
+        buf->type = FILE_TYPE_UNKNOWN;
+
+        if(GetLastError() != NO_ERROR)
+            return WASI_ERRNO();
+    }
+
+    if(fret == FILE_TYPE_DISK)
+    {
+        BY_HANDLE_FILE_INFORMATION fhandle = {};
+        GetFileInformationByHandle((HANDLE)handle, &fhandle);
+
+        buf->type = __WASI_FILETYPE_REGULAR_FILE;
+
+        if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
+            buf->type = __WASI_FILETYPE_DIRECTORY;
+    }
+
+    return __WASI_ESUCCESS;
+}
+
 __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
 {
     DWORD dwCreationDisposition = OPEN_EXISTING;
@@ -275,13 +367,8 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
     HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
-    printf("H2\n");
-
     if(hFile == INVALID_HANDLE_VALUE)
         return WASI_ERRNO();
-
-    BY_HANDLE_FILE_INFORMATION fhandle = {};
-    GetFileInformationByHandle(hFile, &fhandle);
 
     int nHandle = _open_osfhandle((intptr_t)hFile, 0);
 
@@ -294,22 +381,26 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     }
 
     out.portable_fd = nHandle;
-    out.fs_filetype = __WASI_FILETYPE_REGULAR_FILE;
 
-    if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
-        out.fs_filetype = __WASI_FILETYPE_DIRECTORY;
+    cfstat_info buf;
+    cfstat(out.portable_fd, &buf);
 
-    /*{
+    out.fs_filetype = buf.type;
+
+    #if 0
+    {
+        intptr_t hndl = _get_osfhandle(nHandle);
+
+        BY_HANDLE_FILE_INFORMATION fhandle2 = {};
+        GetFileInformationByHandle((HANDLE)hndl, &fhandle2);
+
         struct stat st;
-        fstat(out.portable_fd, &st);
+        fstat(nHandle, &st);
 
-        std::cout << "FMODE " << std::to_string(st.st_mode) << std::endl;
-
-        if((st.st_mode & S_IFDIR) > 0)
-        {
-            std::cout << "IS DIR\n";
-        }
-    }*/
+        std::cout << "is dir through winapi " << ((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0) << std::endl;
+        std::cout << "is dir through cstyle api " << S_ISDIR(st.st_mode) << std::endl;
+    }
+    #endif // 0
 
     if(out.fs_filetype != __WASI_FILETYPE_DIRECTORY && ((open_flags & __WASI_O_DIRECTORY) > 0))
     {
@@ -339,6 +430,39 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 #include <fcntl.h>
 #include <unistd.h>
 
+intptr_t get_std_inouterr_platform_handle(int which)
+{
+    assert(which == 0 || which == 1 || which == 2);
+
+    return which;
+}
+
+__wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
+{
+    assert(buf);
+
+    struct stat st;
+    int rval = fstat(fd, &st);
+
+    if(rval != 0)
+        return WASI_ERRNO();
+
+    buf->type = __WASI_FILETYPE_UNKNOWN;
+
+    if(S_ISREG(st.st_mode))
+        buf->type = __WASI_FILETYPE_REGULAR_FILE;
+    if(S_ISDIR(st.st_mode))
+        buf->type = __WASI_FILETYPE_DIRECTORY;
+    if(S_ISFIFO(st.st_mode))
+        buf->type = __WASI_FILETYPE_UNKNOWN;
+    if(S_ISCHR(st.st_mode))
+        buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
+    if(S_ISBLK(st.st_mode))
+        buf->type = __WASI_FILETYPE_BLOCK_DEVICE;
+
+    return __WASI_ESUCCESS;
+}
+
 __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
 {
     int flags = 0;
@@ -360,21 +484,10 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     if(out.portable_fd == -1)
         return WASI_ERRNO();
 
-    struct stat st;
-    fstat(out.portable_fd, &st);
+    cfstat_info buf;
+    cfstat(out.portable_fd, &buf);
 
-    out.fs_filetype = __WASI_FILETYPE_UNKNOWN;
-
-    if(S_ISREG(st.st_mode))
-        out.fs_filetype = __WASI_FILETYPE_REGULAR_FILE;
-    if(S_ISDIR(st.st_mode))
-        out.fs_filetype = __WASI_FILETYPE_DIRECTORY;
-    if(S_ISFIFO(st.st_mode))
-        out.fs_filetype = __WASI_FILETYPE_UNKNOWN;
-    if(S_ISCHR(st.st_mode))
-        out.fs_filetype = __WASI_FILETYPE_CHARACTER_DEVICE;
-    if(S_ISBLK(st.st_mode))
-        out.fs_filetype = __WASI_FILETYPE_BLOCK_DEVICE;
+    out.fs_filetype = buf.type;
 
     return __WASI_ESUCCESS;
 }
