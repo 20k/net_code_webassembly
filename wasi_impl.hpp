@@ -889,6 +889,7 @@ struct preopened
 
 preopened file_sandbox;
 
+///TODO: Implement the other clocks
 __wasi_errno_t __wasi_clock_res_get(__wasi_clockid_t clock_id, wasi_ptr_t<__wasi_timestamp_t> resolution)
 {
     if(clock_id == __WASI_CLOCK_MONOTONIC)
@@ -1006,6 +1007,7 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
     return __WASI_EBADF;
 }
 
+///TODO: Do I need to implement this?
 __wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len, __wasi_advice_t advice)
 {
     if(!file_sandbox.has_fd(fd))
@@ -1029,10 +1031,7 @@ __wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
 
     __wasi_errno_t err = file_sandbox.datasync(fd);
 
-    if(err != __WASI_ESUCCESS)
-        return err;
-
-    return __WASI_ESUCCESS;
+    return err;
 }
 
 __wasi_errno_t __wasi_fd_sync(__wasi_fd_t fd)
@@ -1045,12 +1044,10 @@ __wasi_errno_t __wasi_fd_sync(__wasi_fd_t fd)
 
     __wasi_errno_t err = file_sandbox.sync(fd);
 
-    if(err != __WASI_ESUCCESS)
-        return err;
-
-    return __WASI_ESUCCESS;
+    return err;
 }
 
+///TODO: Mostly fine but might want to stat real file to check for external influences
 __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
 {
     printf("FdStat %i\n", fd);
@@ -1074,6 +1071,8 @@ __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
     return __WASI_ESUCCESS;
 }
 
+///TODO: Do I actually need to do anything here?
+///I suppose I at least need to implement append and sync, switching
 __wasi_errno_t __wasi_fd_fdstat_set_flags(__wasi_fd_t fd, __wasi_fdflags_t flags)
 {
     if(!file_sandbox.has_fd(fd))
@@ -1135,6 +1134,7 @@ __wasi_errno_t __wasi_fd_fdstat_set_rights(__wasi_fd_t fd, __wasi_rights_t fs_ri
 
 #undef CLEARBIT
 
+///TODO: Clean this up
 __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat_t> buf)
 {
     if(!file_sandbox.has_fd(fd))
@@ -1176,6 +1176,7 @@ __wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_
     return __WASI_ESUCCESS;
 }
 
+///TODO: This
 __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags)
 {
     if(!file_sandbox.has_fd(fd))
@@ -1352,6 +1353,7 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
     return __WASI_ESUCCESS;
 }
 
+///TODO: This
 __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_whence_t whence, PTR(__wasi_filesize_t) newoffset)
 {
     printf("Seek\n");
