@@ -241,6 +241,8 @@ __wasi_errno_t errno_to_wasi(errno_t err)
 #define O_RANDOM _O_RANDOM
 #define O_ACCMODE _O_ACCMODE
 
+///handle based rename is SetFileInformationByHandle
+
 __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
 {
     DWORD dwCreationDisposition = OPEN_EXISTING;
@@ -408,18 +410,24 @@ struct preopened
                                 __WASI_RIGHT_FD_ALLOCATE |
                                 __WASI_RIGHT_PATH_CREATE_DIRECTORY |
                                 __WASI_RIGHT_PATH_CREATE_FILE |
+                                __WASI_RIGHT_PATH_LINK_SOURCE |
+                                __WASI_RIGHT_PATH_LINK_TARGET |
                                 __WASI_RIGHT_PATH_OPEN |
                                 __WASI_RIGHT_FD_READDIR |
                                 __WASI_RIGHT_PATH_READLINK |
+                                __WASI_RIGHT_PATH_RENAME_SOURCE |
+                                __WASI_RIGHT_PATH_RENAME_TARGET |
                                 __WASI_RIGHT_PATH_FILESTAT_GET |
                                 __WASI_RIGHT_PATH_FILESTAT_SET_SIZE |
                                 __WASI_RIGHT_PATH_FILESTAT_SET_TIMES |
                                 __WASI_RIGHT_FD_FILESTAT_GET |
                                 __WASI_RIGHT_FD_FILESTAT_SET_SIZE |
                                 __WASI_RIGHT_FD_FILESTAT_SET_TIMES |
-                                __WASI_RIGHT_PATH_UNLINK_FILE |
+                                __WASI_RIGHT_PATH_SYMLINK |
                                 __WASI_RIGHT_PATH_REMOVE_DIRECTORY |
-                                __WASI_RIGHT_POLL_FD_READWRITE;
+                                __WASI_RIGHT_PATH_UNLINK_FILE |
+                                __WASI_RIGHT_POLL_FD_READWRITE |
+                                __WASI_RIGHT_SOCK_SHUTDOWN;
 
         desc.fs_rights_inheriting = desc.fs_rights_base;
 
@@ -436,6 +444,18 @@ struct preopened
         return desc;
     }
 
+    bool path_in_sandbox(const std::filesystem::path& path)
+    {
+        std::filesystem::path rel = path.std::filesystem::path::lexically_relative(std::filesystem::path(files[3].relative_path));
+
+        std::string relative_path = rel.string();
+
+        if(relative_path.size() > 0 && relative_path[0] == '.' && relative_path != ".")
+            return false;
+
+        return true;
+    }
+
     __wasi_errno_t make_file(__wasi_fd_t base, const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
     {
         if(!has_fd(base))
@@ -449,13 +469,9 @@ struct preopened
 
         std::filesystem::path their_requested_full = mine/theirs;
 
-        std::filesystem::path rel = their_requested_full.std::filesystem::path::lexically_relative(std::filesystem::path(files[3].relative_path));
-
         std::filesystem::path fin = std::filesystem::path(their_requested_full).lexically_normal();
 
-        std::string relative_path = rel.string();
-
-        if(relative_path.size() > 0 && relative_path[0] == '.' && relative_path != ".")
+        if(!path_in_sandbox(their_requested_full))
             return __WASI_EACCES;
 
         ///should be sandbox/something
@@ -474,18 +490,24 @@ struct preopened
                                 __WASI_RIGHT_FD_ALLOCATE |
                                 __WASI_RIGHT_PATH_CREATE_DIRECTORY |
                                 __WASI_RIGHT_PATH_CREATE_FILE |
+                                __WASI_RIGHT_PATH_LINK_SOURCE |
+                                __WASI_RIGHT_PATH_LINK_TARGET |
                                 __WASI_RIGHT_PATH_OPEN |
                                 __WASI_RIGHT_FD_READDIR |
                                 __WASI_RIGHT_PATH_READLINK |
+                                __WASI_RIGHT_PATH_RENAME_SOURCE |
+                                __WASI_RIGHT_PATH_RENAME_TARGET |
                                 __WASI_RIGHT_PATH_FILESTAT_GET |
                                 __WASI_RIGHT_PATH_FILESTAT_SET_SIZE |
                                 __WASI_RIGHT_PATH_FILESTAT_SET_TIMES |
                                 __WASI_RIGHT_FD_FILESTAT_GET |
                                 __WASI_RIGHT_FD_FILESTAT_SET_SIZE |
                                 __WASI_RIGHT_FD_FILESTAT_SET_TIMES |
-                                __WASI_RIGHT_PATH_UNLINK_FILE |
+                                __WASI_RIGHT_PATH_SYMLINK |
                                 __WASI_RIGHT_PATH_REMOVE_DIRECTORY |
-                                __WASI_RIGHT_POLL_FD_READWRITE;
+                                __WASI_RIGHT_PATH_UNLINK_FILE |
+                                __WASI_RIGHT_POLL_FD_READWRITE |
+                                __WASI_RIGHT_SOCK_SHUTDOWN;
 
         desc.fs_rights_inheriting = desc.fs_rights_base;
 
@@ -824,7 +846,7 @@ __wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
 
     __wasi_errno_t err = file_sandbox.datasync(fd);
 
-    if(err)
+    if(err != __WASI_ESUCCESS)
         return err;
 
     return __WASI_ESUCCESS;
@@ -840,7 +862,7 @@ __wasi_errno_t __wasi_fd_sync(__wasi_fd_t fd)
 
     __wasi_errno_t err = file_sandbox.sync(fd);
 
-    if(err)
+    if(err != __WASI_ESUCCESS)
         return err;
 
     return __WASI_ESUCCESS;
@@ -848,7 +870,7 @@ __wasi_errno_t __wasi_fd_sync(__wasi_fd_t fd)
 
 __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
 {
-    printf("FdStat\n");
+    printf("FdStat %i\n", fd);
 
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
@@ -965,7 +987,7 @@ __wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_
 
     __wasi_errno_t err = file_sandbox.resize_fd(fd, st_size);
 
-    if(err)
+    if(err != __WASI_ESUCCESS)
         return err;
 
     return __WASI_ESUCCESS;
@@ -1197,6 +1219,54 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
     return __WASI_ESUCCESS;
 }
 
+std::string make_str(const wasi_ptr_t<char> ptr, wasi_size_t len)
+{
+    if(len == 0)
+        return "";
+
+    ptr[0];
+    ptr[len-1];
+
+    return std::string(&ptr[0], len);
+}
+
+__wasi_errno_t __wasi_path_rename(__wasi_fd_t old_fd,
+                                    const wasi_ptr_t<char>old_path,
+                                    wasi_size_t old_path_len,
+                                    __wasi_fd_t new_fd,
+                                    const wasi_ptr_t<char>new_path,
+                                    wasi_size_t new_path_len)
+{
+    printf("PATH RENAME\n");
+
+    if(!file_sandbox.has_fd(old_fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.has_fd(new_fd))
+        return __WASI_EBADF;
+
+    const file_desc& v1 = file_sandbox.files[old_fd];
+    const file_desc& v2 = file_sandbox.files[new_fd];
+
+    std::filesystem::path p1 = std::filesystem::path(v1.relative_path) / std::filesystem::path(make_str(old_path, old_path_len));
+    std::filesystem::path p2 = std::filesystem::path(v2.relative_path) / std::filesystem::path(make_str(new_path, new_path_len));
+
+    printf("NOPE\n");
+
+    if(!file_sandbox.path_in_sandbox(p1) || !file_sandbox.path_in_sandbox(p2))
+        return __WASI_EACCES;
+
+    int rval = rename(p1.string().c_str(), p2.string().c_str());
+
+    printf("Try rename\n");
+
+    if(rval != 0)
+        return WASI_ERRNO();
+
+    std::cout << "Renamed " << p1 << " to " << p2 << std::endl;
+
+    return __WASI_ESUCCESS;
+}
 
 __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> iovs, wasi_size_t iovs_len, wasi_ptr_t<uint32_t> nread)
 {
