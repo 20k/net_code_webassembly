@@ -245,6 +245,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
 #define fdatasync _commit
 #define fsync _commit
 #define unlink _unlink
+#define lseek _lseeki64
 
 #define O_RDONLY _O_RDONLY
 #define O_WRONLY _O_WRONLY
@@ -1195,8 +1196,6 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //fd_pwrite
 //fd_readdir
 //fd_renumber
-//fd_seek
-//fd_tell
 //path_create_directory
 //path_filestat_get
 //path_filestat_set_times
@@ -1353,7 +1352,6 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
     return __WASI_ESUCCESS;
 }
 
-///TODO: This
 __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_whence_t whence, PTR(__wasi_filesize_t) newoffset)
 {
     printf("Seek\n");
@@ -1364,7 +1362,34 @@ __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_SEEK))
         return __WASI_ENOTCAPABLE;
 
-    return __WASI_EBADF;
+    int64_t off = lseek(fd, offset, whence);
+
+    if(off == -1)
+        return WASI_ERRNO();
+
+    *newoffset = off;
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_tell(__wasi_fd_t fd, wasi_ptr_t<__wasi_filesize_t> newoffset)
+{
+    printf("Tell\n");
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_TELL))
+        return __WASI_ENOTCAPABLE;
+
+    int64_t off = lseek(fd, 0, SEEK_CUR);
+
+    if(off == -1)
+        return WASI_ERRNO();
+
+    *newoffset = off;
+
+    return __WASI_ESUCCESS;
 }
 
 __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
