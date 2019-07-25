@@ -213,6 +213,8 @@ struct cfstat_info
 };
 
 __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
+///closes fd, returns new_fd
+__wasi_errno_t c_setfnctl(int64_t fd, __wasi_fdflags_t fdflags, int64_t* new_fd);
 
 #ifdef _WIN32
 #include <io.h>
@@ -220,6 +222,8 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
 #define stat __stat64
 #define fstat _fstat64
 #define fileno _fileno
+
+#define DEFAULT_FILE_SHARING 0
 
 #define	_S_IFBLK	0x3000
 
@@ -288,12 +292,12 @@ intptr_t get_std_inouterr_platform_handle(int which)
     return -1;
 }
 
-__wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
+__wasi_errno_t to_winapi_handle(int64_t fd, HANDLE* out)
 {
-    assert(buf != nullptr);
+    if(out == nullptr)
+        return __WASI_EINVAL;
 
-    if(fd < 0)
-        return __WASI_EBADF;
+    *out = INVALID_HANDLE_VALUE;
 
     intptr_t handle = 0;
 
@@ -315,9 +319,51 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
             return __WASI_EBADF;
     }
 
+    *out = (HANDLE)handle;
+
+    return __WASI_ESUCCESS;
+}
+
+/*__wasi_errno_t c_setfnctl(int64_t fd, __wasi_fdflags_t fdflags, int64_t* new_fd)
+{
+    *new_fd = fd;
+
+    if(fd == 0 || fd == 1 || fd == 2)
+        return __WASI_EBADF;
+
+    if(new_fd == nullptr)
+        return __WASI_EINVAL;
+
+    HANDLE handle;
+    __wasi_errno_t err_1 = to_winapi_handle(fd, &handle);
+
+    if(err_1 != __WASI_ESUCCESS)
+        return err_1;
+
+    HANDLE next_handle = INVALID_HANDLE_VALUE;
+
+    DWORD dwDesiredAccess = DEFAULT_FILE_SHARING;
+
+    if((fdflags & __WASI_FDFLAG_APPEND) > 0)
+        dwDesiredAccess |=
+}*/
+
+__wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
+{
+    assert(buf != nullptr);
+
+    if(fd < 0)
+        return __WASI_EBADF;
+
+    HANDLE handle;
+    __wasi_errno_t err_1 = to_winapi_handle(fd, &handle);
+
+    if(err_1 != __WASI_ESUCCESS)
+        return err_1;
+
     buf->type = __WASI_FILETYPE_UNKNOWN;
 
-    DWORD fret = GetFileType((HANDLE)handle);
+    DWORD fret = GetFileType(handle);
 
     if(fret == FILE_TYPE_CHAR)
         buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
@@ -339,7 +385,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
     if(fret == FILE_TYPE_DISK)
     {
         BY_HANDLE_FILE_INFORMATION fhandle = {};
-        GetFileInformationByHandle((HANDLE)handle, &fhandle);
+        GetFileInformationByHandle(handle, &fhandle);
 
         buf->type = __WASI_FILETYPE_REGULAR_FILE;
 
@@ -378,7 +424,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
             dwCreationDisposition = CREATE_NEW;
     }
 
-    int share_flags = 0;
+    int share_flags = DEFAULT_FILE_SHARING;
 
     if((open_flags & __WASI_O_DIRECTORY) > 0)
     {
@@ -514,6 +560,31 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     return __WASI_ESUCCESS;
 }
 #endif // _WIN32
+
+__wasi_errno_t c_lseek(int64_t fd, __wasi_filedelta_t offset, __wasi_whence_t origin, int64_t* off)
+{
+    int which = 0;
+
+    if(origin == __WASI_WHENCE_CUR)
+        which = SEEK_CUR;
+
+    if(origin == __WASI_WHENCE_END)
+        which = SEEK_END;
+
+    if(origin == __WASI_WHENCE_SET)
+        which = SEEK_SET;
+
+    *off = 0;
+
+    int64_t res = lseek(fd, offset, which);
+
+    if(res == -1L)
+        return WASI_ERRNO();
+
+    *off = res;
+
+    return __WASI_ESUCCESS;
+}
 
 struct preopened
 {
@@ -836,10 +907,19 @@ struct preopened
 
         size_t processed = 0;
 
-        file_desc& desc = files[fd];
+        const file_desc& desc = files[fd];
 
         if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE && desc.fs_filetype != __WASI_FILETYPE_CHARACTER_DEVICE)
             return __WASI_EBADF;
+
+        if((desc.fs_flags & __WASI_FDFLAG_APPEND) > 0)
+        {
+            int64_t off;
+            __wasi_errno_t err = c_lseek(desc.portable_fd, 0, __WASI_WHENCE_END, &off);
+
+            if(err != __WASI_ESUCCESS)
+                return err;
+        }
 
         ///so. I think it might not be my responsibility to do this
         //while(processed < len)
@@ -868,7 +948,7 @@ struct preopened
 
         size_t processed = 0;
 
-        file_desc& desc = files[fd];
+        const file_desc& desc = files[fd];
 
         if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE && desc.fs_filetype != __WASI_FILETYPE_CHARACTER_DEVICE)
             return __WASI_EBADF;
@@ -1188,8 +1268,6 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
     //return __WASI_ESUCCESS;
 }
 
-///0/1/2 fds need to be merged into fd_write and fd_read
-
 //fd_pread
 //fd_pwrite
 //fd_readdir
@@ -1205,8 +1283,6 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //sock_recv
 //sock_send
 //sock_shutdown
-
-///implement path_open first
 
 #include <random>
 
@@ -1360,10 +1436,11 @@ __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_SEEK))
         return __WASI_ENOTCAPABLE;
 
-    int64_t off = lseek(fd, offset, whence);
+    int64_t off;
+    __wasi_errno_t err = c_lseek(fd, offset, whence, &off);
 
-    if(off == -1)
-        return WASI_ERRNO();
+    if(err != __WASI_ESUCCESS)
+        return err;
 
     *newoffset = off;
 
@@ -1380,9 +1457,10 @@ __wasi_errno_t __wasi_fd_tell(__wasi_fd_t fd, wasi_ptr_t<__wasi_filesize_t> newo
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_TELL))
         return __WASI_ENOTCAPABLE;
 
-    int64_t off = lseek(fd, 0, SEEK_CUR);
+    int64_t off;
+    __wasi_errno_t err = c_lseek(fd, 0, __WASI_WHENCE_CUR, &off);
 
-    if(off == -1)
+    if(err != __WASI_ESUCCESS)
         return WASI_ERRNO();
 
     *newoffset = off;
