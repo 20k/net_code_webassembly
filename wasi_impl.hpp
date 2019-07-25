@@ -73,6 +73,17 @@ struct wasi_ptr_t
 
 #endif // HOST
 
+std::string make_str(const wasi_ptr_t<char> ptr, wasi_size_t len)
+{
+    if(len == 0)
+        return "";
+
+    ptr[0];
+    ptr[len-1];
+
+    return std::string(&ptr[0], len);
+}
+
 using wasi_ptr_raw = uint32_t;
 
 #include <map>
@@ -233,6 +244,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
 #define ftruncate _chsize
 #define fdatasync _commit
 #define fsync _commit
+#define unlink _unlink
 
 #define O_RDONLY _O_RDONLY
 #define O_WRONLY _O_WRONLY
@@ -1372,12 +1384,7 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
     if(path_len == 0)
         return __WASI_EACCES;
 
-    std::string pth;
-
-    for(size_t i=0; i < path_len; i++)
-    {
-        pth += std::string(1, path[i]);
-    }
+    std::string pth = make_str(path, path_len);
 
     file_desc out;
     __wasi_errno_t err = file_sandbox.make_file(dirfd, pth, out, oflags);
@@ -1390,15 +1397,26 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
     return __WASI_ESUCCESS;
 }
 
-std::string make_str(const wasi_ptr_t<char> ptr, wasi_size_t len)
+__wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, wasi_ptr_t<char> path, wasi_size_t path_len)
 {
-    if(len == 0)
-        return "";
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
 
-    ptr[0];
-    ptr[len-1];
+    std::string their_path = make_str(path, path_len);
 
-    return std::string(&ptr[0], len);
+    const file_desc& v1 = file_sandbox.files[fd];
+
+    std::filesystem::path p1 = std::filesystem::path(v1.relative_path) / std::filesystem::path(their_path);
+
+    if(!file_sandbox.path_in_sandbox(p1))
+        return __WASI_EACCES;
+
+    int res = unlink(their_path.c_str());
+
+    if(res != 0)
+        return WASI_ERRNO();
+
+    return __WASI_ESUCCESS;
 }
 
 __wasi_errno_t __wasi_path_rename(__wasi_fd_t old_fd,
