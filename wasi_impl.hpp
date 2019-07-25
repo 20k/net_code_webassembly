@@ -840,7 +840,8 @@ struct preopened
         if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE && desc.fs_filetype != __WASI_FILETYPE_CHARACTER_DEVICE)
             return __WASI_EBADF;
 
-        while(processed < len)
+        ///so. I think it might not be my responsibility to do this
+        //while(processed < len)
         {
             int next = write(desc.portable_fd, &data[processed], len - processed);
 
@@ -871,7 +872,7 @@ struct preopened
         if(desc.fs_filetype != __WASI_FILETYPE_REGULAR_FILE && desc.fs_filetype != __WASI_FILETYPE_CHARACTER_DEVICE)
             return __WASI_EBADF;
 
-        while(processed < len)
+        //while(processed < len)
         {
             int next = read(desc.portable_fd, &data[processed], len - processed);
 
@@ -1533,6 +1534,8 @@ __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> i
 
         wasi_ptr_t<char> tchr(0);
         tchr.val = buf.val;
+
+        printf("BUF LEN %i\n", single.buf_len);
 
         size_t out_bytes = 0;
         __wasi_errno_t err = file_sandbox.read_fd(fd, tchr, single.buf_len, out_bytes);
