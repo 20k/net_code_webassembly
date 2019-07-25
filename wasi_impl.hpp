@@ -1402,7 +1402,8 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
                                 __wasi_fdflags_t fs_flags,
                                 wasi_ptr_t<__wasi_fd_t> fd)
 {
-    assert(file_sandbox.has_fd(dirfd));
+    if(!file_sandbox.has_fd(dirfd))
+        return __WASI_EBADF;
 
     printf("Openasdfasdf\n");
 
