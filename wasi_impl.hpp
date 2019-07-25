@@ -214,6 +214,7 @@ struct cfstat_info
 
 __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
 ///closes fd, returns new_fd
+///if necessary would implement through reopenfile
 __wasi_errno_t c_setfnctl(int64_t fd, __wasi_fdflags_t fdflags, int64_t* new_fd);
 
 #ifdef _WIN32
