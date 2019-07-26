@@ -484,7 +484,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
     return __WASI_ESUCCESS;
 }
 
-__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
+__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags, __wasi_lookupflags_t symlink_policy)
 {
     DWORD dwCreationDisposition = OPEN_EXISTING;
 
@@ -710,16 +710,16 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
 
 __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle, __wasi_lookupflags_t symlink_policy)
 {
-    *handle = -1;
-
     if(handle == nullptr)
         return __WASI_EINVAL;
 
-    int flags = 0;
+    *handle = -1;
+
+    int flags = O_RDONLY;
 
     if((symlink_policy & __WASI_LOOKUP_SYMLINK_FOLLOW) == 0)
     {
-        flags = O_NOFOLLOW;
+        flags |= O_NOFOLLOW | O_PATH;
     }
 
     *handle = open(path.c_str(), flags);
@@ -731,12 +731,12 @@ __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle, __was
 }
 
 ///need to test directory creation behaviour on linux
-__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
+__wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags, __wasi_lookupflags_t symlink_policy)
 {
     int flags = 0;
 
     if((open_flags & __WASI_O_DIRECTORY) == 0)
-        flags = O_RDWR;
+        flags |= O_RDWR;
 
     if((open_flags & __WASI_O_CREAT) > 0)
         flags |= O_CREAT;
@@ -750,7 +750,10 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     if((open_flags & __WASI_O_DIRECTORY) > 0)
         flags |= O_DIRECTORY;
 
-    out.portable_fd = open(path.c_str(), flags);
+    if((symlink_policy & __WASI_LOOKUP_SYMLINK_FOLLOW) == 0)
+        flags |= (O_NOFOLLOW | O_PATH);
+
+    out.portable_fd = open(path.c_str(), flags, S_IRWXU | S_IRWXG | S_IRWXO);
 
     if(out.portable_fd == -1)
         return WASI_ERRNO();
@@ -922,7 +925,7 @@ struct preopened
 
         assert(dir_res == __WASI_ESUCCESS || dir_res == __WASI_EEXIST);
 
-        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, __WASI_O_DIRECTORY);
+        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, __WASI_O_DIRECTORY, __WASI_LOOKUP_SYMLINK_FOLLOW);
 
         std::cout << "err " << err << std::endl;
 
@@ -946,7 +949,7 @@ struct preopened
         return true;
     }
 
-    __wasi_errno_t make_file(__wasi_fd_t base, const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
+    __wasi_errno_t make_file(__wasi_fd_t base, const std::string& path, file_desc& out, __wasi_oflags_t open_flags, __wasi_lookupflags_t symlink_policy)
     {
         if(!has_fd(base))
             return __WASI_EBADF;
@@ -1008,7 +1011,7 @@ struct preopened
 
         std::cout << "Flags? " << open_flags << std::endl;
 
-        __wasi_errno_t err = get_read_fd_wrapper(final_path, desc, open_flags);
+        __wasi_errno_t err = get_read_fd_wrapper(final_path, desc, open_flags, symlink_policy);
 
         if(err != __WASI_ESUCCESS)
             return err;
@@ -1900,7 +1903,7 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
     std::string pth = make_str(path, path_len);
 
     file_desc out;
-    __wasi_errno_t err = file_sandbox.make_file(dirfd, pth, out, oflags);
+    __wasi_errno_t err = file_sandbox.make_file(dirfd, pth, out, oflags, dirflags);
 
     if(err != __WASI_ESUCCESS)
         return err;
@@ -1942,6 +1945,8 @@ __wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, const wasi_ptr_t<char> pa
 
         return __WASI_EINVAL;
     }
+
+    std::cout << "Trying to unlink " << p1.string() << std::endl;
 
     int res = unlink(p1.string().c_str());
 
