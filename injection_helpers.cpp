@@ -468,6 +468,7 @@ std::map<std::string, std::map<std::string, runtime::externval>> get_env_helpers
     WASI_IMPORT(path_rename);
     WASI_IMPORT(path_unlink_file);
     WASI_IMPORT(path_remove_directory);
+    WASI_IMPORT(fd_readdir);
 
     return vals;
 }

@@ -400,8 +400,17 @@ namespace runtime
     {
         uint32_t ptr = get(v, minst, uint32_t());
 
-        if(ptr + sizeof(T) > minst.dat.size())
-            throw std::runtime_error("Ptr out of bounds");
+        if constexpr(std::is_same_v<T, void>)
+        {
+            if(ptr > minst.dat.size())
+                throw std::runtime_error("Ptr out of bounds");
+        }
+
+        if constexpr(!std::is_same_v<T, void>)
+        {
+            if(ptr + sizeof(T) > minst.dat.size())
+                throw std::runtime_error("Ptr out of bounds");
+        }
 
         wasi_ptr_t<T> ret;
         ret.val = ptr;

@@ -90,6 +90,7 @@ using wasi_ptr_raw = uint32_t;
 #include <filesystem>
 #include <set>
 #include <thread>
+#include "tinydir.h"
 
 #define NO_OLDNAMES
 
@@ -424,6 +425,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         return err_1;
 
     bool full_stat = false;
+    bool is_disk = false;
 
     FILE_ATTRIBUTE_TAG_INFO tag_info;
     GetFileInformationByHandleEx(handle, FileAttributeTagInfo, &tag_info, sizeof(tag_info));
@@ -460,6 +462,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         if(fret == FILE_TYPE_DISK)
         {
             full_stat = true;
+            is_disk = true;
         }
     }
 
@@ -469,10 +472,13 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         BY_HANDLE_FILE_INFORMATION fhandle = {};
         GetFileInformationByHandle(handle, &fhandle);
 
-        buf->type = __WASI_FILETYPE_REGULAR_FILE;
+        if(is_disk)
+        {
+            buf->type = __WASI_FILETYPE_REGULAR_FILE;
 
-        if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
-            buf->type = __WASI_FILETYPE_DIRECTORY;
+            if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
+                buf->type = __WASI_FILETYPE_DIRECTORY;
+        }
 
         buf->file_size = lo_hi_to_64(fhandle.nFileSizeLow, fhandle.nFileSizeHigh);
 
@@ -1657,6 +1663,127 @@ __wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags
         return WASI_ERRNO();
 
     return set_err;
+}
+
+__wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_size_t buf_len, __wasi_dircookie_t cookie, wasi_ptr_t<wasi_size_t> used)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_READDIR))
+        return __WASI_ENOTCAPABLE;
+
+    if(buf_len == 0)
+        return __WASI_ESUCCESS;
+
+    wasi_size_t used_buf = 0;
+    __wasi_dircookie_t current_entry = cookie;
+
+    wasi_ptr_t<char> buf;
+    buf.val = vbuf.val;
+
+    #ifdef _WIN32
+    constexpr int win_allocation_size = sizeof(_FILE_ID_BOTH_DIR_INFO) + MAX_PATH + 1;
+
+    char win_alloc_backing[win_allocation_size + 32] = {};
+
+    size_t alloc = win_allocation_size + 32;
+    void* in_ptr = win_alloc_backing;
+    char* win_alloc = (char*)std::align(8, win_allocation_size, in_ptr, alloc);
+
+    assert(win_alloc);
+
+    bool iterate = true;
+    bool restart = true;
+
+    HANDLE handle;
+    __wasi_errno_t err_1 = to_winapi_handle(file_sandbox.files[fd].portable_fd, &handle);
+
+    if(err_1 != __WASI_ESUCCESS)
+        return err_1;
+
+    do
+    {
+        memset(win_alloc, 0, win_allocation_size);
+
+        bool success = false;
+
+        if(restart)
+            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, win_alloc, win_allocation_size);
+        else
+            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, win_allocation_size);
+
+        restart = false;
+
+        if(!success)
+            return __WASI_EBADF;
+
+        FILE_ID_BOTH_DIR_INFO* inf = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
+
+        if(inf->FileIndex < cookie)
+        {
+            ///asking for more files but none available
+            if(inf->NextEntryOffset == 0)
+                return __WASI_EINVAL;
+
+            continue;
+        }
+
+        __wasi_dirent_t dir;
+        dir.d_ino = inf->FileId.QuadPart;
+        dir.d_namlen = inf->FileNameLength;
+
+        dir.d_type = __WASI_FILETYPE_REGULAR_FILE;
+
+        if((inf->FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            dir.d_type = __WASI_FILETYPE_DIRECTORY;
+
+        if((inf->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+            dir.d_type = __WASI_FILETYPE_SYMBOLIC_LINK;
+
+        __wasi_dircookie_t d_next = current_entry + 1;
+
+        if(inf->NextEntryOffset == 0)
+        {
+            d_next = 0;
+            iterate = false;
+        }
+
+        dir.d_next = d_next;
+
+        wasi_size_t struct_len = sizeof(__wasi_dirent_t);
+        wasi_size_t end_with_struct = used_buf + struct_len;
+        wasi_size_t end_with_struct_and_name = used_buf + struct_len + dir.d_namlen;
+
+        int lused = 0;
+
+        for(wasi_size_t i=used_buf; i < buf_len && i < end_with_struct; i++)
+        {
+            size_t idx = i - used_buf;
+
+            char* as_ptr = (char*)&dir;
+            buf[i] = as_ptr[idx];
+            lused++;
+        }
+
+        for(wasi_size_t i=end_with_struct; i < buf_len && i < end_with_struct_and_name; i++)
+        {
+            size_t idx = i - end_with_struct;
+
+            buf[i] = inf->FileName[idx];
+            lused++;
+        }
+
+        used_buf += lused;
+        *used = used_buf;
+    }
+    while(iterate);
+
+    return __WASI_ESUCCESS;
+
+    #endif // _WIN32
+
+    return __WASI_ENOTCAPABLE;
 }
 
 //fd_pread
