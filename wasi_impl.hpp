@@ -476,13 +476,14 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
         {
             DWORD err = GetLastError();
 
-            if(err == ERROR_ALREADY_EXISTS)
+            if(err == ERROR_ALREADY_EXISTS && ((open_flags & __WASI_O_EXCL) > 0))
                 return __WASI_EEXIST;
 
             if(err == ERROR_PATH_NOT_FOUND)
                 return __WASI_ENOENT;
 
-            return __WASI_EACCES; ///?
+            if(err != ERROR_ALREADY_EXISTS)
+                return __WASI_EACCES;
         }
 
         dwCreationDisposition = OPEN_EXISTING;
@@ -732,7 +733,7 @@ struct preopened
         desc.fs_flags = __WASI_FDFLAG_SYNC;
         desc.is_preopen = true;
 
-        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, __WASI_O_DIRECTORY);
+        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, __WASI_O_DIRECTORY | __WASI_O_CREAT);
 
         assert(err == __WASI_ESUCCESS);
 
