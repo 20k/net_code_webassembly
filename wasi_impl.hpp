@@ -1329,7 +1329,6 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //fd_pread
 //fd_pwrite
 //fd_readdir
-//fd_renumber
 //path_create_directory
 //path_filestat_get
 //path_filestat_set_times
