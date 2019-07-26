@@ -211,6 +211,10 @@ struct cfstat_info
 {
     __wasi_filetype_t type = __WASI_FILETYPE_UNKNOWN;
     uint64_t file_size = 0;
+
+    uint64_t atim = 0;
+    uint64_t mtim = 0;
+    uint64_t ctim = 0;
 };
 
 __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
@@ -223,6 +227,10 @@ __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle);
 __wasi_errno_t cstat(const std::string& path, cfstat_info* buf);
 
 __wasi_errno_t c_create_directory(const std::string& path);
+
+__wasi_errno_t c_set_times(int64_t fd, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags);
+
+#define CLOCK_AS_NANOSECONDS(x) std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::x::now().time_since_epoch()).count()
 
 #ifdef _WIN32
 #include <io.h>
@@ -385,6 +393,16 @@ __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle)
     return __WASI_ESUCCESS;
 }
 
+uint64_t lo_hi_to_64(uint32_t lo, uint32_t hi)
+{
+    return (((uint64_t)hi) << 32) | ((uint64_t)lo);
+}
+
+uint64_t filetime_to_64(FILETIME f)
+{
+    return lo_hi_to_64(f.dwLowDateTime, f.dwHighDateTime);
+}
+
 __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
 {
     assert(buf != nullptr);
@@ -429,7 +447,11 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         if((fhandle.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0)
             buf->type = __WASI_FILETYPE_DIRECTORY;
 
-        buf->file_size = (((uint64_t)fhandle.nFileSizeHigh) << 32) | ((uint64_t)fhandle.nFileSizeLow);
+        buf->file_size = lo_hi_to_64(fhandle.nFileSizeLow, fhandle.nFileSizeHigh);
+
+        buf->atim = filetime_to_64(fhandle.ftLastAccessTime);
+        buf->mtim = filetime_to_64(fhandle.ftLastWriteTime);
+        buf->ctim = filetime_to_64(fhandle.ftCreationTime);
     }
 
     return __WASI_ESUCCESS;
@@ -548,6 +570,46 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     return __WASI_ESUCCESS;
 }
 
+__wasi_errno_t c_set_times(int64_t fd, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags)
+{
+    HANDLE out = INVALID_HANDLE_VALUE;
+    __wasi_errno_t err = to_winapi_handle(fd, &out);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
+    FILE_BASIC_INFO info = {};
+    bool success = GetFileInformationByHandleEx(out, FileBasicInfo, &info, sizeof(info));
+
+    if(!success)
+        return __WASI_EACCES;
+
+    if((fstflags & __WASI_FILESTAT_SET_ATIM) > 0)
+    {
+        info.LastAccessTime.QuadPart = st_atim;
+    }
+
+    if((fstflags & __WASI_FILESTAT_SET_ATIM_NOW) > 0)
+    {
+        info.LastAccessTime.QuadPart = CLOCK_AS_NANOSECONDS(system_clock);
+    }
+
+    if((fstflags & __WASI_FILESTAT_SET_MTIM) > 0)
+    {
+        info.LastWriteTime.QuadPart = st_mtim;
+    }
+
+    if((fstflags & __WASI_FILESTAT_SET_MTIM_NOW))
+    {
+        info.LastWriteTime.QuadPart = CLOCK_AS_NANOSECONDS(system_clock);
+    }
+
+    if(!SetFileInformationByHandle(out, FileBasicInfo, &info, sizeof(info)))
+        return __WASI_EACCES;
+
+    return __WASI_ESUCCESS;
+}
+
 #define write _write
 #define read _read
 
@@ -564,6 +626,26 @@ intptr_t get_std_inouterr_platform_handle(int which)
 
     return which;
 }
+
+uint64_t timespec_to_u64(struct timespec in)
+{
+    uint64_t top = in.tv_sec & 0xFFFFFFFF;
+    uint64_t bot = in.tv_nsec & 0xFFFFFFFF;
+
+    return (top << 32) | bot;
+}
+
+struct timespec u64_to_timespec(uint64_t in)
+{
+    uint64_t top = in >> 32;
+    uint64_t bot = in & 0xFFFFFFFF;
+
+    struct timespec ret;
+    ret.tv_sec = top;
+    ret.tv_nsec = bot;
+
+    return ret;
+};
 
 __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
 {
@@ -589,6 +671,10 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         buf->type = __WASI_FILETYPE_BLOCK_DEVICE;
 
     buf->file_size = st.st_size;
+
+    buf->atim = timespec_to_u64(st.st_atim);
+    buf->mtim = timespec_to_u64(st.st_mtim);
+    buf->ctim = timespec_to_u64(st.st_ctim);
 
     return __WASI_ESUCCESS;
 }
@@ -640,6 +726,48 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
     return __WASI_ESUCCESS;
 }
+
+__wasi_errno_t c_set_times(int64_t fd, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags)
+{
+    struct timespec times[2] = {};
+
+    cfstat_info cf;
+    __wasi_errno_t err = cfstat(fd, &cf);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
+    times[0] = u64_to_timespec(cf.atim);
+    times[1] = u64_to_timespec(cf.mtim);
+
+    if((fstflags & __WASI_FILESTAT_SET_ATIM) > 0)
+    {
+        times[0] = u64_to_timespec(st_atim);
+    }
+
+    if((fstflags & __WASI_FILESTAT_SET_ATIM_NOW) > 0)
+    {
+        times[0] = u64_to_timespec(CLOCK_AS_NANOSECONDS(system_clock));
+    }
+
+    if((fstflags & __WASI_FILESTAT_SET_MTIM) > 0)
+    {
+        times[1] = u64_to_timespec(st_mtim);
+    }
+
+    if((fstflags & __WASI_FILESTAT_SET_MTIM_NOW) > 0)
+    {
+        times[1] = u64_to_timespec(CLOCK_AS_NANOSECONDS(system_clock));
+    }
+
+    int res = futimens(fd, times);
+
+    if(res != 0)
+        return WASI_ERRNO();
+
+    return __WASI_ESUCCESS;
+}
+
 #endif // _WIN32
 
 __wasi_errno_t c_create_directory(const std::string& path)
@@ -1465,8 +1593,31 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_FILESTAT_SET_TIMES))
         return __WASI_ENOTCAPABLE;
 
-    return __WASI_ENOTCAPABLE;
-    //return __WASI_ESUCCESS;
+    return c_set_times(file_sandbox.files[fd].portable_fd, st_atim, st_mtim, fstflags);
+}
+
+__wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags_t flags, const wasi_ptr_t<char> path, wasi_size_t path_len, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_PATH_FILESTAT_SET_TIMES))
+        return __WASI_ENOTCAPABLE;
+
+    int64_t handle = -1;
+    __wasi_errno_t err = c_get_read_handle(make_str(path, path_len), &handle);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
+    __wasi_errno_t set_err = c_set_times(handle, st_atim, st_mtim, fstflags);
+
+    int err_c = close(handle);
+
+    if(err_c != 0)
+        return WASI_ERRNO();
+
+    return set_err;
 }
 
 //fd_pread
