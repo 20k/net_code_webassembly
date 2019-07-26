@@ -1679,11 +1679,11 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     wasi_size_t used_buf = 0;
     __wasi_dircookie_t current_entry = cookie;
 
-    wasi_ptr_t<char> buf;
+    wasi_ptr_t<char> buf(0);
     buf.val = vbuf.val;
 
     #ifdef _WIN32
-    constexpr int win_allocation_size = sizeof(_FILE_ID_BOTH_DIR_INFO) + MAX_PATH + 1;
+    constexpr int win_allocation_size = sizeof(FILE_ID_BOTH_DIR_INFO) + MAX_PATH + 1;
 
     char win_alloc_backing[win_allocation_size + 32] = {};
 
@@ -1718,32 +1718,32 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
         if(!success)
             return __WASI_EBADF;
 
-        FILE_ID_BOTH_DIR_INFO* inf = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
+        FILE_ID_BOTH_DIR_INFO* info = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
 
-        if(inf->FileIndex < cookie)
+        if(info->FileIndex < cookie)
         {
             ///asking for more files but none available
-            if(inf->NextEntryOffset == 0)
+            if(info->NextEntryOffset == 0)
                 return __WASI_EINVAL;
 
             continue;
         }
 
         __wasi_dirent_t dir;
-        dir.d_ino = inf->FileId.QuadPart;
-        dir.d_namlen = inf->FileNameLength;
+        dir.d_ino = info->FileId.QuadPart;
+        dir.d_namlen = info->FileNameLength;
 
         dir.d_type = __WASI_FILETYPE_REGULAR_FILE;
 
-        if((inf->FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        if((info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
             dir.d_type = __WASI_FILETYPE_DIRECTORY;
 
-        if((inf->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+        if((info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
             dir.d_type = __WASI_FILETYPE_SYMBOLIC_LINK;
 
         __wasi_dircookie_t d_next = current_entry + 1;
 
-        if(inf->NextEntryOffset == 0)
+        if(info->NextEntryOffset == 0)
         {
             d_next = 0;
             iterate = false;
@@ -1770,7 +1770,7 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
         {
             size_t idx = i - end_with_struct;
 
-            buf[i] = inf->FileName[idx];
+            buf[i] = info->FileName[idx];
             lused++;
         }
 

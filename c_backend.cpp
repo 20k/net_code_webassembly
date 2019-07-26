@@ -263,6 +263,7 @@ struct c_context
 {
     int label_depth = 0;
     std::vector<int> label_arities;
+    std::vector<int> label_types;
 };
 
 std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity, runtime::moduleinst& minst);
@@ -284,18 +285,20 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     if(l.btype.arity() > 0)
     {
         destination_stack_val = stack_offset.peek_back();
+        stack_offset.pop_back();
 
         printf("Label with arity\n");
     }
 
     ctx.label_arities.push_back(l.btype.arity());
+    ctx.label_types.push_back(l.continuation);
 
     std::string fbody;
 
     ///one stack value argument
     if(l.btype.arity() == 1)
     {
-        fbody += l.btype.friendly() + " r_" + std::to_string(ctx.label_depth) + " = 0;\n";
+        fbody += l.btype.friendly() + " r_" + std::to_string(ctx.label_depth) + " = 0; //[label with arity]\n";
     }
 
     if(l.continuation == 2)
@@ -315,6 +318,12 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
 
+    ///no back jumps with a loop with a value
+    if(l.btype.arity() > 0)
+    {
+        fbody += "    r_" + std::to_string(ctx.label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
+    }
+
     fbody += "    } while(0); //end skip point\n";
 
     fbody += "if(abort_stack > 0) {\n    abort_stack--;\n";
@@ -325,8 +334,23 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         ///if we aborted to this loop
         ///loops take no argument
         ///so just keep looping
-        assert(l.btype.arity() == 0);
-        fbody += "    if(abort_stack == 0) {continue;}\n";
+        //assert(l.btype.arity() == 0);
+
+        if(l.btype.arity() == 0)
+        {
+            fbody += "    if(abort_stack == 0) {continue;}\n";
+        }
+        else
+        {
+            //assert(false);
+
+            fbody += "    if(abort_stack == 0) {continue;} ///[arity cont in loop cannot pass value]\n";
+        }
+
+        /*else
+        {
+            fbody += "    if(abort_stack == 0) { " + get_variable_name(destination_stack_val) + " = r_" + std::to_string(ctx.label_depth) + "; continue;}\n";
+        }*/
 
         ///ok but what if its not us?
         ///Just pop all values on stack? AKA just break outside of this?
@@ -353,11 +377,18 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
     fbody += "}\n";
 
-    if(l.btype.arity() > 0)
+    /*if(l.btype.arity() > 0)
     {
         fbody += " else { \n";
 
         fbody += get_variable_name(destination_stack_val) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n}";
+    }*/
+
+    if(l.btype.arity() > 0 && l.continuation == 2)
+    {
+        fbody += " else {\n";
+
+        fbody += get_variable_name(destination_stack_val) + " = r_" + std::to_string(ctx.label_depth) + ";\n}\n";
     }
 
     ///reached end of block
@@ -365,6 +396,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
     ctx.label_depth--;
     ctx.label_arities.pop_back();
+    ctx.label_types.pop_back();
 
     if(l.continuation == 2)
         return fbody + "}\n";
@@ -493,7 +525,7 @@ std::string sfjump(c_context& ctx, value_stack& stack_offset, types::labelidx li
 
     int arity = ctx.label_arities[nidx];
 
-    if(arity > 0)
+    if(arity > 0 && ctx.label_types[nidx] != 2)
     {
         ret += "r_" + std::to_string(next_label_depth) + " = " + get_variable_name(stack_offset.peek_back()) + ";\n";
         would_consume = true;
@@ -644,7 +676,17 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 l.btype = sbd.btype;
                 l.continuation = 2;
 
-                assert(l.btype.arity() == 0);
+                if(l.btype.arity() != 0)
+                {
+                    printf("Warning! Loop with arity!\n");
+                    std::cout << l.btype.friendly() << std::endl;
+                    l.btype.which = 0x40; ///HACK!
+
+                    ///arity destination
+                    //ret += sbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0; //[loop with arity]\n";
+                }
+
+                //assert(l.btype.arity() == 0);
 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
@@ -668,7 +710,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 int branch_variable = stack_offset.pop_back();
 
                 if(l.btype.arity() > 0)
-                    ret += dbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0\n";
+                    ret += dbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0; //[if with arity]\n";
 
                 ret += "if(" + get_variable_name(branch_variable) + " != 0)\n{";
 
@@ -1467,7 +1509,16 @@ std::string define_function(runtime::store& s, runtime::funcaddr address, runtim
     if(return_arity > 0 && soffset.stk.size() > 0)
         return function_body + "return " + get_variable_name(soffset.pop_back()) + ";\n}\n";
     else
-        return function_body + "}\n";
+    {
+        if(return_arity > 0)
+        {
+            return function_body + "\nassert(false);}\n";
+        }
+        else
+        {
+            return function_body + "}\n";
+        }
+    }
 }
 
 std::string init_data_segment(runtime::moduleinst& minst)
