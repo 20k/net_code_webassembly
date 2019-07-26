@@ -1205,8 +1205,6 @@ __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
     return __WASI_ESUCCESS;
 }
 
-///TODO: Do I actually need to do anything here?
-///I suppose I at least need to implement append and sync, switching
 __wasi_errno_t __wasi_fd_fdstat_set_flags(__wasi_fd_t fd, __wasi_fdflags_t flags)
 {
     if(!file_sandbox.has_fd(fd))
@@ -1628,7 +1626,6 @@ __wasi_errno_t __wasi_path_remove_directory(__wasi_fd_t fd, const wasi_ptr_t<cha
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
-    ///? TODO: Which permissions should this use?
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_PATH_REMOVE_DIRECTORY))
         return __WASI_ENOTCAPABLE;
 
