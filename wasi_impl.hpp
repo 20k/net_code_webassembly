@@ -1482,6 +1482,32 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
     return file_sandbox.close_fd(fd);
 }
 
+__wasi_errno_t __wasi_fd_renumber(__wasi_fd_t from, __wasi_fd_t to)
+{
+    if(!file_sandbox.has_fd(from) || !file_sandbox.has_fd(to))
+        return __WASI_EBADF;
+
+    const file_desc& fdesc = file_sandbox.files[from];
+    const file_desc& tdesc = file_sandbox.files[to];
+
+    if(fdesc.is_preopen || tdesc.is_preopen)
+        return __WASI_EBADF;
+
+    __wasi_errno_t err_c = file_sandbox.close_fd(to);
+
+    if(err_c != __WASI_ESUCCESS)
+        return err_c;
+
+    file_desc cpy = file_sandbox.files[from];
+    cpy.fd = to;
+
+    file_sandbox.files.erase(file_sandbox.files.find(from));
+
+    file_sandbox.files[to] = cpy;
+
+    return __WASI_ESUCCESS;
+}
+
 __wasi_errno_t __wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset, __wasi_whence_t whence, PTR(__wasi_filesize_t) newoffset)
 {
     printf("Seek\n");
