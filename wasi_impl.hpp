@@ -468,6 +468,26 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
     std::cout << "CREAT " << dwCreationDisposition << " NAME? " << path << std::endl;
 
+    if((open_flags & __WASI_O_DIRECTORY) > 0 && (((open_flags & __WASI_O_CREAT) > 0) || ((open_flags & __WASI_O_EXCL) > 0))
+    {
+        bool success = CreateDirectory(path.c_str(), nullptr);
+
+        if(!success)
+        {
+            DWORD err = GetLastError();
+
+            if(err == ERROR_ALREADY_EXISTS)
+                return __WASI_EEXIST;
+
+            if(err == ERROR_PATH_NOT_FOUND)
+                return __WASI_ENOENT;
+
+            return __WASI_EACCES; ///?
+        }
+
+        dwCreationDisposition = OPEN_EXISTING;
+    }
+
     HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, share_flags, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if(hFile == INVALID_HANDLE_VALUE)
@@ -583,6 +603,7 @@ __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle)
     return __WASI_ESUCCESS;
 }
 
+///need to test directory creation behaviour on linux
 __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
 {
     int flags = 0;
@@ -1424,7 +1445,6 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 //fd_pwrite
 //fd_readdir
 //path_create_directory
-//path_filestat_get
 //path_filestat_set_times
 //path_link
 //path_open
