@@ -426,7 +426,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
     bool full_stat = false;
 
     FILE_ATTRIBUTE_TAG_INFO tag_info;
-    GetFileInformationByHandleEx(handle, FileAttributeTaginfo, &tag_info, sizeof(tag_info));
+    GetFileInformationByHandleEx(handle, FileAttributeTagInfo, &tag_info, sizeof(tag_info));
 
     if((tag_info.FileAttributes & FILE_FLAG_OPEN_REPARSE_POINT) > 0 && ((tag_info.ReparseTag & IO_REPARSE_TAG_SYMLINK) > 0))
     {
@@ -696,7 +696,7 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
     if(S_ISBLK(st.st_mode))
         buf->type = __WASI_FILETYPE_BLOCK_DEVICE;
-    if(S_IFLNK(st.st_mode))
+    if(S_ISLNK(st.st_mode))
         buf->type = __WASI_FILETYPE_SYMBOLIC_LINK;
 
     buf->file_size = st.st_size;
