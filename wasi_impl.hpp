@@ -839,6 +839,8 @@ struct preopened
             return WASI_ERRNO();
 
         files.erase(files.find(fd));
+
+        return __WASI_ESUCCESS;
     }
 
     bool can_fd(uint32_t fd, __wasi_rights_t right)
