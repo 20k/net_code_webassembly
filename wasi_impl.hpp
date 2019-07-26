@@ -613,6 +613,9 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 {
     int flags = 0;
 
+    if((open_flags & __WASI_O_DIRECTORY) == 0)
+        flags = O_RDWR;
+
     if((open_flags & __WASI_O_CREAT) > 0)
         flags |= O_CREAT;
 
@@ -1862,10 +1865,10 @@ __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> i
         size_t out_bytes = 0;
         __wasi_errno_t err = file_sandbox.read_fd(fd, tchr, single.buf_len, out_bytes);
 
+        *nread += out_bytes;
+
         if(err != __WASI_ESUCCESS)
             return err;
-
-        *nread += out_bytes;
     }
 
     return __WASI_ESUCCESS;
@@ -1895,10 +1898,10 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
         size_t out_bytes = 0;
         __wasi_errno_t err = file_sandbox.write_fd(fd, tchr, single.buf_len, out_bytes);
 
+        *nwritten += out_bytes;
+
         if(err != __WASI_ESUCCESS)
             return err;
-
-        *nwritten += out_bytes;
     }
 
     return __WASI_ESUCCESS;
