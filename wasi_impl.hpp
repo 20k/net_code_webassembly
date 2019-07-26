@@ -1659,7 +1659,6 @@ __wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags
 //fd_pread
 //fd_pwrite
 //fd_readdir
-//path_filestat_set_times
 //path_link
 //path_open
 //path_readlink
