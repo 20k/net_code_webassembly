@@ -1589,7 +1589,6 @@ __wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, const wasi_ptr_t<char> pa
 
     printf("Unlink?\n");
 
-    ///? TODO: Which permissions should this use?
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_PATH_UNLINK_FILE))
         return __WASI_ENOTCAPABLE;
 
