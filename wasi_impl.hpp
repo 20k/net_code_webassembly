@@ -218,6 +218,10 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
 ///if necessary would implement through reopenfile
 __wasi_errno_t c_setfnctl(int64_t fd, __wasi_fdflags_t fdflags, int64_t* new_fd);
 
+__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle);
+
+__wasi_errno_t cstat(const std::string& path, cfstat_info* buf);
+
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
@@ -349,6 +353,33 @@ __wasi_errno_t to_winapi_handle(int64_t fd, HANDLE* out)
     if((fdflags & __WASI_FDFLAG_APPEND) > 0)
         dwDesiredAccess |=
 }*/
+
+__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle)
+{
+    *handle = -1;
+
+    if(handle == nullptr)
+        return __WASI_EINVAL;
+
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+
+    if(hFile == INVALID_HANDLE_VALUE)
+        return WASI_ERRNO();
+
+    int val = _open_osfhandle((intptr_t)hFile, 0);
+
+    if(val == -1)
+    {
+        __wasi_errno_t err = WASI_ERRNO();
+
+        CloseHandle(hFile);
+        return err;
+    }
+
+    *handle = val;
+
+    return __WASI_ESUCCESS;
+}
 
 __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
 {
@@ -537,6 +568,21 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
     return __WASI_ESUCCESS;
 }
 
+__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle)
+{
+    *handle = -1;
+
+    if(handle == nullptr)
+        return __WASI_EINVAL;
+
+    *handle = open(path.c_str(), 0);
+
+    if(*handle == -1)
+        return WASI_ERRNO();
+
+    return __WASI_ESUCCESS;
+}
+
 __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wasi_oflags_t open_flags)
 {
     int flags = 0;
@@ -566,6 +612,25 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
     return __WASI_ESUCCESS;
 }
 #endif // _WIN32
+
+__wasi_errno_t cstat(const std::string& path, cfstat_info* buf)
+{
+    int64_t handle = 0;
+
+    __wasi_errno_t err = c_get_read_handle(path, &handle);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
+    __wasi_errno_t stat_err = cfstat(handle, buf);
+
+    int c_err = close(handle);
+
+    if(c_err != 0)
+        return WASI_ERRNO();
+
+    return stat_err;
+}
 
 __wasi_errno_t c_lseek(int64_t fd, __wasi_filedelta_t offset, __wasi_whence_t origin, int64_t* off)
 {
@@ -1278,7 +1343,7 @@ __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat
     const file_desc& fle = file_sandbox.files[fd];
 
     cfstat_info cf;
-    __wasi_errno_t err = cfstat(file_sandbox.files[fd].portable_fd, &cf);
+    __wasi_errno_t err = cfstat(fle.portable_fd, &cf);
 
     if(err != __WASI_ESUCCESS)
         return err;
@@ -1286,7 +1351,38 @@ __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat
     __wasi_filestat_t ret;
     ret.st_dev = 0;
     ret.st_ino = 0; ///ERROR NEED TO DO INODES
-    ret.st_filetype = fle.fs_filetype;
+    ret.st_filetype = cf.type;
+    ret.st_nlink = 0;
+    ret.st_size = cf.file_size;
+    ret.st_atim = 0; ///TODO: ATIM
+    ret.st_mtim = 0; ///TODO: MTIM
+    ret.st_ctim = 0; ///TODO: CTIM
+
+    *buf = ret;
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_path_filestat_get(__wasi_fd_t fd, __wasi_lookupflags_t flags, const wasi_ptr_t<char> path, wasi_size_t path_len, wasi_ptr_t<__wasi_filestat_t> buf)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_PATH_FILESTAT_GET))
+        return __WASI_ENOTCAPABLE;
+
+    std::string spath = make_str(path, path_len);
+
+    cfstat_info cf;
+    __wasi_errno_t err = cstat(spath, &cf);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
+    __wasi_filestat_t ret;
+    ret.st_dev = 0;
+    ret.st_ino = 0; ///ERROR NEED TO DO INODES
+    ret.st_filetype = cf.type;
     ret.st_nlink = 0;
     ret.st_size = cf.file_size;
     ret.st_atim = 0; ///TODO: ATIM
