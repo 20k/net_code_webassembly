@@ -222,9 +222,12 @@ __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle);
 
 __wasi_errno_t cstat(const std::string& path, cfstat_info* buf);
 
+__wasi_errno_t c_create_directory(const std::string& path);
+
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
+#include <direct.h>
 #define stat __stat64
 #define fstat _fstat64
 #define fileno _fileno
@@ -256,6 +259,7 @@ __wasi_errno_t cstat(const std::string& path, cfstat_info* buf);
 #define fsync _commit
 #define unlink _unlink
 #define lseek _lseeki64
+#define mkdir _mkdir
 
 #define O_RDONLY _O_RDONLY
 #define O_WRONLY _O_WRONLY
@@ -468,7 +472,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
     std::cout << "CREAT " << dwCreationDisposition << " NAME? " << path << std::endl;
 
-    if((open_flags & __WASI_O_DIRECTORY) > 0 && (((open_flags & __WASI_O_CREAT) > 0) || ((open_flags & __WASI_O_EXCL) > 0)))
+    /*if((open_flags & __WASI_O_DIRECTORY) > 0 && (((open_flags & __WASI_O_CREAT) > 0) || ((open_flags & __WASI_O_EXCL) > 0)))
     {
         bool success = CreateDirectory(path.c_str(), nullptr);
 
@@ -487,7 +491,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
         }
 
         dwCreationDisposition = OPEN_EXISTING;
-    }
+    }*/
 
     HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, share_flags, nullptr, dwCreationDisposition, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
@@ -635,6 +639,20 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 }
 #endif // _WIN32
 
+__wasi_errno_t c_create_directory(const std::string& path)
+{
+    #ifdef _WIN32
+    int val = mkdir(path.c_str());
+    #else
+    int val = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
+    #endif // _WIN32
+
+    if(val != 0)
+        return WASI_ERRNO();
+
+    return __WASI_ESUCCESS;
+}
+
 __wasi_errno_t cstat(const std::string& path, cfstat_info* buf)
 {
     int64_t handle = 0;
@@ -733,7 +751,13 @@ struct preopened
         desc.fs_flags = __WASI_FDFLAG_SYNC;
         desc.is_preopen = true;
 
-        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, __WASI_O_DIRECTORY | __WASI_O_CREAT);
+        __wasi_errno_t dir_res = c_create_directory(path.c_str());
+
+        assert(dir_res == __WASI_ESUCCESS || dir_res == __WASI_EEXIST);
+
+        __wasi_errno_t err = get_read_fd_wrapper(path.c_str(), desc, __WASI_O_DIRECTORY);
+
+        std::cout << "err " << err << std::endl;
 
         assert(err == __WASI_ESUCCESS);
 
