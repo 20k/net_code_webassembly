@@ -1570,9 +1570,9 @@ __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat
     ret.st_filetype = cf.type;
     ret.st_nlink = 0;
     ret.st_size = cf.file_size;
-    ret.st_atim = 0; ///TODO: ATIM
-    ret.st_mtim = 0; ///TODO: MTIM
-    ret.st_ctim = 0; ///TODO: CTIM
+    ret.st_atim = cf.atim;
+    ret.st_mtim = cf.mtim;
+    ret.st_ctim = cf.ctim;
 
     *buf = ret;
 
@@ -1601,9 +1601,9 @@ __wasi_errno_t __wasi_path_filestat_get(__wasi_fd_t fd, __wasi_lookupflags_t fla
     ret.st_filetype = cf.type;
     ret.st_nlink = 0;
     ret.st_size = cf.file_size;
-    ret.st_atim = 0; ///TODO: ATIM
-    ret.st_mtim = 0; ///TODO: MTIM
-    ret.st_ctim = 0; ///TODO: CTIM
+    ret.st_atim = cf.atim;
+    ret.st_mtim = cf.mtim;
+    ret.st_ctim = cf.ctim;
 
     *buf = ret;
 
