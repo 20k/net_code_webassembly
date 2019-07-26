@@ -375,7 +375,7 @@ __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle, __was
 
     DWORD sym = 0;
 
-    if((symlink_policy & __WASI_LOOKUP_SYMLINK_FOLLOW) > 0)
+    if((symlink_policy & __WASI_LOOKUP_SYMLINK_FOLLOW) == 0)
     {
         sym = FILE_FLAG_OPEN_REPARSE_POINT;
     }
@@ -722,7 +722,7 @@ __wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle, __was
         flags = O_NOFOLLOW;
     }
 
-    *handle = open(path.c_str(), 0);
+    *handle = open(path.c_str(), flags);
 
     if(*handle == -1)
         return WASI_ERRNO();
