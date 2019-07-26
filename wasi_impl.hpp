@@ -1704,6 +1704,9 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
     if(!file_sandbox.has_fd(dirfd))
         return __WASI_EBADF;
 
+    if(((oflags & __WASI_O_CREAT) > 0) && !file_sandbox.can_fd(dirfd, __WASI_RIGHT_PATH_CREATE_FILE))
+        return __WASI_ENOTCAPABLE;
+
     printf("Openasdfasdf\n");
 
     if(path_len == 0)
@@ -1763,6 +1766,26 @@ __wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, const wasi_ptr_t<char> pa
         return WASI_ERRNO();
 
     return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_path_create_directory(__wasi_fd_t fd, const wasi_ptr_t<char> path, wasi_size_t path_len)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_PATH_CREATE_DIRECTORY))
+        return __WASI_ENOTCAPABLE;
+
+    std::string their_path = make_str(path, path_len);
+
+    const file_desc& v1 = file_sandbox.files[fd];
+
+    std::filesystem::path p1 = std::filesystem::path(v1.relative_path) / std::filesystem::path(their_path);
+
+    if(!file_sandbox.path_in_sandbox(p1))
+        return __WASI_EACCES;
+
+    return c_create_directory(p1.string());
 }
 
 __wasi_errno_t __wasi_path_remove_directory(__wasi_fd_t fd, const wasi_ptr_t<char> path, wasi_size_t path_len)
