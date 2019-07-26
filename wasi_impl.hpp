@@ -468,7 +468,7 @@ __wasi_errno_t get_read_fd_wrapper(const std::string& path, file_desc& out, __wa
 
     std::cout << "CREAT " << dwCreationDisposition << " NAME? " << path << std::endl;
 
-    if((open_flags & __WASI_O_DIRECTORY) > 0 && (((open_flags & __WASI_O_CREAT) > 0) || ((open_flags & __WASI_O_EXCL) > 0))
+    if((open_flags & __WASI_O_DIRECTORY) > 0 && (((open_flags & __WASI_O_CREAT) > 0) || ((open_flags & __WASI_O_EXCL) > 0)))
     {
         bool success = CreateDirectory(path.c_str(), nullptr);
 
