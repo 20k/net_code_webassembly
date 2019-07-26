@@ -222,9 +222,9 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf);
 ///if necessary would implement through reopenfile
 __wasi_errno_t c_setfnctl(int64_t fd, __wasi_fdflags_t fdflags, int64_t* new_fd);
 
-__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle);
+__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle, __wasi_lookupflags_t symlink_policy);
 
-__wasi_errno_t cstat(const std::string& path, cfstat_info* buf);
+__wasi_errno_t cstat(const std::string& path, cfstat_info* buf, __wasi_lookupflags_t symlink_policy);
 
 __wasi_errno_t c_create_directory(const std::string& path);
 
@@ -366,14 +366,21 @@ __wasi_errno_t to_winapi_handle(int64_t fd, HANDLE* out)
         dwDesiredAccess |=
 }*/
 
-__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle)
+__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle, __wasi_lookupflags_t symlink_policy)
 {
     *handle = -1;
 
     if(handle == nullptr)
         return __WASI_EINVAL;
 
-    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    DWORD sym = 0;
+
+    if((symlink_policy & __WASI_LOOKUP_SYMLINK_FOLLOW) > 0)
+    {
+        sym = FILE_FLAG_OPEN_REPARSE_POINT;
+    }
+
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | sym, NULL);
 
     if(hFile == INVALID_HANDLE_VALUE)
         return WASI_ERRNO();
@@ -416,28 +423,48 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
     if(err_1 != __WASI_ESUCCESS)
         return err_1;
 
-    buf->type = __WASI_FILETYPE_UNKNOWN;
+    bool full_stat = false;
 
-    DWORD fret = GetFileType(handle);
+    FILE_ATTRIBUTE_TAG_INFO tag_info;
+    GetFileInformationByHandleEx(handle, FileAttributeTaginfo, &tag_info, sizeof(tag_info));
 
-    if(fret == FILE_TYPE_CHAR)
-        buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
-
-    ///pipe = socket or anon/named pipe
-    if(fret == FILE_TYPE_PIPE)
+    if((tag_info.FileAttributes & FILE_FLAG_OPEN_REPARSE_POINT) > 0 && ((tag_info.ReparseTag & IO_REPARSE_TAG_SYMLINK) > 0))
     {
-        buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
+        buf->type = __WASI_FILETYPE_SYMBOLIC_LINK;
+
+        full_stat = true;
+    }
+    else
+    {
+        buf->type = __WASI_FILETYPE_UNKNOWN;
+
+        DWORD fret = GetFileType(handle);
+
+        if(fret == FILE_TYPE_CHAR)
+            buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
+
+        ///pipe = socket or anon/named pipe
+        if(fret == FILE_TYPE_PIPE)
+        {
+            buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
+        }
+
+        if(fret == FILE_TYPE_UNKNOWN)
+        {
+            buf->type = FILE_TYPE_UNKNOWN;
+
+            if(GetLastError() != NO_ERROR)
+                return WASI_ERRNO();
+        }
+
+        if(fret == FILE_TYPE_DISK)
+        {
+            full_stat = true;
+        }
     }
 
-    if(fret == FILE_TYPE_UNKNOWN)
-    {
-        buf->type = FILE_TYPE_UNKNOWN;
 
-        if(GetLastError() != NO_ERROR)
-            return WASI_ERRNO();
-    }
-
-    if(fret == FILE_TYPE_DISK)
+    if(full_stat)
     {
         BY_HANDLE_FILE_INFORMATION fhandle = {};
         GetFileInformationByHandle(handle, &fhandle);
@@ -669,6 +696,8 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
         buf->type = __WASI_FILETYPE_CHARACTER_DEVICE;
     if(S_ISBLK(st.st_mode))
         buf->type = __WASI_FILETYPE_BLOCK_DEVICE;
+    if(S_IFLNK(st.st_mode))
+        buf->type = __WASI_FILETYPE_SYMBOLIC_LINK;
 
     buf->file_size = st.st_size;
 
@@ -679,12 +708,19 @@ __wasi_errno_t cfstat(int64_t fd, cfstat_info* buf)
     return __WASI_ESUCCESS;
 }
 
-__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle)
+__wasi_errno_t c_get_read_handle(const std::string& path, int64_t* handle, __wasi_lookupflags_t symlink_policy)
 {
     *handle = -1;
 
     if(handle == nullptr)
         return __WASI_EINVAL;
+
+    int flags = 0;
+
+    if((symlink_policy & __WASI_LOOKUP_SYMLINK_FOLLOW) == 0)
+    {
+        flags = O_NOFOLLOW;
+    }
 
     *handle = open(path.c_str(), 0);
 
@@ -784,11 +820,11 @@ __wasi_errno_t c_create_directory(const std::string& path)
     return __WASI_ESUCCESS;
 }
 
-__wasi_errno_t cstat(const std::string& path, cfstat_info* buf)
+__wasi_errno_t cstat(const std::string& path, cfstat_info* buf, __wasi_lookupflags_t symlink_policy)
 {
     int64_t handle = 0;
 
-    __wasi_errno_t err = c_get_read_handle(path, &handle);
+    __wasi_errno_t err = c_get_read_handle(path, &handle, symlink_policy);
 
     if(err != __WASI_ESUCCESS)
         return err;
@@ -1551,7 +1587,7 @@ __wasi_errno_t __wasi_path_filestat_get(__wasi_fd_t fd, __wasi_lookupflags_t fla
     std::string spath = make_str(path, path_len);
 
     cfstat_info cf;
-    __wasi_errno_t err = cstat(spath, &cf);
+    __wasi_errno_t err = cstat(spath, &cf, flags);
 
     if(err != __WASI_ESUCCESS)
         return err;
@@ -1605,7 +1641,7 @@ __wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags
         return __WASI_ENOTCAPABLE;
 
     int64_t handle = -1;
-    __wasi_errno_t err = c_get_read_handle(make_str(path, path_len), &handle);
+    __wasi_errno_t err = c_get_read_handle(make_str(path, path_len), &handle, flags);
 
     if(err != __WASI_ESUCCESS)
         return err;
