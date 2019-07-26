@@ -1120,7 +1120,6 @@ __wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi
     return __WASI_ESUCCESS;
 }
 
-///allocate may be unimplementable on windows effectively
 __wasi_errno_t __wasi_fd_allocate(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len)
 {
     if(!file_sandbox.has_fd(fd))
