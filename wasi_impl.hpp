@@ -1121,7 +1121,40 @@ __wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi
 }
 
 ///allocate may be unimplementable on windows effectively
-//__wasi_errno_t __wasi_fd_allocate()
+__wasi_errno_t __wasi_fd_allocate(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_ALLOCATE))
+        return __WASI_ENOTCAPABLE;
+
+    const file_desc& desc = file_sandbox.files[fd];
+
+    cfstat_info cf;
+    __wasi_errno_t err_1 = cfstat(desc.portable_fd, &cf);
+
+    if(err_1 != __WASI_ESUCCESS)
+        return err_1;
+
+    uint64_t desired_size = (uint64_t)offset + (uint64_t)len;
+
+    ///overflow
+    if(desired_size < offset)
+        return __WASI_E2BIG;
+
+    if(desired_size > std::numeric_limits<int64_t>::max())
+        return __WASI_E2BIG;
+
+    if(desired_size > cf.file_size)
+    {
+        return file_sandbox.resize_fd(fd, desired_size);
+    }
+    else
+    {
+        return __WASI_ESUCCESS;
+    }
+}
 
 __wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
 {
