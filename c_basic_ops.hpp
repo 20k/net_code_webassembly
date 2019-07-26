@@ -1,6 +1,8 @@
 #ifndef C_BASIC_OPS_HPP_INCLUDED
 #define C_BASIC_OPS_HPP_INCLUDED
 
+///todo: there's some UB in basic ops
+
 template<typename T>
 std::string coerce(const std::string& in)
 {
