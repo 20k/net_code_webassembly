@@ -42,6 +42,54 @@ void print(const char* ptr)
     printf("pre %s post\n", ptr);
 }
 
+#include <windows.h>
+#include <tchar.h>
+#include <stdio.h>
+#include <strsafe.h>
+
+void test_files()
+{
+   WIN32_FIND_DATA ffd;
+   LARGE_INTEGER filesize;
+   TCHAR szDir[MAX_PATH] = "./";
+   size_t length_of_arg;
+   HANDLE hFind = INVALID_HANDLE_VALUE;
+   DWORD dwError=0;
+
+   StringCchLength("./", MAX_PATH, &length_of_arg);
+
+   _tprintf(TEXT("\nTarget directory is %s\n\n"), "./");
+
+   StringCchCopy(szDir, MAX_PATH, "./");
+   StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+   hFind = FindFirstFile(szDir, &ffd);
+
+   if (INVALID_HANDLE_VALUE == hFind)
+   {
+        return;
+   }
+
+   do
+   {
+      if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+      {
+         _tprintf(TEXT("  %s   <DIR>\n"), ffd.cFileName);
+      }
+      else
+      {
+         filesize.LowPart = ffd.nFileSizeLow;
+         filesize.HighPart = ffd.nFileSizeHigh;
+         _tprintf(TEXT("  %s   %ld bytes\n"), ffd.cFileName, filesize.QuadPart);
+      }
+   }
+   while (FindNextFile(hFind, &ffd) != 0);
+
+   dwError = GetLastError();
+
+   FindClose(hFind);
+}
+
 ///ok so
 ///js isn't actually js unfortunately, its typescript, and its forcibly typescript which isn't good enough
 ///so it looks like the 'wasm everything' plan is out of the window
@@ -51,6 +99,8 @@ void print(const char* ptr)
 ///so we need to be able to go js Object -> c structure, and back
 int main()
 {
+    //test_files();
+
     //test_jit();
     leb_tests();
 
