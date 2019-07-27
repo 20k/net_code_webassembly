@@ -1744,113 +1744,13 @@ void hacky_copy_into(__wasi_dirent_t dir, char* name, wasi_ptr_t<char> buf, wasi
 }
 
 #ifdef _WIN32
-#if 0
-__wasi_errno_t get_directory_info(HANDLE handle, std::vector<int>& ucs16_filename_lengths)
-{
-    ucs16_filename_lengths.clear();
-
-    ///this is technically too much space but i don't want to deal with the divisions
-    ///needs to be 8 byte aligned
-    uint64_t aligned[sizeof(FILE_ID_BOTH_DIR_INFO) + 32] = {};
-    int buffer_length = sizeof(FILE_ID_BOTH_DIR_INFO);
-
-    char* win_alloc = (char*)&aligned[0];
-
-    bool iterate = true;
-    bool restart = true;
-
-    size_t last_idx = -1;
-
-    {
-        uint64_t test[sizeof(FILE_ID_BOTH_DIR_INFO) * 40 + 1024 * 10] = {};
-
-        char* test_ptr = (char*)&test[0];
-
-        GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, test_ptr, sizeof(test));
-
-        FILE_ID_BOTH_DIR_INFO* next_info = (FILE_ID_BOTH_DIR_INFO*)test_ptr;
-
-        while(next_info->NextEntryOffset != 0)
-        {
-            std::cout << "LEN " << next_info->FileNameLength << std::endl;
-            std::cout << "Next " << next_info->NextEntryOffset << std::endl;
-            std::cout << "SSR? " <<  sizeof(FILE_ID_BOTH_DIR_INFO) << std::endl;
-
-            std::wstring str(&next_info->FileName[0], &next_info->FileName[0] + next_info->FileNameLength);
-
-            std::wcout << "wstr " << str << std::endl;
-
-            next_info = (FILE_ID_BOTH_DIR_INFO*)((char*)next_info + next_info->NextEntryOffset);
-        }
-    }
-
-    while(iterate)
-    {
-        bool success = false;
-
-        if(restart)
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, win_alloc, buffer_length);
-        else
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, buffer_length);
-
-        if(!success)
-        {
-            if(GetLastError() == ERROR_NO_MORE_FILES)
-            {
-                printf("No more files\n");
-                break;
-            }
-
-            if(GetLastError() != ERROR_MORE_DATA)
-            {
-                printf("Bad getfileinfo %i\n", GetLastError());
-                return __WASI_EBADF;
-            }
-        }
-
-        FILE_ID_BOTH_DIR_INFO* info = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
-
-        ///got a duplicate file
-        if(!restart && info->FileId.QuadPart == last_idx)
-            break;
-
-        restart = false;
-
-        ucs16_filename_lengths.push_back(info->FileNameLength);
-
-        last_idx = info->FileId.QuadPart;
-    }
-
-    return __WASI_ESUCCESS;
-}
-
 __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, wasi_size_t buf_len, wasi_ptr_t<wasi_size_t> used, __wasi_dircookie_t cookie)
 {
-    std::vector<int> ucs16_filename_lengths;
-    __wasi_errno_t err_1 = get_directory_info(handle, ucs16_filename_lengths);
+    std::vector<char> stupid_pos_buf(sizeof(FILE_ID_BOTH_DIR_INFO) + MAX_PATH * sizeof(wchar_t) + 32);
 
-    std::cout << "Got " << ucs16_filename_lengths.size() << " filenames " << std::endl;
-
-    printf("Pre first check\n");
-
-    if(err_1 != __WASI_ESUCCESS)
-        return err_1;
-
-    printf("Post first check\n");
-
-    int max_namelen = 0;
-
-    for(auto& i : ucs16_filename_lengths)
-    {
-        if(i > max_namelen)
-            max_namelen = i;
-    }
-
-    if(max_namelen >= MAX_PATH)
-        return __WASI_ENAMETOOLONG;
-
-    uint64_t aligned[sizeof(FILE_ID_BOTH_DIR_INFO) + MAX_PATH] = {};
-    char* win_alloc = (char*)&aligned[0];
+    void* some_ptr = (void*)&stupid_pos_buf[0];
+    size_t space_ptr = stupid_pos_buf.size();
+    char* win_alloc = (char*)std::align(8, stupid_pos_buf.size() - 32, some_ptr, space_ptr);
 
     bool iterate = true;
     bool restart = true;
@@ -1862,12 +1762,10 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
     {
         bool success = false;
 
-        assert(idx < ucs16_filename_lengths.size());
-
         if(restart)
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, win_alloc, sizeof(FILE_ID_BOTH_DIR_INFO) + ucs16_filename_lengths[idx]);
+            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, win_alloc, stupid_pos_buf.size());
         else
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, sizeof(FILE_ID_BOTH_DIR_INFO) + ucs16_filename_lengths[idx]);
+            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, stupid_pos_buf.size());
 
         restart = false;
 
@@ -1876,163 +1774,74 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
             if(GetLastError() == ERROR_NO_MORE_FILES)
                 break;
 
-            //printf("Bad getfileinfo %i\n", GetLastError());
-            return __WASI_EBADF;
-        }
-
-        FILE_ID_BOTH_DIR_INFO* info = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
-
-        if(idx >= cookie)
-        {
-            const WCHAR* wc = info->FileName;
-
-            size_t len = wcstombs(path_len_output_mbs, wc, sizeof(path_len_output_mbs));
-
-            if (len > 0)
-                path_len_output_mbs[len] = '\0';
-
-            __wasi_dirent_t dir;
-            dir.d_ino = info->FileId.QuadPart;
-
-            dir.d_type = __WASI_FILETYPE_REGULAR_FILE;
-
-            if((info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-                dir.d_type = __WASI_FILETYPE_DIRECTORY;
-
-            if((info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
-                dir.d_type = __WASI_FILETYPE_SYMBOLIC_LINK;
-
-            __wasi_dircookie_t d_next = idx + 1;
-
-            if(info->NextEntryOffset == 0)
+            if(GetLastError() == ERROR_MORE_DATA)
             {
-                d_next = 0;
+                stupid_pos_buf.resize(stupid_pos_buf.size() * 2);
+
+                some_ptr = (void*)&stupid_pos_buf[0];
+                space_ptr = stupid_pos_buf.size();
+                win_alloc = (char*)std::align(8, stupid_pos_buf.size() - 32, some_ptr, space_ptr);
+                continue;
             }
-
-            dir.d_namlen = len;
-            dir.d_next = d_next;
-
-            hacky_copy_into(dir, path_len_output_mbs, buf, buf_len, used);
-        }
-
-        idx++;
-
-        if(idx >= (int)ucs16_filename_lengths.size())
-            break;
-    }
-
-    return __WASI_ESUCCESS;
-}
-#endif // 0
-
-
-#if 0
-__wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, wasi_size_t buf_len, wasi_ptr_t<wasi_size_t> used, __wasi_dircookie_t cookie)
-{
-    uint64_t aligned[sizeof(FILE_ID_BOTH_DIR_INFO) + MAX_PATH + 9999] = {};
-    char* win_alloc = (char*)&aligned[0];
-
-    bool iterate = true;
-    bool restart = true;
-    int idx = 0;
-
-    char path_len_output_mbs[4096] = {};
-
-    while(iterate)
-    {
-        memset(aligned, 0, sizeof(aligned));
-
-        bool success = false;
-
-        //assert(idx < ucs16_filename_lengths.size());
-
-        if(restart)
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, sizeof(FILE_ID_BOTH_DIR_INFO));
-        else
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, sizeof(FILE_ID_BOTH_DIR_INFO));
-
-        restart = false;
-
-        if(!success)
-        {
-            if(GetLastError() == ERROR_NO_MORE_FILES)
-                break;
 
             if(GetLastError() != ERROR_MORE_DATA)
             {
-                //printf("Bad getfileinfo %i\n", GetLastError());
                 return __WASI_EBADF;
             }
         }
-
-        FILE_ID_BOTH_DIR_INFO* info_1 = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
-        int name_len_ucs = info_1->FileNameLength;
-
-        std::cout << "Name len ucs " << name_len_ucs << std::endl;
-        std::cout << "Idx " << info_1->FileIndex << std::endl;
-
-        memset(aligned, 0, sizeof(aligned));
-
-        bool next = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, sizeof(FILE_ID_BOTH_DIR_INFO) + name_len_ucs);
 
         FILE_ID_BOTH_DIR_INFO* info = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
 
-        std::cout << "ginfo " << info->FileNameLength << std::endl;
+        int name_len_ucs = info->FileNameLength;
 
-        std::cout << "FIdx " << info->FileIndex << std::endl;
-
-        if(!next)
+        do
         {
-            if(GetLastError() == ERROR_NO_MORE_FILES)
-                break;
-
-            //if(GetLastError() != ERROR_MORE_DATA)
+            if(idx >= cookie)
             {
-                printf("Bad getfileinfo %i\n", GetLastError());
-                return __WASI_EBADF;
+                ///fun fact: Not *necessarily* null terminated!
+                const WCHAR* wc = info->FileName;
+                std::wstring ws(wc, wc + info->FileNameLength);
+
+                size_t len = wcstombs(path_len_output_mbs, ws.c_str(), sizeof(path_len_output_mbs));
+
+                if (len > 0)
+                    path_len_output_mbs[len] = '\0';
+
+                __wasi_dirent_t dir;
+                dir.d_ino = info->FileId.QuadPart;
+
+                dir.d_type = __WASI_FILETYPE_REGULAR_FILE;
+
+                if((info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                    dir.d_type = __WASI_FILETYPE_DIRECTORY;
+
+                if((info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+                    dir.d_type = __WASI_FILETYPE_SYMBOLIC_LINK;
+
+                __wasi_dircookie_t d_next = idx + 1;
+
+                if(info->NextEntryOffset == 0)
+                {
+                    d_next = 0;
+                }
+
+                dir.d_namlen = len;
+                dir.d_next = d_next;
+
+                hacky_copy_into(dir, path_len_output_mbs, buf, buf_len, used);
             }
-        }
-
-
-        if(idx >= cookie)
-        {
-            const WCHAR* wc = info->FileName;
-
-            size_t len = wcstombs(path_len_output_mbs, wc, sizeof(path_len_output_mbs));
-
-            if (len > 0)
-                path_len_output_mbs[len] = '\0';
-
-            __wasi_dirent_t dir;
-            dir.d_ino = info->FileId.QuadPart;
-
-            dir.d_type = __WASI_FILETYPE_REGULAR_FILE;
-
-            if((info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-                dir.d_type = __WASI_FILETYPE_DIRECTORY;
-
-            if((info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
-                dir.d_type = __WASI_FILETYPE_SYMBOLIC_LINK;
-
-            __wasi_dircookie_t d_next = idx + 1;
 
             if(info->NextEntryOffset == 0)
-            {
-                d_next = 0;
-            }
+                break;
 
-            dir.d_namlen = len;
-            dir.d_next = d_next;
-
-            hacky_copy_into(dir, path_len_output_mbs, buf, buf_len, used);
+            info = (FILE_ID_BOTH_DIR_INFO*)((char*)info + info->NextEntryOffset);
+            idx++;
         }
-
-        idx++;
+        while(1);
     }
 
     return __WASI_ESUCCESS;
 }
-#endif // 0
 
 #endif // _WIN32
 
@@ -2073,141 +1882,6 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     return err_2;
 
     #endif // _WIN32
-
-    #if 0
-    #ifdef _WIN32
-    constexpr int win_allocation_size = sizeof(FILE_ID_BOTH_DIR_INFO) + MAX_PATH + 1;
-
-    char win_alloc_backing[win_allocation_size + 32] = {};
-
-    size_t alloc = win_allocation_size + 32;
-    void* in_ptr = win_alloc_backing;
-    char* win_alloc = (char*)std::align(8, win_allocation_size, in_ptr, alloc);
-
-    assert(win_alloc);
-
-    bool iterate = true;
-    bool restart = true;
-
-    HANDLE handle;
-    __wasi_errno_t err_1 = to_winapi_handle(file_sandbox.files[fd].portable_fd, &handle);
-
-    if(err_1 != __WASI_ESUCCESS)
-        return err_1;
-
-    ///ok this can be fixed
-    ///basically what needs to happen is need to do 2 passes
-    ///once to get all the info, put it in fixed sized structs
-    ///then a second time to get the names out
-    do
-    {
-        memset(win_alloc, 0, win_allocation_size);
-
-        bool success = false;
-
-        if(restart)
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, win_alloc, win_allocation_size);
-        else
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, win_allocation_size);
-
-        restart = false;
-
-        if(!success)
-        {
-            if(GetLastError() == ERROR_NO_MORE_FILES)
-            {
-                printf("No more files\n");
-                break;
-            }
-
-            //printf("Bad getfileinfo %i\n", GetLastError());
-            return __WASI_EBADF;
-        }
-
-        FILE_ID_BOTH_DIR_INFO* info = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
-
-        if(info->FileIndex < cookie)
-        {
-            ///asking for more files but none available
-            if(info->NextEntryOffset == 0)
-                return __WASI_EINVAL;
-
-            continue;
-        }
-
-        printf("Got a file\n");
-
-        __wasi_dirent_t dir;
-        dir.d_ino = info->FileId.QuadPart;
-
-        dir.d_type = __WASI_FILETYPE_REGULAR_FILE;
-
-        if((info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-            dir.d_type = __WASI_FILETYPE_DIRECTORY;
-
-        if((info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
-            dir.d_type = __WASI_FILETYPE_SYMBOLIC_LINK;
-
-        __wasi_dircookie_t d_next = current_entry + 1;
-
-        std::cout << "DNext " << info->NextEntryOffset << std::endl;
-
-        if(info->NextEntryOffset == 0)
-        {
-            d_next = 0;
-            iterate = false;
-
-            printf("Last file\n");
-        }
-
-        char output[256] = {};
-        const WCHAR* wc = info->FileName;
-
-        size_t len = wcstombs(output,wc,sizeof(output));
-
-        if (len > 0)
-            output[len] = '\0';
-
-        dir.d_namlen = len;
-
-        dir.d_next = d_next;
-
-        wasi_size_t struct_len = sizeof(__wasi_dirent_t);
-        wasi_size_t end_with_struct = used_buf + struct_len;
-        wasi_size_t end_with_struct_and_name = used_buf + struct_len + dir.d_namlen;
-
-        int lused = 0;
-
-        for(wasi_size_t i=used_buf; i < buf_len && i < end_with_struct; i++)
-        {
-            size_t idx = i - used_buf;
-
-            char* as_ptr = (char*)&dir;
-            buf[i] = as_ptr[idx];
-            lused++;
-        }
-
-        for(wasi_size_t i=end_with_struct; i < buf_len && i < end_with_struct_and_name; i++)
-        {
-            size_t idx = i - end_with_struct;
-
-            buf[i] = output[idx];
-            lused++;
-        }
-
-        std::cout << "Name " << (char*)&output[0] << std::endl;
-
-        used_buf += lused;
-        *used = used_buf;
-    }
-    while(iterate);
-
-    return __WASI_ESUCCESS;
-
-    #endif // _WIN32
-
-    return __WASI_ENOTCAPABLE;
-    #endif
 
     #if 0
     __wasi_dircookie_t which = 0;
