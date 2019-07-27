@@ -1742,12 +1742,6 @@ void hacky_copy_into(__wasi_dirent_t dir, const char* name, wasi_ptr_t<char> buf
         lused++;
     }
 
-    /*if(end_with_struct_and_name < buf_len)
-    {
-        buf[end_with_struct_and_name] = '\0';
-        lused++;
-    }*/
-
     *used_buf += lused;
 }
 
@@ -1763,11 +1757,6 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
     bool iterate = true;
     bool restart = true;
     int idx = 0;
-
-    std::vector<__wasi_dirent_t> dirents;
-    std::vector<std::string> names;
-
-    char path_len_output_mbs[4096] = {};
 
     while(iterate)
     {
@@ -1808,23 +1797,11 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
 
         do
         {
-            //if(idx >= cookie)
+            if(idx >= cookie)
             {
-                memset(path_len_output_mbs, 0, sizeof(path_len_output_mbs));
-
                 ///fun fact: Not *necessarily* null terminated!
                 const WCHAR* wc = info->FileName;
                 std::wstring ws(wc, info->FileNameLength);
-
-                //std::wcout << "Hello my name! " << ws << std::endl;
-
-                /*size_t len = wcstombs(path_len_output_mbs, ws.c_str(), sizeof(path_len_output_mbs));
-
-                if (len > 0)
-                    path_len_output_mbs[len] = '\0';*/
-
-                /*std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
-                std::string str = utf8_conv.to_bytes(ws);*/
 
                 int utf8len = WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), ws.size(), NULL, 0, NULL, NULL);
 
@@ -1834,10 +1811,6 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
                 WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), ws.size(), &str[0], utf8len, 0, 0);
 
                 str.pop_back();
-
-                //std::cout << "Got string " << str.c_str() << std::endl;
-
-                //printf("Got str %s\n", path_len_output_mbs);
 
                 __wasi_dirent_t dir;
                 dir.d_ino = info->FileId.QuadPart;
@@ -1852,64 +1825,24 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
 
                 __wasi_dircookie_t d_next = idx + 1;
 
-                /*if(info->NextEntryOffset == 0)
-                {
-                    d_next = 0;
-                }*/
-
-                //dir.d_namlen = str.size();
                 dir.d_namlen = strlen(str.c_str());
                 dir.d_next = d_next;
 
-                dirents.push_back(dir);
-                names.push_back(str);
+                hacky_copy_into(dir, str.c_str(), buf, buf_len, used);
 
-                //hacky_copy_into(dir, str.c_str(), buf, buf_len, used);
+                if(*used == buf_len)
+                    return __WASI_ESUCCESS;
             }
+
+            idx++;
 
             if(info->NextEntryOffset == 0)
                 break;
 
             info = (FILE_ID_BOTH_DIR_INFO*)((char*)info + info->NextEntryOffset);
-            idx++;
         }
         while(1);
     }
-
-    for(int i=0; i < (int)dirents.size(); i++)
-    {
-        if(i < (int)cookie)
-            continue;
-
-        if(i == (int)dirents.size() - 1)
-        {
-            dirents[i].d_next = 0;
-        }
-        else
-        {
-            dirents[i].d_next = i + 1;
-        }
-
-        hacky_copy_into(dirents[i], names[i].c_str(), buf, buf_len, used);
-
-        if(*used == buf_len)
-            break;
-
-        //break;
-    }
-
-    /*__wasi_dirent_t* test_dir = (__wasi_dirent_t*)&buf[0];
-
-    std::cout << "FDIR " << test_dir->d_next << std::endl;
-    std::cout << "FDIR " << test_dir->d_ino << std::endl;
-    std::cout << "FDIR " << test_dir->d_namlen << std::endl;
-    std::cout << "FDIR " << std::to_string(test_dir->d_type) << std::endl;
-
-    std::cout << "TEST " << buf[sizeof(__wasi_dirent_t) + 0] << std::endl;*/
-    //std::cout << "TEST " << buf[sizeof(__wasi_dirent_t) + 1] << std::endl;
-    //std::cout << "TEST " << buf[sizeof(__wasi_dirent_t) + 2] << std::endl;
-
-    std::cout << "USED " << *used << " READ BUFFER " << buf_len << std::endl;
 
     return __WASI_ESUCCESS;
 }
