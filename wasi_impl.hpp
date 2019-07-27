@@ -1687,6 +1687,62 @@ __wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags
     return set_err;
 }
 
+#if 0
+struct aligned_vector
+{
+    std::vector<char> vec;
+    void* in = nullptr;
+    size_t alloc = 0;
+
+    aligned_vector() : vec(32)
+    {
+
+    }
+
+    template<int N>
+    char* get()
+    {
+        alloc = vec.size();
+        in = &vec[0];
+
+        return (char*)std::align(8, N, in, alloc);
+    }
+
+    void resize(size_t size)
+    {
+        vec.resize(size + 32);
+    }
+};
+#endif // 0
+
+void hacky_copy_into(__wasi_dirent_t dir, char* name, wasi_ptr_t<char> buf, size_t buf_len, wasi_size_t& used_buf)
+{
+    wasi_size_t struct_len = sizeof(__wasi_dirent_t);
+    wasi_size_t end_with_struct = used_buf + struct_len;
+    wasi_size_t end_with_struct_and_name = used_buf + struct_len + dir.d_namlen;
+
+    int lused = 0;
+
+    for(wasi_size_t i=used_buf; i < buf_len && i < end_with_struct; i++)
+    {
+        size_t idx = i - used_buf;
+
+        char* as_ptr = (char*)&dir;
+        buf[i] = as_ptr[idx];
+        lused++;
+    }
+
+    for(wasi_size_t i=end_with_struct; i < buf_len && i < end_with_struct_and_name; i++)
+    {
+        size_t idx = i - end_with_struct;
+
+        buf[i] = name[idx];
+        lused++;
+    }
+
+    used_buf += lused;
+}
+
 __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_size_t buf_len, __wasi_dircookie_t cookie, wasi_ptr_t<wasi_size_t> used)
 {
     printf("Readdir\n");
@@ -1694,12 +1750,8 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
-    printf("Has fd in readdir\n");
-
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_READDIR))
         return __WASI_ENOTCAPABLE;
-
-    printf("Is capable in readdir\n");
 
     if(buf_len == 0)
         return __WASI_ESUCCESS;
@@ -1710,6 +1762,7 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     wasi_ptr_t<char> buf(0);
     buf.val = vbuf.val;
 
+    #if 0
     #ifdef _WIN32
     constexpr int win_allocation_size = sizeof(FILE_ID_BOTH_DIR_INFO) + MAX_PATH + 1;
 
@@ -1737,7 +1790,7 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
         bool success = false;
 
         if(restart)
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, win_allocation_size);
+            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, win_alloc, win_allocation_size);
         else
             success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, win_allocation_size);
 
@@ -1746,7 +1799,10 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
         if(!success)
         {
             if(GetLastError() == ERROR_NO_MORE_FILES)
+            {
+                printf("No more files\n");
                 break;
+            }
 
             //printf("Bad getfileinfo %i\n", GetLastError());
             return __WASI_EBADF;
@@ -1778,10 +1834,14 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
 
         __wasi_dircookie_t d_next = current_entry + 1;
 
+        std::cout << "DNext " << info->NextEntryOffset << std::endl;
+
         if(info->NextEntryOffset == 0)
         {
             d_next = 0;
             iterate = false;
+
+            printf("Last file\n");
         }
 
         char output[256] = {};
@@ -1831,6 +1891,71 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     #endif // _WIN32
 
     return __WASI_ENOTCAPABLE;
+    #endif
+
+    __wasi_dircookie_t which = 0;
+
+    tinydir_dir dir;
+    int res = tinydir_open(&dir, file_sandbox.files[fd].relative_path.c_str());
+
+    if(res != 0)
+        return WASI_ERRNO();
+
+    __wasi_dircookie_t accum = 0;
+
+
+    size_t wasi_buffer_writer = 0;
+
+    while (dir.has_next)
+    {
+        if(which >= current_entry)
+        {
+            tinydir_file file;
+            int res = tinydir_readfile(&dir, &file);
+
+            if(res != 0)
+            {
+                tinydir_close(&dir);
+                return WASI_ERRNO();
+            }
+
+            __wasi_dirent_t wdir;
+            wdir.d_ino = 0;
+            wdir.d_namlen = strlen(file.name);
+            wdir.d_type = __WASI_FILETYPE_UNKNOWN;
+
+            if(file.is_reg)
+                wdir.d_type = __WASI_FILETYPE_REGULAR_FILE;
+
+            if(file.is_dir)
+                wdir.d_type = __WASI_FILETYPE_DIRECTORY;
+
+            ///?
+            //dir.d_next = sizeof(__wasi_dirent_t) + d_namlen + accum;
+            //accum += sizeof(__wasi_dirent_t) + d_namlen;
+            wdir.d_next = which + 1;
+
+            if(!dir.has_next)
+                wdir.d_next = 0;
+
+            hacky_copy_into(wdir, file.name, buf, buf_len, used_buf);
+            *used = used_buf;
+        }
+
+        int res = tinydir_next(&dir);
+
+        if(res != 0)
+        {
+            tinydir_close(&dir);
+            return WASI_ERRNO();
+        }
+
+        which++;
+    }
+
+    tinydir_close(&dir);
+
+    return __WASI_ESUCCESS;
 }
 
 //fd_pread
