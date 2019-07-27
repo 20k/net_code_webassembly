@@ -1889,7 +1889,10 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     DIR* associated = fdopendir(usefd);
 
     if(associated == nullptr)
+    {
+        close(usefd);
         return WASI_ERRNO();
+    }
 
     rewinddir(associated);
     seekdir(associated, cookie);
