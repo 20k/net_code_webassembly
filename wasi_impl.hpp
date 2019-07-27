@@ -1715,17 +1715,19 @@ struct aligned_vector
 };
 #endif // 0
 
-void hacky_copy_into(__wasi_dirent_t dir, char* name, wasi_ptr_t<char> buf, wasi_size_t buf_len, wasi_ptr_t<wasi_size_t> used_buf)
+void hacky_copy_into(__wasi_dirent_t dir, const char* name, wasi_ptr_t<char> buf, wasi_size_t buf_len, wasi_ptr_t<wasi_size_t> used_buf)
 {
+    wasi_size_t start = *used_buf;
+
     wasi_size_t struct_len = sizeof(__wasi_dirent_t);
-    wasi_size_t end_with_struct = *used_buf + struct_len;
-    wasi_size_t end_with_struct_and_name = *used_buf + struct_len + dir.d_namlen;
+    wasi_size_t end_with_struct = start + struct_len;
+    wasi_size_t end_with_struct_and_name = start + struct_len + dir.d_namlen;
 
     int lused = 0;
 
-    for(wasi_size_t i=*used_buf; i < buf_len && i < end_with_struct; i++)
+    for(wasi_size_t i=start; i < buf_len && i < end_with_struct; i++)
     {
-        size_t idx = i - *used_buf;
+        size_t idx = i - start;
 
         char* as_ptr = (char*)&dir;
         buf[i] = as_ptr[idx];
@@ -1739,6 +1741,12 @@ void hacky_copy_into(__wasi_dirent_t dir, char* name, wasi_ptr_t<char> buf, wasi
         buf[i] = name[idx];
         lused++;
     }
+
+    /*if(end_with_struct_and_name < buf_len)
+    {
+        buf[end_with_struct_and_name] = '\0';
+        lused++;
+    }*/
 
     *used_buf += lused;
 }
@@ -1756,10 +1764,16 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
     bool restart = true;
     int idx = 0;
 
+    std::vector<__wasi_dirent_t> dirents;
+    std::vector<std::string> names;
+
     char path_len_output_mbs[4096] = {};
 
     while(iterate)
     {
+        for(auto& i : stupid_pos_buf)
+            i = 0;
+
         bool success = false;
 
         if(restart)
@@ -1792,20 +1806,38 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
 
         FILE_ID_BOTH_DIR_INFO* info = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
 
-        int name_len_ucs = info->FileNameLength;
-
         do
         {
-            if(idx >= cookie)
+            //if(idx >= cookie)
             {
+                memset(path_len_output_mbs, 0, sizeof(path_len_output_mbs));
+
                 ///fun fact: Not *necessarily* null terminated!
                 const WCHAR* wc = info->FileName;
-                std::wstring ws(wc, wc + info->FileNameLength);
+                std::wstring ws(wc, info->FileNameLength);
 
-                size_t len = wcstombs(path_len_output_mbs, ws.c_str(), sizeof(path_len_output_mbs));
+                //std::wcout << "Hello my name! " << ws << std::endl;
+
+                /*size_t len = wcstombs(path_len_output_mbs, ws.c_str(), sizeof(path_len_output_mbs));
 
                 if (len > 0)
-                    path_len_output_mbs[len] = '\0';
+                    path_len_output_mbs[len] = '\0';*/
+
+                /*std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
+                std::string str = utf8_conv.to_bytes(ws);*/
+
+                int utf8len = WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), ws.size(), NULL, 0, NULL, NULL);
+
+                std::string str;
+                str.resize(utf8len + 1);
+
+                WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), ws.size(), &str[0], utf8len, 0, 0);
+
+                str.pop_back();
+
+                //std::cout << "Got string " << str.c_str() << std::endl;
+
+                //printf("Got str %s\n", path_len_output_mbs);
 
                 __wasi_dirent_t dir;
                 dir.d_ino = info->FileId.QuadPart;
@@ -1820,15 +1852,19 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
 
                 __wasi_dircookie_t d_next = idx + 1;
 
-                if(info->NextEntryOffset == 0)
+                /*if(info->NextEntryOffset == 0)
                 {
                     d_next = 0;
-                }
+                }*/
 
-                dir.d_namlen = len;
+                //dir.d_namlen = str.size();
+                dir.d_namlen = strlen(str.c_str());
                 dir.d_next = d_next;
 
-                hacky_copy_into(dir, path_len_output_mbs, buf, buf_len, used);
+                dirents.push_back(dir);
+                names.push_back(str);
+
+                //hacky_copy_into(dir, str.c_str(), buf, buf_len, used);
             }
 
             if(info->NextEntryOffset == 0)
@@ -1839,6 +1875,41 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
         }
         while(1);
     }
+
+    for(int i=0; i < (int)dirents.size(); i++)
+    {
+        if(i < (int)cookie)
+            continue;
+
+        if(i == (int)dirents.size() - 1)
+        {
+            dirents[i].d_next = 0;
+        }
+        else
+        {
+            dirents[i].d_next = i + 1;
+        }
+
+        hacky_copy_into(dirents[i], names[i].c_str(), buf, buf_len, used);
+
+        if(*used == buf_len)
+            break;
+
+        //break;
+    }
+
+    /*__wasi_dirent_t* test_dir = (__wasi_dirent_t*)&buf[0];
+
+    std::cout << "FDIR " << test_dir->d_next << std::endl;
+    std::cout << "FDIR " << test_dir->d_ino << std::endl;
+    std::cout << "FDIR " << test_dir->d_namlen << std::endl;
+    std::cout << "FDIR " << std::to_string(test_dir->d_type) << std::endl;
+
+    std::cout << "TEST " << buf[sizeof(__wasi_dirent_t) + 0] << std::endl;*/
+    //std::cout << "TEST " << buf[sizeof(__wasi_dirent_t) + 1] << std::endl;
+    //std::cout << "TEST " << buf[sizeof(__wasi_dirent_t) + 2] << std::endl;
+
+    std::cout << "USED " << *used << " READ BUFFER " << buf_len << std::endl;
 
     return __WASI_ESUCCESS;
 }
@@ -1857,6 +1928,9 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
 
     if(buf_len == 0)
         return __WASI_ESUCCESS;
+
+    std::cout << "Got cookie " << cookie << std::endl;
+    std::cout << "Got buf len " << buf_len << std::endl;
 
     //wasi_size_t used_buf = 0;
     __wasi_dircookie_t current_entry = cookie;
