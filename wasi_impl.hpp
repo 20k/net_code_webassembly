@@ -1907,7 +1907,6 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
 
     __wasi_dircookie_t accum = 0;
 
-
     size_t wasi_buffer_writer = 0;
 
     while (dir.has_next)

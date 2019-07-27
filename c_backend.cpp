@@ -266,7 +266,7 @@ struct c_context
     std::vector<int> label_types;
 };
 
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity, runtime::moduleinst& minst);
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity, runtime::moduleinst& minst, bool dbg = false);
 
 ///so, frame_abort = true is just a return <last_stack_item> if our arity is > 0
 ///only thing return arity is used for
@@ -276,18 +276,37 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
 ///pops all values off stack when we exit
 ///have to pass values manually to higher level variables
 ///each label capture arity has an associated variable
+
+///so: in the wasm2c gen, what seems to happen is that when you do a return, it sets the arity store variable out
+///and then jumps to the end of the loop out of the function
+///but it doesn't seem to guarantee that the extra value is actually on the stack which is.. weird
+///treats return like a push
 std::string define_label(runtime::store& s, const types::vec<types::instr>& exp, const label& l, c_context& ctx, value_stack stack_offset, int return_arity, runtime::moduleinst& minst)
 {
     ctx.label_depth++;
 
     int destination_stack_val = -1;
 
-    if(l.btype.arity() > 0)
+    //std::cout << "START STACK " << stack_offset.stk.size() << std::endl;
+
+    if(l.btype.arity() > 0 && l.continuation == 2)
     {
-        destination_stack_val = stack_offset.peek_back();
-        stack_offset.pop_back();
+        ///loops cannot have arguments, so we pop this and get rid of it
+        destination_stack_val = stack_offset.pop_back();
 
         printf("Label with arity\n");
+    }
+
+    if(l.btype.arity() > 0 && l.continuation != 2)
+    {
+        printf("Non loop label with arity\n");
+
+        destination_stack_val = stack_offset.peek_back();
+    }
+
+    if(stack_offset.stk.size() != 0)
+    {
+        printf("Start extra stack\n");
     }
 
     ctx.label_arities.push_back(l.btype.arity());
@@ -296,7 +315,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     std::string fbody;
 
     ///one stack value argument
-    if(l.btype.arity() == 1)
+    if(l.btype.arity() > 0)
     {
         fbody += l.btype.friendly() + " r_" + std::to_string(ctx.label_depth) + " = 0; //[label with arity]\n";
     }
@@ -313,7 +332,7 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
         fbody += l.btype.friendly() + " " + get_variable_name(stack_offset++) + " = r_" + std::to_string(ctx.label_depth) + ";";
     }*/
 
-    fbody += define_expr(s, exp, ctx, stack_offset, return_arity, minst);
+    fbody += define_expr(s, exp, ctx, stack_offset, return_arity, minst, l.btype.arity() > 0);
 
     ///so in the event that there's an abort and we're not it, we delete our stack and then back up a level
     ///in the event that there's an abort and we are it, our return value is the next item on the stack
@@ -321,7 +340,8 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     ///no back jumps with a loop with a value
     if(l.btype.arity() > 0)
     {
-        fbody += "    r_" + std::to_string(ctx.label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
+        if(stack_offset.stk.size() > 0)
+            fbody += "    r_" + std::to_string(ctx.label_depth) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n";
     }
 
     fbody += "    } while(0); //end skip point\n";
@@ -377,19 +397,25 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
 
     fbody += "}\n";
 
-    /*if(l.btype.arity() > 0)
+    if(stack_offset.stk.size() != 0)
+    {
+        printf("Stack extra!\n");
+    }
+
+    if(l.btype.arity() > 0)
     {
         fbody += " else { \n";
 
-        fbody += get_variable_name(destination_stack_val) + " = " + get_variable_name(stack_offset.pop_back()) + ";\n}";
-    }*/
+        fbody += get_variable_name(destination_stack_val) + " = r_" + std::to_string(ctx.label_depth) + ";\n}";
+    }
 
-    if(l.btype.arity() > 0 && l.continuation == 2)
+    /*if(l.btype.arity() > 0 && l.continuation == 2)
     {
         fbody += " else {\n";
 
-        fbody += get_variable_name(destination_stack_val) + " = r_" + std::to_string(ctx.label_depth) + ";\n}\n";
-    }
+        //fbody += get_variable_name(destination_stack_val) + " = " + std::to_string(stack_offset.pop_back()) + ";\n";
+        //fbody += get_variable_name(destination_stack_val) + " = r_" + std::to_string(ctx.label_depth) + ";\n}\n";
+    }*/
 
     ///reached end of block
     fbody += "    break;\n";
@@ -397,6 +423,8 @@ std::string define_label(runtime::store& s, const types::vec<types::instr>& exp,
     ctx.label_depth--;
     ctx.label_arities.pop_back();
     ctx.label_types.pop_back();
+
+    //std::cout << "END STACK " << stack_offset.stk.size() << std::endl;
 
     if(l.continuation == 2)
         return fbody + "}\n";
@@ -600,7 +628,7 @@ std::string invoke_function(runtime::store& s, c_context& ctx, value_stack stack
 }
 
 ///don't need to support eval with frame, do need to support eval with label
-std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity, runtime::moduleinst& minst)
+std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, c_context& ctx, value_stack& stack_offset, int return_arity, runtime::moduleinst& minst, bool dbg)
 {
     size_t len = exp.size();
 
@@ -629,6 +657,11 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
         //ret += "fwrite(\"" + inst + "\\n\", " + std::to_string(inst.size()+1) + ", 1, my_file);\n";
         #endif // INSTRUCTION_TRACING
 
+        if(dbg)
+        {
+            std::cout << "ar " << instr_to_str(which) << std::endl;
+        }
+
         switch(which)
         {
             case 0x00:
@@ -654,7 +687,7 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 //assert(l.btype.arity() == 0);
 
                 if(l.btype.arity() > 0)
-                    ret += sbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0\n";
+                    ret += sbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0;\n";
 
                 ret += define_label(s, sbd.first, l, ctx, stack_offset, return_arity, minst);
 
@@ -680,10 +713,10 @@ std::string define_expr(runtime::store& s, const types::vec<types::instr>& exp, 
                 {
                     printf("Warning! Loop with arity!\n");
                     std::cout << l.btype.friendly() << std::endl;
-                    l.btype.which = 0x40; ///HACK!
+                    //l.btype.which = 0x40; ///HACK!
 
                     ///arity destination
-                    //ret += sbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0; //[loop with arity]\n";
+                    ret += sbd.btype.friendly() + " " + get_variable_name(stack_offset.get_next()) + " = 0; //[loop with arity]\n";
                 }
 
                 //assert(l.btype.arity() == 0);
