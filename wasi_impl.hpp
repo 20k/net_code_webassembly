@@ -1756,7 +1756,7 @@ __wasi_errno_t get_directory_info_as_wasi(HANDLE handle, wasi_ptr_t<char> buf, w
 
     bool iterate = true;
     bool restart = true;
-    int idx = 0;
+    uint64_t idx = 0;
 
     while(iterate)
     {
@@ -1865,9 +1865,6 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     std::cout << "Got cookie " << cookie << std::endl;
     std::cout << "Got buf len " << buf_len << std::endl;
 
-    //wasi_size_t used_buf = 0;
-    __wasi_dircookie_t current_entry = cookie;
-
     wasi_ptr_t<char> buf(0);
     buf.val = vbuf.val;
 
@@ -1887,6 +1884,66 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     std::cout << "Did second? " << err_2 << std::endl;
 
     return err_2;
+
+    #else
+
+    int usefd = dup(file_sandbox.files[fd].portable_fd);
+
+    DIR* associated = fdopendir(usefd);
+
+    if(associated == nullptr)
+        return WASI_ERRNO();
+
+    rewinddir(associated);
+    seekdir(associated, cookie);
+
+    struct dirent* entry = nullptr;
+
+    uint64_t idx = cookie;
+
+    errno = 0;
+
+    while((entry = readdir(associated)) != nullptr)
+    {
+        __wasi_dirent_t wdir;
+        wdir.d_next = idx + 1;
+        wdir.d_ino = entry->d_ino;
+        wdir.d_namlen = strlen(entry->d_name);
+
+        wdir.d_type = __WASI_FILETYPE_UNKNOWN;
+
+        if((entry->d_type & DT_BLK) > 0)
+            wdir.d_type = __WASI_FILETYPE_BLOCK_DEVICE;
+
+        if((entry->d_type & DT_CHR) > 0)
+            wdir.d_type = __WASI_FILETYPE_CHARACTER_DEVICE;
+
+        if((entry->d_type & DT_DIR) > 0)
+            wdir.d_type = __WASI_FILETYPE_DIRECTORY;
+
+        if((entry->d_type & DT_FIFO) > 0)
+            wdir.d_type = __WASI_FILETYPE_CHARACTER_DEVICE;
+
+        if((entry->d_type & DT_LNK) > 0)
+            wdir.d_type = __WASI_FILETYPE_SYMBOLIC_LINK;
+
+        if((entry->d_type & DT_REG) > 0)
+            wdir.d_type = __WASI_FILETYPE_REGULAR_FILE;
+
+        hacky_copy_into(wdir, entry->d_name, buf, buf_len, used);
+
+        idx++;
+    }
+
+    if(errno != 0)
+        return WASI_ERRNO();
+
+    int err = closedir(associated);
+
+    if(err != 0)
+        return WASI_ERRNO();
+
+    return __WASI_ESUCCESS;
 
     #endif // _WIN32
 
@@ -1928,15 +1985,12 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
                 wdir.d_type = __WASI_FILETYPE_DIRECTORY;
 
             ///?
-            //dir.d_next = sizeof(__wasi_dirent_t) + d_namlen + accum;
-            //accum += sizeof(__wasi_dirent_t) + d_namlen;
             wdir.d_next = which + 1;
 
             if(!dir.has_next)
                 wdir.d_next = 0;
 
-            hacky_copy_into(wdir, file.name, buf, buf_len, used_buf);
-            *used = used_buf;
+            hacky_copy_into(wdir, file.name, buf, buf_len, *used);
         }
 
         int res = tinydir_next(&dir);
