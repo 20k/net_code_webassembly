@@ -1862,9 +1862,6 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     if(buf_len == 0)
         return __WASI_ESUCCESS;
 
-    std::cout << "Got cookie " << cookie << std::endl;
-    std::cout << "Got buf len " << buf_len << std::endl;
-
     wasi_ptr_t<char> buf(0);
     buf.val = vbuf.val;
 
