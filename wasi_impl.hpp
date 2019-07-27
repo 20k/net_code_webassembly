@@ -1398,6 +1398,8 @@ __wasi_errno_t __wasi_fd_prestat_dir_name(__wasi_fd_t fd, PTR(char) path, wasi_s
 ///not supported on windows at all, could support linux
 __wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len, __wasi_advice_t advice)
 {
+    printf("FdAdvise\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1409,6 +1411,8 @@ __wasi_errno_t __wasi_fd_advise(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi
 
 __wasi_errno_t __wasi_fd_allocate(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len)
 {
+    printf("FdAllocate\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1444,6 +1448,8 @@ __wasi_errno_t __wasi_fd_allocate(__wasi_fd_t fd, __wasi_filesize_t offset, __wa
 
 __wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
 {
+    printf("FdDatasync\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1457,6 +1463,8 @@ __wasi_errno_t __wasi_fd_datasync(__wasi_fd_t fd)
 
 __wasi_errno_t __wasi_fd_sync(__wasi_fd_t fd)
 {
+    printf("FdSync\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1494,6 +1502,8 @@ __wasi_errno_t __wasi_fd_fdstat_get(__wasi_fd_t fd, PTR(__wasi_fdstat_t) buf)
 
 __wasi_errno_t __wasi_fd_fdstat_set_flags(__wasi_fd_t fd, __wasi_fdflags_t flags)
 {
+    printf("FdStatSetFlags\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1509,6 +1519,8 @@ __wasi_errno_t __wasi_fd_fdstat_set_flags(__wasi_fd_t fd, __wasi_fdflags_t flags
 
 __wasi_errno_t __wasi_fd_fdstat_set_rights(__wasi_fd_t fd, __wasi_rights_t fs_rights_base, __wasi_rights_t fs_rights_inheriting)
 {
+    printf("FdStatSetRights\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1556,6 +1568,8 @@ __wasi_errno_t __wasi_fd_fdstat_set_rights(__wasi_fd_t fd, __wasi_rights_t fs_ri
 ///TODO: Clean this up
 __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat_t> buf)
 {
+    printf("FdFilestatGet\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1587,6 +1601,8 @@ __wasi_errno_t __wasi_fd_filestat_get(__wasi_fd_t fd, wasi_ptr_t<__wasi_filestat
 
 __wasi_errno_t __wasi_path_filestat_get(__wasi_fd_t fd, __wasi_lookupflags_t flags, const wasi_ptr_t<char> path, wasi_size_t path_len, wasi_ptr_t<__wasi_filestat_t> buf)
 {
+    printf("PathFilestatGet\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1618,6 +1634,8 @@ __wasi_errno_t __wasi_path_filestat_get(__wasi_fd_t fd, __wasi_lookupflags_t fla
 
 __wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_size)
 {
+    printf("FdSetSize\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1632,6 +1650,8 @@ __wasi_errno_t __wasi_fd_filestat_set_size(__wasi_fd_t fd, __wasi_filesize_t st_
 ///TODO: This
 __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags)
 {
+    printf("FSetTimes\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1643,6 +1663,8 @@ __wasi_errno_t __wasi_fd_filestat_set_times(__wasi_fd_t fd, __wasi_timestamp_t s
 
 __wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags_t flags, const wasi_ptr_t<char> path, wasi_size_t path_len, __wasi_timestamp_t st_atim, __wasi_timestamp_t st_mtim, __wasi_fstflags_t fstflags)
 {
+    printf("PSetTimes\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -1667,11 +1689,17 @@ __wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags
 
 __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_size_t buf_len, __wasi_dircookie_t cookie, wasi_ptr_t<wasi_size_t> used)
 {
+    printf("Readdir\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
+    printf("Has fd in readdir\n");
+
     if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_READDIR))
         return __WASI_ENOTCAPABLE;
+
+    printf("Is capable in readdir\n");
 
     if(buf_len == 0)
         return __WASI_ESUCCESS;
@@ -1716,7 +1744,13 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
         restart = false;
 
         if(!success)
+        {
+            if(GetLastError() == ERROR_NO_MORE_FILES)
+                break;
+
+            //printf("Bad getfileinfo %i\n", GetLastError());
             return __WASI_EBADF;
+        }
 
         FILE_ID_BOTH_DIR_INFO* info = (FILE_ID_BOTH_DIR_INFO*)win_alloc;
 
@@ -1811,6 +1845,8 @@ uint8_t get_next_random_byte()
 
 __wasi_errno_t __wasi_proc_raise(__wasi_signal_t sig)
 {
+    printf("Raise\n");
+
     HALT_ON(__WASI_SIGABRT);
     HALT_ON(__WASI_SIGALRM); ///is this really necessary in the spec
     HALT_ON(__WASI_SIGBUS);
@@ -1856,6 +1892,8 @@ __wasi_errno_t __wasi_proc_raise(__wasi_signal_t sig)
 
 __wasi_errno_t __wasi_random_get(wasi_ptr_t<void> buf, uint32_t buf_len)
 {
+    printf("Random\n");
+
     wasi_ptr_t<char> cbuf(0);
     cbuf.val = buf.val;
 
@@ -1929,17 +1967,29 @@ __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
     if(fd == 0 || fd == 1 || fd == 2)
         return __WASI_EBADF;
 
+    printf("Yay!\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
+
+    printf("Nay!\n");
 
     if(file_sandbox.is_preopen(fd))
         return __WASI_EBADF;
 
-    return file_sandbox.close_fd(fd);
+    printf("Hereclose\n");
+
+    __wasi_errno_t err = file_sandbox.close_fd(fd);
+
+    std::cout << "fclose err " << err << std::endl;
+
+    return err;
 }
 
 __wasi_errno_t __wasi_fd_renumber(__wasi_fd_t from, __wasi_fd_t to)
 {
+    printf("Renumber\n");
+
     if(!file_sandbox.has_fd(from) || !file_sandbox.has_fd(to))
         return __WASI_EBADF;
 
@@ -2016,6 +2066,8 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
                                 __wasi_fdflags_t fs_flags,
                                 wasi_ptr_t<__wasi_fd_t> fd)
 {
+    printf("BeginOpen\n");
+
     if(!file_sandbox.has_fd(dirfd))
         return __WASI_EBADF;
 
@@ -2031,6 +2083,8 @@ __wasi_errno_t __wasi_path_open(__wasi_fd_t dirfd,
 
     file_desc out;
     __wasi_errno_t err = file_sandbox.make_file(dirfd, pth, out, oflags, dirflags);
+
+    std::cout << "open err " << err << std::endl;
 
     if(err != __WASI_ESUCCESS)
         return err;
@@ -2087,6 +2141,8 @@ __wasi_errno_t __wasi_path_unlink_file(__wasi_fd_t fd, const wasi_ptr_t<char> pa
 
 __wasi_errno_t __wasi_path_create_directory(__wasi_fd_t fd, const wasi_ptr_t<char> path, wasi_size_t path_len)
 {
+    printf("PathCreate\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
@@ -2107,6 +2163,8 @@ __wasi_errno_t __wasi_path_create_directory(__wasi_fd_t fd, const wasi_ptr_t<cha
 
 __wasi_errno_t __wasi_path_remove_directory(__wasi_fd_t fd, const wasi_ptr_t<char> path, wasi_size_t path_len)
 {
+    printf("PathRemove\n");
+
     if(!file_sandbox.has_fd(fd))
         return __WASI_EBADF;
 
