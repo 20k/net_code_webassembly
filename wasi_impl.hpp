@@ -1783,6 +1783,10 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     if(err_1 != __WASI_ESUCCESS)
         return err_1;
 
+    ///ok this can be fixed
+    ///basically what needs to happen is need to do 2 passes
+    ///once to get all the info, put it in fixed sized structs
+    ///then a second time to get the names out
     do
     {
         memset(win_alloc, 0, win_allocation_size);
