@@ -2012,7 +2012,6 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
 
 //fd_pread
 //fd_pwrite
-//fd_readdir
 //path_link
 //path_open
 //path_readlink
