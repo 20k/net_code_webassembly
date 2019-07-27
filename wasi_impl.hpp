@@ -1687,34 +1687,6 @@ __wasi_errno_t __wasi_path_filestat_set_times(__wasi_fd_t fd, __wasi_lookupflags
     return set_err;
 }
 
-#if 0
-struct aligned_vector
-{
-    std::vector<char> vec;
-    void* in = nullptr;
-    size_t alloc = 0;
-
-    aligned_vector() : vec(32)
-    {
-
-    }
-
-    template<int N>
-    char* get()
-    {
-        alloc = vec.size();
-        in = &vec[0];
-
-        return (char*)std::align(8, N, in, alloc);
-    }
-
-    void resize(size_t size)
-    {
-        vec.resize(size + 32);
-    }
-};
-#endif // 0
-
 void hacky_copy_into(__wasi_dirent_t dir, const char* name, wasi_ptr_t<char> buf, wasi_size_t buf_len, wasi_ptr_t<wasi_size_t> used_buf)
 {
     wasi_size_t start = *used_buf;
