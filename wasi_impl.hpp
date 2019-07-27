@@ -1737,7 +1737,7 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
         bool success = false;
 
         if(restart)
-            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryRestartInfo, win_alloc, win_allocation_size);
+            success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, win_allocation_size);
         else
             success = GetFileInformationByHandleEx(handle, FileIdBothDirectoryInfo, win_alloc, win_allocation_size);
 
@@ -1763,9 +1763,10 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
             continue;
         }
 
+        printf("Got a file\n");
+
         __wasi_dirent_t dir;
         dir.d_ino = info->FileId.QuadPart;
-        dir.d_namlen = info->FileNameLength;
 
         dir.d_type = __WASI_FILETYPE_REGULAR_FILE;
 
@@ -1782,6 +1783,16 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
             d_next = 0;
             iterate = false;
         }
+
+        char output[256] = {};
+        const WCHAR* wc = info->FileName;
+
+        size_t len = wcstombs(output,wc,sizeof(output));
+
+        if (len > 0)
+            output[len] = '\0';
+
+        dir.d_namlen = len;
 
         dir.d_next = d_next;
 
@@ -1804,9 +1815,11 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
         {
             size_t idx = i - end_with_struct;
 
-            buf[i] = info->FileName[idx];
+            buf[i] = output[idx];
             lused++;
         }
+
+        std::cout << "Name " << (char*)&output[0] << std::endl;
 
         used_buf += lused;
         *used = used_buf;
