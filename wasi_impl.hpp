@@ -850,6 +850,8 @@ __wasi_errno_t cstat(const std::string& path, cfstat_info* buf, __wasi_lookupfla
 
 __wasi_errno_t c_lseek(int64_t fd, __wasi_filedelta_t offset, __wasi_whence_t origin, int64_t* off)
 {
+    assert(off);
+
     int which = 0;
 
     if(origin == __WASI_WHENCE_CUR)
@@ -871,6 +873,13 @@ __wasi_errno_t c_lseek(int64_t fd, __wasi_filedelta_t offset, __wasi_whence_t or
     *off = res;
 
     return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t c_tell(int64_t fd, int64_t* off)
+{
+    assert(off);
+
+    return c_lseek(fd, 0, __WASI_WHENCE_CUR, off);
 }
 
 struct preopened
@@ -1270,6 +1279,78 @@ struct preopened
             processed += next;
             out_bytes = processed;
         }
+
+        return __WASI_ESUCCESS;
+    }
+
+    __wasi_errno_t write_fd_at(uint32_t fd, wasi_ptr_t<char> data, wasi_size_t len, wasi_size_t offset, size_t& out_bytes)
+    {
+        assert(has_fd(fd));
+
+        const file_desc& desc = files[fd];
+
+        ///get ptr offset
+        int64_t my_off = 0;
+        __wasi_errno_t err = c_tell(desc.portable_fd, &my_off);
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+
+        ///rewind
+        int64_t dummy_off = 0;
+        __wasi_errno_t err_2 = c_lseek(desc.portable_fd, 0, __WASI_WHENCE_SET, &dummy_off);
+
+        if(err_2 != __WASI_ESUCCESS)
+            return err_2;
+
+        ///write
+        __wasi_errno_t write_err = write_fd(fd, data, len, out_bytes);
+
+        ///don't leave the seek ptr half butchered even on error
+        ///moves file pointer back to my_offset
+        __wasi_errno_t seek_err = c_lseek(desc.portable_fd, my_off, __WASI_WHENCE_SET, &dummy_off);
+
+        if(seek_err != __WASI_ESUCCESS)
+            return seek_err;
+
+        if(write_err != __WASI_ESUCCESS)
+            return write_err;
+
+        return __WASI_ESUCCESS;
+    }
+
+    __wasi_errno_t read_fd_at(uint32_t fd, wasi_ptr_t<char> data, wasi_size_t len, wasi_size_t offset, size_t& out_bytes)
+    {
+        assert(has_fd(fd));
+
+        const file_desc& desc = files[fd];
+
+        ///get ptr offset
+        int64_t my_off = 0;
+        __wasi_errno_t err = c_tell(desc.portable_fd, &my_off);
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+
+        ///rewind
+        int64_t dummy_off = 0;
+        __wasi_errno_t err_2 = c_lseek(desc.portable_fd, 0, __WASI_WHENCE_SET, &dummy_off);
+
+        if(err_2 != __WASI_ESUCCESS)
+            return err_2;
+
+        ///read
+        __wasi_errno_t read_err = read_fd(fd, data, len, out_bytes);
+
+        ///don't leave the seek ptr half butchered even on error
+        ///moves file pointer back to my_offset
+        __wasi_errno_t seek_err = c_lseek(desc.portable_fd, my_off, __WASI_WHENCE_SET, &dummy_off);
+
+        if(seek_err != __WASI_ESUCCESS)
+            return seek_err;
+
+        if(read_err != __WASI_ESUCCESS)
+            return read_err;
 
         return __WASI_ESUCCESS;
     }
@@ -2456,6 +2537,68 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t>
 
         size_t out_bytes = 0;
         __wasi_errno_t err = file_sandbox.write_fd(fd, tchr, single.buf_len, out_bytes);
+
+        *nwritten += out_bytes;
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+    }
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_pread(__wasi_fd_t fd, const wasi_ptr_t<__wasi_iovec_t> iovs, wasi_size_t iovs_len, __wasi_filesize_t offset, wasi_ptr_t<wasi_size_t> nread)
+{
+    *nread = 0;
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_READ))
+        return __WASI_ENOTCAPABLE;
+
+    for(size_t i=0; i < iovs_len; i++)
+    {
+        __wasi_iovec_t single = iovs[i];
+
+        const wasi_ptr_t<void> buf = single.buf;
+
+        wasi_ptr_t<char> tchr(0);
+        tchr.val = buf.val;
+
+        size_t out_bytes = 0;
+        __wasi_errno_t err = file_sandbox.read_fd_at(fd, tchr, single.buf_len, offset, out_bytes);
+
+        *nread += out_bytes;
+
+        if(err != __WASI_ESUCCESS)
+            return err;
+    }
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_fd_pwrite(__wasi_fd_t fd, const wasi_ptr_t<__wasi_ciovec_t> iovs, wasi_size_t iovs_len, __wasi_filesize_t offset, wasi_ptr_t<uint32_t> nwritten)
+{
+    *nwritten = 0;
+
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd, __WASI_RIGHT_FD_WRITE))
+        return __WASI_ENOTCAPABLE;
+
+    for(size_t i=0; i < iovs_len; i++)
+    {
+        __wasi_ciovec_t single = iovs[i];
+
+        const wasi_ptr_t<void> buf = single.buf;
+
+        wasi_ptr_t<char> tchr(0);
+        tchr.val = buf.val;
+
+        size_t out_bytes = 0;
+        __wasi_errno_t err = file_sandbox.write_fd_at(fd, tchr, single.buf_len, offset, out_bytes);
 
         *nwritten += out_bytes;
 
