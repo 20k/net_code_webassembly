@@ -233,6 +233,8 @@ __wasi_errno_t c_set_times(int64_t fd, __wasi_timestamp_t st_atim, __wasi_timest
 
 __wasi_errno_t c_symlink(const std::string& sym_contents, const std::string& create_at);
 
+__wasi_errno_t c_readlink(const std::string& path, std::string& out);
+
 #define CLOCK_AS_NANOSECONDS(x) std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::x::now().time_since_epoch()).count()
 
 #ifdef _WIN32
@@ -664,6 +666,23 @@ __wasi_errno_t c_symlink(const std::string& sym_contents, const std::string& cre
 
     return __WASI_ESUCCESS;
 }
+
+__wasi_errno_t c_readlink(const std::string& path, std::string& out)
+{
+    out.clear();
+
+    std::error_code ec;
+    std::filesystem::path sym = std::filesystem::read_symlink(path, ec);
+
+    if(ec)
+    {
+        return __WASI_EACCES;
+    }
+
+    out = sym.string();
+    return __WASI_ESUCCESS;
+}
+
 
 #define write _write
 #define read _read
@@ -2093,13 +2112,92 @@ __wasi_errno_t __wasi_fd_readdir(__wasi_fd_t fd, wasi_ptr_t<void> vbuf, wasi_siz
     return __WASI_ESUCCESS;
 }
 
-//path_link
 //path_open
-//path_readlink
 //poll_oneoff
 //sock_recv
 //sock_send
 //sock_shutdown
+
+__wasi_errno_t __wasi_path_link(__wasi_fd_t old_fd,
+                                __wasi_lookupflags_t old_flags,
+                                const wasi_ptr_t<char>old_path,
+                                wasi_size_t old_path_len,
+                                __wasi_fd_t new_fd,
+                                const wasi_ptr_t<char>new_path,
+                                wasi_size_t new_path_len)
+{
+    if(!file_sandbox.has_fd(old_fd) || !file_sandbox.has_fd(new_fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(old_fd,__WASI_RIGHT_PATH_LINK_SOURCE) || !file_sandbox.can_fd(new_fd,__WASI_RIGHT_PATH_LINK_TARGET))
+        return __WASI_ENOTCAPABLE;
+
+    ///can't find a way in winapi to create a hard link to a symlink
+    if(old_flags != __WASI_LOOKUP_SYMLINK_FOLLOW)
+        return __WASI_EINVAL;
+
+    std::string oldp = make_str(old_path, old_path_len);
+    std::string newp = make_str(new_path, new_path_len);
+
+    std::string p1 = file_sandbox.files[old_fd].relative_path + "/" + oldp;
+    std::string p2 = file_sandbox.files[new_fd].relative_path + "/" + newp;
+
+    if(!file_sandbox.path_in_sandbox(p1) || !file_sandbox.path_in_sandbox(p2))
+        return __WASI_EACCES;
+
+    #ifdef _WIN32
+    std::error_code ec;
+    std::filesystem::create_hard_link(p1, p2, ec);
+
+    if(ec)
+        return __WASI_EACCES;
+    #else
+
+    int res = linkat(file_sandbox.files[old_fd].portable_fd, oldp.c_str(), file_sandbox.files[new_fd].portable_fd, newp.c_str(), AT_SYMLINK_FOLLOW);
+
+    if(res != 0)
+        return WASI_ERRNO();
+
+    #endif // _WIN32
+
+    return __WASI_ESUCCESS;
+}
+
+__wasi_errno_t __wasi_path_readlink(__wasi_fd_t fd,
+                                    const wasi_ptr_t<char>path,
+                                    wasi_size_t path_len,
+                                    wasi_ptr_t<char>buf,
+                                    wasi_size_t buf_len,
+                                    wasi_ptr_t<wasi_size_t> bufused)
+{
+    if(!file_sandbox.has_fd(fd))
+        return __WASI_EBADF;
+
+    if(!file_sandbox.can_fd(fd,__WASI_RIGHT_PATH_READLINK))
+        return __WASI_ENOTCAPABLE;
+
+    std::string base_path = file_sandbox.files[fd].relative_path;
+
+    std::string full = base_path + "/" + make_str(path, path_len);
+
+    if(!file_sandbox.path_in_sandbox(full))
+        return __WASI_EACCES;
+
+    std::string out;
+    __wasi_errno_t err = c_readlink(full, out);
+
+    if(err != __WASI_ESUCCESS)
+        return err;
+
+    wasi_size_t used = 0;
+    for(used=0; used < out.size() && used < buf_len; used++)
+    {
+        buf[used] = out[used];
+    }
+
+    *bufused = used;
+    return __WASI_ESUCCESS;
+}
 
 __wasi_errno_t __wasi_path_symlink(const wasi_ptr_t<char> old_path,
                                    wasi_size_t old_path_len,
@@ -2114,7 +2212,7 @@ __wasi_errno_t __wasi_path_symlink(const wasi_ptr_t<char> old_path,
         return __WASI_ENOTCAPABLE;
 
     std::string path_old = make_str(old_path, old_path_len);
-    std::string path_new = make_str(new_path, new_path_len);
+    std::string path_new = file_sandbox.files[fd].relative_path + "/" + make_str(new_path, new_path_len);
 
     if(!file_sandbox.path_in_sandbox(path_old) || !file_sandbox.path_in_sandbox(path_new))
         return __WASI_EACCES;
